@@ -19,3 +19,5 @@ from .Organization import *
 from .Place import *
 
 from .Relationship import *
+
+from .Holdings import *

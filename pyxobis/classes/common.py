@@ -358,41 +358,6 @@ class Note(Component):
         return note_e
 
 
-class VersionsHoldingsOpt(Component):
-    """
-    versionsHoldingsOpt |=
-        (element xobis:versions {
-             element xobis:version {
-                 element xobis:entry {
-                     element xobis:name { nameContent_ },
-                     qualifiersOpt
-                 },
-                 optNoteList_,
-                 _holdings
-             }+
-         }
-         | _holdings)?
-    """
-    def __init__(self, versions=None):
-        self.is_none = not bool(versions)
-        self.is_holdings = isinstance(versions, Holdings)
-        if not (self.is_holdings or self.is_none):
-            assert len(versions) > 0
-            assert all(isinstance(v, Version) for v in versions)
-        self.versions = versions
-    def serialize_xml(self):
-        # Returns an Element or None.
-        if self.is_none:
-            return None
-        if self.is_holdings:
-            return self.versions.serialize_xml()
-        # List of versions
-        versions_e = E('versions')
-        versions_e.extend([v.serialize_xml() for v in self.versions])
-        return versions_e
-
-
-
 class PreQualifiersOpt(Component):
     """
     preQualifiersOpt |= element xobis:qualifiers { (eventRef | orgRef | placeRef)+ }?
@@ -444,6 +409,40 @@ class QualifiersOpt(Component):
         return qualifiers_e
 
 
+
+
+class VersionsHoldingsOpt(Component):
+    """
+    versionsHoldingsOpt |=
+        (element xobis:versions {
+             element xobis:version {
+                 element xobis:entry {
+                     element xobis:name { nameContent_ },
+                     qualifiersOpt
+                 },
+                 optNoteList_,
+                 _holdings
+             }+
+         }
+         | _holdings)?
+    """
+    def __init__(self, versions=None):
+        self.is_none = not bool(versions)
+        self.is_holdings = isinstance(versions, Holdings)
+        if not (self.is_holdings or self.is_none):
+            assert len(versions) > 0
+            assert all(isinstance(v, Version) for v in versions)
+        self.versions = versions
+    def serialize_xml(self):
+        # Returns an Element or None.
+        if self.is_none:
+            return None
+        if self.is_holdings:
+            return self.versions.serialize_xml()
+        # List of versions
+        versions_e = E('versions')
+        versions_e.extend([v.serialize_xml() for v in self.versions])
+        return versions_e
 
 
 class Version(Component):
