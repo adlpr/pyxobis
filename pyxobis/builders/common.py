@@ -78,9 +78,9 @@ class PrincipalElementBuilder(Builder):
         self.note_list.append(Note(
             Content(content_text, content_lang),
             class_ = class_,  # ["transcription", "annotation", "documentation", "description", None]
-            link_attributes = LinkAttributes(link_title, XLinkAnyURI(href_URI) if href_URI else None) \
+            link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
-            xlink_role = XLinkAnyURI(role_URI) if role_URI else None
+            xlink_role = XSDAnyURI(role_URI) if role_URI else None
         ))
     def set_type(self, new_type):
         self.type = new_type
@@ -131,10 +131,10 @@ class PrincipalElementVariantBuilder(Builder):
         self.type = Type(
                         LinkAttributes(
                             link_title,
-                            xlink_href = XLinkAnyURI( href_URI ) \
+                            xlink_href = XSDAnyURI( href_URI ) \
                                          if href_URI else None
                         ),
-                        xlink_role = XLinkAnyURI( role_URI ) \
+                        xlink_role = XSDAnyURI( role_URI ) \
                                      if role_URI else None
                     )
     def set_time_or_duration_ref(self, time_or_duration_ref):
@@ -148,14 +148,14 @@ class PrincipalElementVariantBuilder(Builder):
         self.scheme = new_scheme
     def add_note(self, content_text, content_lang=None, class_=None, link_title=None, href_URI=None, role_URI=None):
         if link_title:
-            link_attributes = LinkAttributes(link_title, XLinkAnyURI(href_URI) if href_URI else None)
+            link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None)
         else:
             link_attributes = None
         self.note_list.append(Note(
             Content(content_text, content_lang),
             class_ = class_,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = link_attributes,
-            xlink_role = XLinkAnyURI(role_URI) if role_URI else None
+            xlink_role = XSDAnyURI(role_URI) if role_URI else None
         ))
 
 
@@ -186,7 +186,7 @@ class PrincipalElementRefBuilder(Builder):
     def set_link(self, link_title, href_URI=None):
         self.link_attributes = LinkAttributes(
                                    link_title,
-                                   XLinkAnyURI(href_URI) if href_URI else None
+                                   XSDAnyURI(href_URI) if href_URI else None
                                )
     def add_subdivision_link(self, content_text, content_lang=None, link_title=None, href_URI=None, substitute=None):
         self.subdivision_link_contents.append(
@@ -194,7 +194,7 @@ class PrincipalElementRefBuilder(Builder):
                 Content(content_text, content_lang),
                 link_attributes = LinkAttributes(
                                       link_title,
-                                      XLinkAnyURI(href_URI) if href_URI else None
+                                      XSDAnyURI(href_URI) if href_URI else None
                                   ) if link_title else None,
                 substitute = substitute
             )

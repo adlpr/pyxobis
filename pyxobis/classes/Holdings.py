@@ -197,7 +197,7 @@ class HoldingSimple(Component):
         self.notes = notes
         assert all(isinstance(enum_chron, EnumChron) for enum_chron in enum_chrons)
         self.enum_chrons = enum_chrons
-        if availability_information:
+        if availability_information is not None:
             assert isinstance(availability_information, AvailabilityInformationType)
         self.availability_information = availability_information
     def serialize_xml(self):
@@ -362,11 +362,50 @@ class HoldingStructuredSet(Component):
     def serialize_xml(self):
         # Returns an Element.
         set_e = E('set')
-        # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        # <label> ?
+        if self.label:
+            label_e = E('label')
+            label_e.text = self.label
+            set_e.append(label_e)
+        # <form> ?
+        if self.form is not None:
+            form_e = self.form.serialize_xml()
+            set_e.append(form_e)
+        # <sublocation> ?
+        if self.sublocation is not None:
+            sublocation_e = self.sublocation.serialize_xml()
+            set_e.append(sublocation_e)
+        # <shelfLocator> *
+        for shelf_locator in self.shelf_locators:
+            shelf_locator_e = E('shelfLocator')
+            shelf_locator_e.text = self.shelf_locator
+            set_e.append(shelf_locator_e)
+        # <electronicLocator> *
+        for electronic_locator in self.electronic_locators:
+            electronic_locator_content_e, electronic_locator_attrs = electronic_locator.serialize_xml()
+            electronic_locator_e = E('electronicLocator', **electronic_locator_attrs)
+            electronic_locator_e.append(electronic_locator_content_e)
+            set_e.append(electronic_locator_e)
+        # <completeness> ?
+        if self.completeness is not None:
+            completeness_e = E('completeness')
+            completeness_e.text = self.completeness
+            set_e.append(completeness_e)
+        # <enumerationAndChronology> *
+        enum_chron_elements = [enum_chron.serialize_xml() for enum_chron in self.enum_chrons]
+        set_e.extend(enum_chron_elements)
+        # <retention> ?
+        if self.retention is not None:
+            retention_e = E('retention')
+            retention_e.text = self.retention
+            set_e.append(retention_e)
+        # <resourceIdentifier> ?
+        if self.resource_identifier is not None:
+            resource_identifier_e = self.resource_identifier.serialize_xml()
+            set_e.append(resource_identifier_e)
+        # <component> *
+        component_elements = [component.serialize_xml() for component in self.components]
+        set_e.extend(component_elements)
         return set_e
 
 
@@ -400,19 +439,87 @@ class HoldingStructuredSetEnumerationAndChronology(Component):
       )}?
     }
     """
-    def __init__(self):
-        ...
+    def __init__(self, starting, ending=None, unit_type=1, alt_numbering=0, note=None):
+        if unit_type is not None:
+            assert (isinstance(unit_type, int) or unit_type.isdigit()) and 1 <= int(unit_type) <= 3
+            unit_type = str(int(unit_type))
+        self.unit_type = unit_type
+        if alt_numbering is not None:
+            assert ((isinstance(alt_numbering, int) or alt_numbering.isdigit()) and int(alt_numbering) in [0,1]) \
+                   or isinstance(alt_numbering, bool)
+           # if bool, auto converts to binary bool (0/1)
+            alt_numbering = str(int(alt_numbering))
+        self.alt_numbering = alt_numbering
+        if note is not None:
+            assert isinstance(note, str)
+        self.note = note
+        # starting and ending should be either a string,
+        # or a tuple ([EnumerationType, ...], [ChronologyType, ...])
+        self.starting_is_str = isinstance(starting, str)
+        assert self.starting_is_str or (len(starting) == 2 \
+                                        and all(isinstance(e, EnumerationType) for e in starting[0]) \
+                                        and all(isinstance(c, ChronologyType) for c in starting[1]))
+        self.starting = starting
+        self.ending_is_str = isinstance(ending, str)
+        assert self.ending_is_str or (len(ending) == 2 \
+                                      and all(isinstance(e, EnumerationType) for e in ending[0]) \
+                                      and all(isinstance(c, ChronologyType) for c in ending[1]))
+        self.ending = ending
     def serialize_xml(self):
-        # # Returns an Element.
-        # holdings_e = E('holdings', **nons)
-        # # variant elements
-        # holding_elements = [holding.serialize_xml() for holding in self.holdings]
-        # holdings_e.extend(holding_elements)
-        # # resource elements
-        # resource_elements = [resource.serialize_xml() for resource in self.resources]
-        # holdings_e.extend(resource_elements)
-        # return holdings_e
-        ...
+        # Returns an Element.
+        # attributes
+        enum_chron_attrs = {}
+        if self.unit_type is not None:
+            enum_chron_attrs['unitType'] = self.unit_type
+        if self.alt_numbering is not None:
+            enum_chron_attrs['altNumbering'] = self.alt_numbering
+        if self.note is not None:
+            enum_chron_attrs['note'] = self.note
+        enum_chron_e = E('enumerationAndChronology', **enum_chron_attrs)
+        # <startingEnumAndChronology>
+        starting_e = E('startingEnumAndChronology')
+        if self.starting_is_str:
+            text_e = E('text')
+            text_e.text = self.starting
+            starting_e.append(text_e)
+        else:
+            structured_e = E('structured')
+            starting_enums, starting_chrons = self.starting
+            for starting_enum in starting_enums:
+                starting_enum_contents, starting_enum_attrs = starting_enum.serialize_xml()
+                starting_enum_e = E('enumeration', **starting_enum_attrs)
+                starting_enum_e.extend(starting_enum_contents)
+                structured_e.append(starting_enum_e)
+            for starting_chron in starting_chrons:
+                starting_chron_contents, starting_chron_attrs = starting_chron.serialize_xml()
+                starting_chron_e = E('chronology', **starting_chron_attrs)
+                starting_chron_e.extend(starting_chron_contents)
+                structured_e.append(starting_chron_e)
+            starting_e.append(structured_e)
+        enum_chron_e.append(starting_e)
+        # <endingEnumAndChronology> ?
+        if self.ending is not None:
+            ending_e = E('endingEnumAndChronology')
+            if self.ending_is_str:
+                text_e = E('text')
+                text_e.text = self.starting
+                ending_e.append(text_e)
+            else:
+                structured_e = E('structured')
+                ending_enums, ending_chrons = self.starting
+                for ending_enum in ending_enums:
+                    ending_enum_contents, ending_enum_attrs = ending_enum.serialize_xml()
+                    ending_enum_e = E('enumeration', **ending_enum_attrs)
+                    ending_enum_e.extend(ending_enum_contents)
+                    structured_e.append(ending_enum_e)
+                for ending_chron in ending_chrons:
+                    ending_chron_contents, ending_chron_attrs = ending_chron.serialize_xml()
+                    ending_chron_e = E('chronology', **ending_chron_attrs)
+                    ending_chron_e.extend(ending_chron_contents)
+                    structured_e.append(ending_chron_e)
+                ending_e.append(structured_e)
+            enum_chron_e.append(ending_e)
+        return enum_chron_e
 
 
 class HoldingStructuredSetComponent(Component):
@@ -429,19 +536,74 @@ class HoldingStructuredSetComponent(Component):
       element availabilityInformation { availabilityInformationType }?
     }
     """
-    def __init__(self):
-        ...
+    def __init__(self, piece_identifiers, enum_chrons, form=None, monetary_valuation=None,  \
+                       sublocations=[], shelf_locators=[], electronic_locators=[],  \
+                       notes=[], availability_information=None):
+        assert piece_identifiers and all(isinstance(piece_identifier, PieceIdentifier) for piece_identifier in piece_identifiers)
+        self.piece_identifiers = piece_identifiers
+        if form is not None:
+            assert isinstance(form, Form)
+        self.form = form
+        if monetary_valuation is not None:
+            assert isinstance(monetary_valuation, MonetaryValuationType)
+        self.monetary_valuation = monetary_valuation
+        assert all(isinstance(sublocation, Sublocation) for sublocation in sublocations)
+        self.sublocations = sublocations
+        assert all(isinstance(shelf_locator, ShelfLocator) for shelf_locator in shelf_locators)
+        self.shelf_locators = shelf_locators
+        assert all(isinstance(electronic_locator, ElectronicLocatorType) for electronic_locator in electronic_locators)
+        self.electronic_locators = electronic_locators
+        assert all(isinstance(note, str) for note in notes)
+        self.notes = notes
+        assert enum_chron and all(isinstance(enum_chron, EnumChron) for enum_chron in enum_chrons)
+        self.enum_chrons = enum_chrons
+        if availability_information is not None:
+            assert isinstance(availability_information, AvailabilityInformationType)
+        self.availability_information = availability_information
     def serialize_xml(self):
-        # # Returns an Element.
-        # holdings_e = E('holdings', **nons)
-        # # variant elements
-        # holding_elements = [holding.serialize_xml() for holding in self.holdings]
-        # holdings_e.extend(holding_elements)
-        # # resource elements
-        # resource_elements = [resource.serialize_xml() for resource in self.resources]
-        # holdings_e.extend(resource_elements)
-        # return holdings_e
-        ...
+        # Returns an Element.
+        component_e = E('component')
+        # <pieceIdentifier> +
+        piece_identifier_elements = [piece_identifier.serialize_xml() for piece_identifier in self.piece_identifiers]
+        component_e.extend(piece_identifier_elements)
+        # <form> ?
+        if self.form is not None:
+            form_e = self.form.serialize_xml()
+            component_e.append(form_e)
+        # <monetaryValuation> ?
+        if self.monetary_valuation is not None:
+            monetary_valuation_text, monetary_valuation_attrs = self.monetary_valuation.serialize_xml()
+            monetary_valuation_e = E('monetaryValuation', **monetary_valuation_attrs)
+            monetary_valuation_e.text = monetary_valuation_amount
+            component_e.append(monetary_valuation_e)
+        # <sublocation> *
+        sublocation_elements = [sublocation.serialize_xml() for sublocation in self.sublocations]
+        component_e.extend(sublocation_elements)
+        # <shelfLocator> *
+        shelf_locator_elements = [shelf_locator.serialize_xml() for shelf_locator in self.shelf_locators]
+        component_e.extend(shelf_locator_elements)
+        # <electronicLocator> *
+        for electronic_locator in self.electronic_locators:
+            electronic_locator_content_e, electronic_locator_attrs = electronic_locator.serialize_xml()
+            electronic_locator_e = E('electronicLocator', **electronic_locator_attrs)
+            electronic_locator_e.append(electronic_locator_content_e)
+            component_e.append(electronic_locator_e)
+        # <note> *
+        for note in self.notes:
+            note_e = E('note')
+            note_e.text = note
+            component_e.append(note_e)
+        # <enumerationAndChronology> +
+        for enum_chron in self.enum_chrons:
+            enum_chron_content_e, enum_chron_attrs = enum_chron.serialize_xml()
+            enum_chron_e = E('enumerationAndChronology', **enum_chron_attrs)
+            enum_chron_e.append(enum_chron_content_e)
+            component_e.append(enum_chron_e)
+        # <availabilityInformation> ?
+        if self.availability_information is not None:
+            availability_information_elements = self.availability_information.serialize_xml()
+            component_e.extend(availability_information_elements)
+        return component
 
 
 class SummaryPolicy(Component):
@@ -453,22 +615,48 @@ class SummaryPolicy(Component):
           ( element text { xs:string } | xs:any )
         }+,
         reservationPolicy?,
-        element feeInformation { feeInformationType }
+        element feeInformation { feeInformationType }?
     }
     """
-    def __init__(self):
-        ...
+    def __init__(self, form, availabilities, reservation_policy=None, fee_information=None):
+        if form is not None:
+            assert isinstance(form, Form)
+        self.form = form
+        # availabilities should be a list of tuples
+        assert availabilities and all(len(availability) == 2 for availability in availabilities)
+        for availability in availabilities:
+            available_for, text_or_element = availability
+            assert isinstance(available_for, AvailableFor)
+            assert isinstance(text_or_element, str) or isinstance(text_or_element, _Element)
+        self.availabilities = availabilities
+        if reservation_policy is not None:
+            assert isinstance(reservation_policy, ReservationPolicy)
+        self.reservation_policy = reservation_policy
+        if fee_information is not None:
+            assert isinstance(fee_information, FeeInformationType)
+        self.fee_information = fee_information
     def serialize_xml(self):
-        # # Returns an Element.
-        # holdings_e = E('holdings', **nons)
-        # # variant elements
-        # holding_elements = [holding.serialize_xml() for holding in self.holdings]
-        # holdings_e.extend(holding_elements)
-        # # resource elements
-        # resource_elements = [resource.serialize_xml() for resource in self.resources]
-        # holdings_e.extend(resource_elements)
-        # return holdings_e
-        ...
+        # Returns an Element.
+        summary_policy_e = E('summaryPolicy')
+        # <form> ?
+        if self.form is not None:
+            form_e = self.form.serialize_xml()
+            summary_policy_e.append(form_e)
+        # <availability> +
+        for availability in availabilities:
+            availability_e = E('availability')
+            available_for, text_or_element = availability
+        # <reservationPolicy> ?
+        if self.reservation_policy is not None:
+            reservation_policy_e = self.reservation_policy.serialize_xml()
+            summary_policy_e.append(reservation_policy_e)
+        # <feeInformation> ?
+        if self.fee_information is not None:
+            fee_information_e = E('feeInformation')
+            fee_information_content_elements = self.fee_information.serialize_xml()
+            fee_information_e.extend(fee_information_content_elements)
+            summary_policy_e.append(fee_information_e)
+        return summary_policy_e
 
 
 class SummaryHistory(Component):
@@ -512,17 +700,18 @@ class SummaryHistory(Component):
     """
     def __init__(self):
         ...
-    def serialize_xml(self):
-        # # Returns an Element.
-        # holdings_e = E('holdings', **nons)
-        # # variant elements
-        # holding_elements = [holding.serialize_xml() for holding in self.holdings]
-        # holdings_e.extend(holding_elements)
-        # # resource elements
-        # resource_elements = [resource.serialize_xml() for resource in self.resources]
-        # holdings_e.extend(resource_elements)
-        # return holdings_e
         ...
+        print("WARNING: SummaryHistory not yet implemented")
+        ...
+        ...
+    def serialize_xml(self):
+        # Returns an Element.
+        # summary_history_e = E('summaryHistory')
+        ...
+        ...
+        ...
+        ...
+        # return summary_history_e
 
 
 class EnumChron(Component):
@@ -546,13 +735,60 @@ class EnumChron(Component):
         }
       )
     """
-    def __init__(self):
-        ...
+    def __init__(self, enum_chron_contents, unit_type=1, alt_numbering=0, note=None):
+        if unit_type is not None:
+            assert (isinstance(unit_type, int) or unit_type.isdigit()) and 1 <= int(unit_type) <= 3
+            unit_type = str(int(unit_type))
+        self.unit_type = unit_type
+        if alt_numbering is not None:
+            assert ((isinstance(alt_numbering, int) or alt_numbering.isdigit()) and int(alt_numbering) in [0,1]) \
+                   or isinstance(alt_numbering, bool)
+           # if bool, auto converts to binary bool (0/1)
+            alt_numbering = str(int(alt_numbering))
+        self.alt_numbering = alt_numbering
+        if note is not None:
+            assert isinstance(note, str)
+        self.note = note
+        # contents should be either a string,
+        # or a tuple/list ([EnumerationType, ...], [ChronologyType, ...])
+        self.is_str = isinstance(enum_chron_contents, str)
+        assert self.is_str or (len(enum_chron_contents) == 2 \
+                               and all(isinstance(e, EnumerationType) for e in enum_chron_contents[0]) \
+                               and all(isinstance(c, ChronologyType) for c in enum_chron_contents[1]))
+        self.enum_chron_contents = enum_chron_contents
     def serialize_xml(self):
-        # Returns an Element and a dict of parent attributes.
-
-        # holdings_e = E('holdings', **nons)
-        ...
+        # Returns an Element.
+        # attributes
+        enum_chron_attrs = {}
+        if self.unit_type is not None:
+            enum_chron_attrs['unitType'] = self.unit_type
+        if self.alt_numbering is not None:
+            enum_chron_attrs['altNumbering'] = self.alt_numbering
+        if self.note is not None:
+            enum_chron_attrs['note'] = self.note
+        enum_chron_e = E('enumerationAndChronology', **enum_chron_attrs)
+        # <enum_chron_contentsEnumAndChronology>
+        enum_chron_contents_e = E('enum_chron_contentsEnumAndChronology')
+        if self.is_str:
+            text_e = E('text')
+            text_e.text = self.enum_chron_contents
+            enum_chron_contents_e.append(text_e)
+        else:
+            structured_e = E('structured')
+            enums, chrons = self.enum_chron_contents
+            for enum in enums:
+                enum_contents, enum_attrs = enum.serialize_xml()
+                enum_e = E('enumeration', **enum_attrs)
+                enum_e.extend(enum_contents)
+                structured_e.append(enum_e)
+            for chron in chrons:
+                chron_contents, chron_attrs = chron.serialize_xml()
+                chron_e = E('chronology', **chron_attrs)
+                chron_e.extend(chron_contents)
+                structured_e.append(chron_e)
+            enum_chron_contents_e.append(structured_e)
+        enum_chron_e.append(enum_chron_contents_e)
+        return enum_chron_e
 
 
 class CodeOrIdentifier(Component):
@@ -567,7 +803,7 @@ class CodeOrIdentifier(Component):
     def __init__(self, value, type_or_source):
         assert isinstance(value, str)
         self.value = value
-        self.is_pointer = isinstance(type_or_source, XLinkAnyURI)
+        self.is_pointer = isinstance(type_or_source, XSDAnyURI)
         assert self.is_pointer or isinstance(type_or_source, str)
         self.type_or_source = type_or_source
     def serialize_xml(self):
@@ -605,13 +841,69 @@ class AvailabilityInformationType(Component):
       reservationPolicy?,
       element reservationQueue { xs:nonNegativeInteger }?
     """
-    def __init__(self):
-        ...
+    def __init__(self, statuses=[], policy=None, fee_information=None, reservation_policy=None, reservation_queue=None):
+        # each status must have 3 parts
+        statuses_normalized = []
+        for status in statuses:
+            assert len(status) == 3
+            availability_status, available_for, date_time_available = status
+            if availability_status is not None:
+                assert (isinstance(availability_status, int) or availability_status.isdigit()) and 0 <= int(availability_status) <= 3
+                availability_status = str(int(availability_status))
+            if available_for is not None:
+                assert isinstance(available_for, AvailableFor)
+            if date_time_available is not None:
+                assert isinstance(date_time_available, XSDDateTime)
+            statuses_normalized.append((availability_status, available_for, date_time_available))
+        self.statuses = statuses_normalized
+        if policy is not None:
+            assert isinstance(policy, _Element)
+        self.policy = policy
+        if fee_information is not None:
+            assert isinstance(fee_information, FeeInformationType)
+        self.fee_information = fee_information
+        if reservation_policy is not None:
+            assert isinstance(reservation_policy, ReservationPolicy)
+        self.reservation_policy = reservation_policy
+        if reservation_queue is not None:
+            assert (isinstance(reservation_queue, int) or reservation_queue.isdigit()) and 0 <= int(reservation_queue)
+            reservation_queue = str(int(reservation_queue))
+        self.reservation_queue = reservation_queue
     def serialize_xml(self):
         # Returns a list of 0 or more Elements.
-
-        # holdings_e = E('holdings', **nons)
-        ...
+        elements = []
+        for status in self.statuses:
+            status_e = E('status')
+            availability_status, available_for, date_time_available = status
+            if availability_status is not None:
+                availability_status_e = E('availabilityStatus')
+                availability_status_e.text = availability_status
+                status_e.append(availability_status_e)
+            if available_for is not None:
+                available_for_e = available_for.serialize_xml()
+                status_e.append(available_for_e)
+            if date_time_available is not None:
+                date_time_available_e = E('dateTimeAvailable')
+                date_time_available_e.text = date_time_available.serialize_xml()
+                status_e.append(date_time_available_e)
+            elements.append(status_e)
+        if self.policy is not None:
+            policy_e = E('policy')
+            policy_e.append(self.policy)
+            elements.append(policy_e)
+        if self.fee_information is not None:
+            fee_information_e = E('feeInformation')
+            fee_information_content_elements = elf.fee_information.serialize_xml()
+            fee_information_e.extend(fee_information_content_elements)
+            elements.append(fee_information_e)
+        if self.reservation_policy is not None:
+            reservation_policy_e = self.reservation_policy.serialize_xml()
+            elements.append(reservation_policy_e)
+        if self.reservation_queue is not None:
+            reservation_queue_e = E('reservationQueue')
+            reservation_queue_e.text = self.reservation_queue
+            elements.append(reservation_queue_e)
+        return elements
 
 
 class StatusType(Component):
@@ -621,13 +913,33 @@ class StatusType(Component):
       availableFor?,
       element earliestDispatchDate { xs:dateTime }?,
     """
-    def __init__(self):
-        ...
+    def __init__(self, available_count=None, available_for=None, earliest_dispatch_date=None):
+        if available_count is not None:
+            assert (isinstance(available_count, int) or available_count.isdigit()) \
+                   and int(available_count) >= 0
+            available_count = str(int(available_count))
+        self.available_count = available_count
+        if available_for is not None:
+            assert isinstance(available_for, AvailableFor)
+        self.available_for = available_for
+        if earliest_dispatch_date is not None:
+            assert isinstance(earliest_dispatch_date, XSDDateTime)
+        self.earliest_dispatch_date = earliest_dispatch_date
     def serialize_xml(self):
         # Returns a list of 0 to 3 Elements.
-
-        # holdings_e = E('holdings', **nons)
-        ...
+        elements = []
+        if self.available_count is not None:
+            available_count_e = E('availableCount')
+            available_count_e.text = self.available_count
+            elements.append(available_count_e)
+        if self.available_for is not None:
+            available_for_e = available_for.serialize_xml()
+            elements.append(available_for_e)
+        if self.earliest_dispatch_date is not None:
+            earliest_dispatch_date_e = E('earliestDispatchDate')
+            earliest_dispatch_date_e.text = earliest_dispatch_date.serialize_xml()
+            elements.append(earliest_dispatch_date_e)
+        return elements
 
 
 class PieceIdentifier(Component):
@@ -651,13 +963,15 @@ class ResourceIdentifier(Component):
     resourceIdentifier =
       element resourceIdentifier { codeOrIdentifier }
     """
-    def __init__(self):
-        ...
+    def __init__(self, code_or_identifier):
+        assert isinstance(code_or_identifier, CodeOrIdentifier)
+        self.code_or_identifier = code_or_identifier
     def serialize_xml(self):
         # Returns an Element.
-
-        # holdings_e = E('holdings', **nons)
-        ...
+        resource_identifier_e = E('resourceIdentifier')
+        code_or_identifier_elements = self.code_or_identifier.serialize_xml()
+        resource_identifier_e.extend(code_or_identifier_elements)
+        return resource_identifier_e
 
 
 class Form(Component):
@@ -665,13 +979,15 @@ class Form(Component):
     form =
       element form { codeOrIdentifier }
     """
-    def __init__(self):
-        ...
+    def __init__(self, code_or_identifier):
+        assert isinstance(code_or_identifier, CodeOrIdentifier)
+        self.code_or_identifier = code_or_identifier
     def serialize_xml(self):
         # Returns an Element.
-
-        # holdings_e = E('holdings', **nons)
-        ...
+        form_e = E('form')
+        code_or_identifier_elements = self.code_or_identifier.serialize_xml()
+        form_e.extend(code_or_identifier_elements)
+        return form_e
 
 
 class ElectronicLocatorType(Component):
@@ -692,13 +1008,25 @@ class ElectronicLocatorType(Component):
         | element text { text }
       )
     """
-    def __init__(self):
-        ...
+    def __init__(self, pointer_or_text, access_restrictions=None):
+        if access_restrictions not in [None, ""]:
+            assert (isinstance(access_restrictions, int) or access_restrictions.isdigit()) and 0 <= int(access_restrictions) <= 6
+            access_restrictions = str(int(access_restrictions))
+        self.access_restrictions = access_restrictions
+        assert self.is_pointer or isinstance(pointer_or_text, str)
+        self.pointer_or_text = pointer_or_text
     def serialize_xml(self):
         # Returns an Element and a dict of parent attributes.
-
-        # holdings_e = E('holdings', **nons)
-        ...
+        attrs = {}
+        if self.access_restrictions is not None:
+            attrs['accessRestrictions'] = self.access_restrictions
+        if self.is_pointer:
+            content_e = E('pointer')
+            content_e.text = self.pointer_or_text.serialize_xml()
+        else:
+            content_e = E('text')
+            content_e.text = self.pointer_or_text
+        return content_e, attrs
 
 
 class ShelfLocator(Component):
@@ -706,13 +1034,14 @@ class ShelfLocator(Component):
     shelfLocator =
       element shelfLocator { xs:string }
     """
-    def __init__(self):
-        ...
+    def __init__(self, shelf_locator):
+        assert isinstance(shelf_locator, str)
+        self.shelf_locator = shelf_locator
     def serialize_xml(self):
         # Returns an Element.
-
-        # holdings_e = E('holdings', **nons)
-        ...
+        shelf_locator_e = E('shelfLocator')
+        shelf_locator_e.text = self.shelf_locator
+        return shelf_locator_e
 
 
 class Sublocation(Component):
@@ -720,13 +1049,14 @@ class Sublocation(Component):
     sublocation =
       element sublocation { xs:string }
     """
-    def __init__(self):
-        ...
+    def __init__(self, sublocation):
+        assert isinstance(sublocation, str)
+        self.sublocation = sublocation
     def serialize_xml(self):
         # Returns an Element.
-
-        # holdings_e = E('holdings', **nons)
-        ...
+        sublocation_e = E('sublocation')
+        sublocation_e.text = self.sublocation
+        return sublocation_e
 
 
 class MonetaryValuationType(Component):
@@ -735,13 +1065,21 @@ class MonetaryValuationType(Component):
       attribute currencyCode { xs:string }?,
       xs:decimal
     """
-    def __init__(self):
-        ...
+    def __init__(self, valuation, currency_code=None, valuation_format_string='{:.2f}'):
+        if currency_code is not None:
+            assert isinstance(currency_code, str)
+        self.currency_code = currency_code
+        try:
+            valuation = float(valuation)
+        except:
+            raise ValueException("valuation must be expressible as float")
+        self.valuation = valuation_format_string.format(valuation)
     def serialize_xml(self):
         # Returns a text string and a dict of parent attributes.
-
-        # holdings_e = E('holdings', **nons)
-        ...
+        attrs = {}
+        if self.currency_code is not None:
+            attrs['currencyCode'] = self.currency_code
+        return self.valuation, attrs
 
 
 class FeeInformationType(Component):
@@ -755,7 +1093,7 @@ class FeeInformationType(Component):
         }+
       )
     """
-    def __init__(self):
+    def __init__(self, ):
         ...
     def serialize_xml(self):
         # Returns a list of 1 or more Elements.

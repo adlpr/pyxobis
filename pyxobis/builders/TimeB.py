@@ -36,10 +36,10 @@ class TimeEntryContentBuilder:
         self.type = Type(
                         LinkAttributes(
                             link_title,
-                            xlink_href = XLinkAnyURI( href_URI ) \
+                            xlink_href = XSDAnyURI( href_URI ) \
                                          if href_URI else None
                         ),
-                        xlink_role = XLinkAnyURI( role_URI ) \
+                        xlink_role = XSDAnyURI( role_URI ) \
                                      if role_URI else None
                     )
     def set_certainty(self, text, lang=None, set_=None):

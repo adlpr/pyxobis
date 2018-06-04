@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 from pyxobis.classes import *
-from .common import Builder
 
 
 class RelationshipBuilder:

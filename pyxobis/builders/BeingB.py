@@ -25,10 +25,10 @@ class BeingBuilder(PrincipalElementBuilder):
         self.entry_type = Type(
                               LinkAttributes(
                                   link_title,
-                                  xlink_href = XLinkAnyURI( href_URI ) \
+                                  xlink_href = XSDAnyURI( href_URI ) \
                                                if href_URI else None
                               ),
-                              xlink_role = XLinkAnyURI( role_URI ) \
+                              xlink_role = XSDAnyURI( role_URI ) \
                                            if role_URI else None
                           )
     def set_time_or_duration_ref(self, time_or_duration_ref):

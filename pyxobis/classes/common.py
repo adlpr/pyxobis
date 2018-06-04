@@ -209,7 +209,7 @@ class Type(Component):
         self.no_attrs = link_attributes is None
         if not self.no_attrs:
             assert isinstance(link_attributes, LinkAttributes)
-            assert isinstance(xlink_role, XLinkAnyURI)
+            assert isinstance(xlink_role, XSDAnyURI)
         self.link_attributes = link_attributes
         self.xlink_role = xlink_role
     def serialize_xml(self):
@@ -232,7 +232,7 @@ class LinkAttributes(Component):
     """
     def __init__(self, xlink_title, xlink_href=None):
         if xlink_href:
-            assert isinstance(xlink_href, XLinkAnyURI)
+            assert isinstance(xlink_href, XSDAnyURI)
         self.xlink_href = xlink_href
         self.xlink_title = xlink_title
     def serialize_xml(self):
@@ -334,7 +334,7 @@ class Note(Component):
         assert not (bool(link_attributes) ^ bool(xlink_role)), "Need both or neither: link / role"
         if link_attributes:
             assert isinstance(link_attributes, LinkAttributes)
-            assert isinstance(xlink_role, XLinkAnyURI)
+            assert isinstance(xlink_role, XSDAnyURI)
         self.link_attributes = link_attributes
         self.xlink_role = xlink_role
         assert isinstance(content, Content)
@@ -502,15 +502,25 @@ class Holdings(Component):
         return holdings_e
 
 
-# other namespaces
+# representations of XS datatypes
 
-class XLinkAnyURI(Component):
+class XSDAnyURI(Component):
     def __init__(self, anyURI):
         # validate??????
         self.anyURI = anyURI
     def serialize_xml(self):
         # Returns a text string.
         return self.anyURI
+
+class XSDDateTime(Component):
+    def __init__(self, date_time):
+        # verify match to ISO 8601 extended format
+        assert re.match(r"-?\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(Z|[+-]\d\d:\d\d])?$", date_time), \
+            "Datetime ({}) must match ISO 8601 extended format".format(date_time)
+        self.date_time = date_time
+    def serialize_xml(self):
+        # Returns a text string.
+        return self.date_time
 
 # functions
 
