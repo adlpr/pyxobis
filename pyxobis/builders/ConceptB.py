@@ -88,5 +88,5 @@ class ConceptRefBuilder(PrincipalElementRefBuilder):
                        QualifiersOpt(self.qualifiers)
                    ),
                    link_attributes = self.link_attributes,
-                   opt_subdivision = OptSubdivision(link_contents)
+                   opt_subdivision = OptSubdivision(self.subdivision_link_contents)
                )

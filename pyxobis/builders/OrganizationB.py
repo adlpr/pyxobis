@@ -84,6 +84,7 @@ class OrganizationRefBuilder(PrincipalElementRefBuilder):
     # ADDITIONAL: add_prequalifier
     def __init__(self):
         super().__init__()
+        self.prequalifiers = []
     def add_prequalifier(self, prequalifier):
         # assert isinstance(qualifier, PreQualifierRefElement)
         self.prequalifiers.append(prequalifier)
@@ -98,5 +99,5 @@ class OrganizationRefBuilder(PrincipalElementRefBuilder):
                        QualifiersOpt(self.qualifiers)
                    ),
                    link_attributes = self.link_attributes,
-                   opt_subdivision = OptSubdivision(link_contents)
+                   opt_subdivision = OptSubdivision(self.subdivision_link_contents)
                )

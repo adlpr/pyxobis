@@ -2,10 +2,12 @@
 # -*- coding: UTF-8 -*-
 
 """
-Builders to facilitate construction of PyXOBIS immutable objects.
+Builders to facilitate construction of PyXOBIS immutable class objects.
 """
 
-from .common import *
+# from .common import *
+
+from .RecordB import *
 
 from .BeingB import *
 from .EventB import *
@@ -18,4 +20,6 @@ from .ConceptB import *
 from .OrganizationB import *
 from .PlaceB import *
 
-# from .RelationshipB import *
+from .RelationshipB import *
+
+# from .HoldingsB import *

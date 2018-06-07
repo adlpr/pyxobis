@@ -182,7 +182,7 @@ class PrincipalElementRefBuilder(Builder):
     def __init__(self):
         super().__init__()
         self.link_attributes = None  # LinkAttributes
-        self.subdivision_link_contents = None
+        self.subdivision_link_contents = []
     def set_link(self, link_title, href_URI=None):
         self.link_attributes = LinkAttributes(
                                    link_title,

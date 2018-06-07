@@ -35,16 +35,18 @@ class RelationshipBuilder:
         self.time_or_duration_ref = time_or_duration_ref
     def build(self):
         return Relationship(
-                   RelationshipName(
-                       Content( self.name_text,
-                                lang = self.name_lang ),
-                       modifier_nonfiling = self.modifier_nonfiling,
-                       modifier_content  = Content( self.modifier_text,
-                                                   lang = self.modifier_lang ) \
-                                          if self.modifier_text else None
-                   ),
-                   self.element_ref, # some RefElement
-                   type   = self.type,
-                   degree = self.degree,
-                   time_or_duration_ref = self.time_or_duration_ref
+                   RelationshipContent(
+                       RelationshipName(
+                           Content( self.name_text,
+                                    lang = self.name_lang ),
+                           modifier_nonfiling = self.modifier_nonfiling,
+                           modifier_content  = Content( self.modifier_text,
+                                                       lang = self.modifier_lang ) \
+                                              if self.modifier_text else None
+                       ),
+                       self.element_ref, # some RefElement
+                       type   = self.type,
+                       degree = self.degree,
+                       time_or_duration_ref = self.time_or_duration_ref
+                   )
                )

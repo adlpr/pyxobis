@@ -9,6 +9,19 @@ E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",
                  nsmap={'xobis':"http://www.xobis.info/ns/2.0/",
                         'xlink':"https://www.w3.org/1999/xlink"})
 
+
+class Relationship(Component):
+    def __init__(self, relationship_content):
+        assert isinstance(relationship_content, RelationshipContent)
+        self.relationship_content = relationship_content
+    def serialize_xml(self):
+        # Returns an Element.
+        content_elements, content_attrs = self.relationship_content.serialize_xml()
+        relationship_e = E('relationship', **content_attrs)
+        relationship_e.extend(content_elements)
+        return relationship_e
+
+
 class RelationshipContent(Component):
     """
     _relationshipContent =
@@ -58,6 +71,7 @@ class RelationshipContent(Component):
         self.time_or_duration_ref = time_or_duration_ref
         self.element_ref = element_ref
     def serialize_xml(self):
+        # Returns a list of two to four Elements and a dict of parent attributes.
         elements, attrs = [], {}
         if self.type:
             attrs['type'] = self.type
@@ -92,14 +106,15 @@ class RelationshipName(Component):
         if modifier_content: assert isinstance(modifier_content, Content)
         self.modifier_content = modifier_content
     def serialize_xml(self):
+        # Returns a list of one or two Elements.
         elements = []
-        name_content_text, name_content_as = self.name_content.serialize_xml()
-        name_e = E('name', **name_content_as)
+        name_content_text, name_content_attrs = self.name_content.serialize_xml()
+        name_e = E('name', **name_content_attrs)
         name_e.text = name_content_text
         elements.append(name_e)
         if self.modifier_content:
-            modifier_content_es, modifier_content_as = self.modifier_content.serialize_xml()
-            modifier_e = E('modifier', **modifier_content_as)
-            modifier_e.extend(modifier_content_es)
+            modifier_content_elements, modifier_content_attrs = self.modifier_content.serialize_xml()
+            modifier_e = E('modifier', **modifier_content_attrs)
+            modifier_e.extend(modifier_content_elements)
             elements.append(modifier_e)
         return elements

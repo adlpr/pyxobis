@@ -69,17 +69,40 @@ VersionsHoldingsBuilder
 ...
 -->
 
+## RecordBuilder
+```
+# Organization owning/managing the record.
+set_id_org_ref ( id_org_ref )  # OrganizationRef
+
+# Record ID.
+set_id_value( id_value )  # str
+
+# Type of record (e.g. original, derivative, suppressed)
+add_type ( xlink_title = None,  # str
+           xlink_href = None,   # URI
+           xlink_role = None )  # URI
+
+set_principal_element ( principal_element )  # PrincipalElement
+
+add_action ( time_or_duration_ref,  # TimeRef or DurationRef
+             xlink_title = None,    # str
+             xlink_href = None,     # URI
+             xlink_role = None )    # URI
+
+add_relationship ( relationship )   # Relationship
+```
+
 ## Being
 
 ### BeingBuilder
 ```
-set_role ( new_role )
+set_role ( new_role )  # ["instance", "authority", "authority instance"]
 
-set_type ( new_type )
+set_type ( new_type )  # ["human", "nonhuman", "special", None]
 
-set_class ( new_class )
+set_class ( new_class )  # ["individual", "familial", "collective", "undifferentiated", "referential", None]
 
-set_scheme ( new_scheme )
+set_scheme ( new_scheme )  # str
 
 set_entry_type ( link_title,
                  role_URI,

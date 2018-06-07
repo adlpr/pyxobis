@@ -53,7 +53,8 @@ class GenericName(Component):
             | element xobis:part { nameContent_ }+
         }
     """
-    def __init__(self, name_content=None):
+    def __init__(self, name_content):
+        assert name_content, "GenericName must have name content"
         self.is_parts = not isinstance(name_content, NameContent)
         if self.is_parts:
             assert all(isinstance(content, NameContent) for content in name_content)

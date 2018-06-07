@@ -5,7 +5,9 @@
 Classes to represent XOBIS elements.
 """
 
-from .common import *
+# from .common import *
+
+from .Record import *
 
 from .Being import *
 from .Event import *
