@@ -1,3 +1,42 @@
+# Guide to Select Attributes
+
+* **role** — Used on "substantive" Principal Elements (Place/Being/Object/Work) to indicate the role(s) served by the record: `authority`, `instance`, or `authority instance`.
+* **type** — Indicates membership as one of a limited group of prescribed choices for various elements.
+  - Record: _generic type_
+  - Principal Elements
+    - Being: `human`, `nonhuman`, `special`
+      - Being entry: _generic type_ (legal name, pseudonym, etc.)
+        - Being entry name parts: `given`, `surname`, `paternal surname`, `maternal surname`, `expansion`
+    - Concept: `abstract`, `collective`, `control`, `specific`
+      - Concept subtype: `general`, `form`, `topical`, `unspecified`
+    - Event: `natural`, `meeting`, `journey`, `occurrence`, `miscellaneous`
+    - Language: _no type_
+    - Object: `natural`, `crafted`, `manufactured`
+    - Organization: `business`, `government`, `nonprofit`, `other`
+    - Place: `natural`, `constructed`, `jurisdictional`
+    - String: `textual`, `numeric`, `mixed`
+    - Time: _generic type_
+    - Work: `intellectual`, `artistic`
+      - Work Parts: `subtitle`, `section`, `generic`
+  - Relationship: `subordinate`, `superordinate`, `preordinate`, `postordinate`, `associative`, `dissociative`
+* **class** — Represents a broad category of Entry, often `individual`, `collective`, or `referential`, but varies by Principal Element.
+  - Being: `individual`, `familial`, `collective`, `undifferentiated`, `referential`
+  - Concept: _none_
+  - Event: `individual`, `collective`, `referential`
+  - Language: `individual`, `collective`, `referential`
+  - Object
+    - Object authority: `individual`, `collective`, `referential`
+    - Object instance or authority-instance: `individual`, `collective`
+  - Organization: `individual`, `collective`, `referential`
+  - Place: `individual`, `collective`, `referential`
+  - String: `word`, `phrase`
+  - Time: `individual`, `collective`, `referential`
+  - Work: `individual`, `serial`, `collective`, `referential`
+* **degree** — Used on a Relationship to indicate its relative strength, usually `primary` or `secondary`, but for conceptual ones, also `broad` and `tertiary`.
+* **scheme** — Indicates the authoritative work containing the term used. Code (an entry substitute) for the Entry of a Work is used to control the value of another Entry or Variant, typically a Concept. e.g. `LCSH`, `MeSH`, ...
+* **substitute** — Indicates which Substitute Entry (`abbrev`/`citation`/`code`/`singular`) is used as a part of the Qualifiers element of another Entry or in a Relationship. Its absence means the Entry is used. The 'scheme' attribute uses `code` by default.
+
+
 # Builders
 
 <!--
@@ -8,7 +47,7 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 ```
 
 ## PrincipalElementBuilder
@@ -77,7 +116,7 @@ set_id_org_ref ( id_org_ref )  # OrganizationRef
 # Record ID.
 set_id_value( id_value )  # str
 
-# Type of record (e.g. original, derivative, suppressed)
+# Type of record (e.g. original, derivative, suppressed?)
 add_type ( xlink_title = None,  # str
            xlink_href = None,   # URI
            xlink_role = None )  # URI
@@ -86,46 +125,50 @@ set_principal_element ( principal_element )  # PrincipalElement
 
 add_action ( time_or_duration_ref,  # TimeRef or DurationRef
              xlink_title = None,    # str
-             xlink_href = None,     # URI
-             xlink_role = None )    # URI
+             xlink_href = None,     # str (URI)
+             xlink_role = None )    # str (URI)
 
 add_relationship ( relationship )   # Relationship
 ```
+
+------------------------------------------------------
 
 ## Being
 
 ### BeingBuilder
 ```
-set_role ( new_role )  # ["instance", "authority", "authority instance"]
+set_role ( new_role )      # str
 
-set_type ( new_type )  # ["human", "nonhuman", "special", None]
+set_type ( new_type )      # str
 
-set_class ( new_class )  # ["individual", "familial", "collective", "undifferentiated", "referential", None]
+set_class ( new_class )    # str
 
 set_scheme ( new_scheme )  # str
 
-set_entry_type ( link_title,
-                 role_URI,
-                 href_URI = None )
+# Most main entries don't have a generic type, but Being records may
+# be for real names or pseudonyms (unlike other principal elements).
+set_entry_type ( link_title,       # str
+                 role_URI,         # str (URI)
+                 href_URI = None ) # str (URI)
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
-add_name ( name_text,
-           type_ = "generic",
-           lang  = None,
-           translit = None,
-           nonfiling = 0 )
+add_name ( name_text,         # str
+           type_ = "generic", # str
+           lang  = None,      # str (ISO 639-2/B?)
+           translit = None,   # str (ISO 15924?)
+           nonfiling = 0 )     # int (>=0)
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 
-add_variant ( variant )
+add_variant ( variant )    # BeingVariantEntry
 
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
+add_note ( content_text,        # str
+           content_lang = None, # str (ISO 639-2/B?)
+           class_ = None,       # str
+           link_title = None,   # str
+           href_URI = None,     # str (URI)
+           role_URI = None )    # str (URI)
 ```
 
 ### BeingVariantBuilder
@@ -144,7 +187,7 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
@@ -162,10 +205,85 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 
 set_link ( link_title,
            href_URI = None )
+```
+
+## Concept
+
+### ConceptBuilder
+```
+set_type ( new_type )
+
+set_usage ( new_usage )
+
+set_subtype ( new_subtype )
+
+set_scheme ( new_scheme )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_variant ( variant )
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+```
+
+### ConceptVariantBuilder
+```
+set_type ( link_title,
+           role_URI,
+           href_URI = None )
+
+set_time_or_duration_ref ( time_or_duration_ref )
+
+set_substitute_attribute_type ( substitute_attribute_type )
+
+set_scheme ( new_scheme )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+```
+
+### ConceptRefBuilder
+```
+set_link ( link_title,
+           href_URI = None )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_subdivision_link ( content_text,
+                       content_lang = None,
+                       link_title = None,
+                       href_URI = None,
+                       substitute = None )
 ```
 
 ## Event
@@ -185,7 +303,7 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 
 add_variant ( variant )
 
@@ -216,7 +334,7 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
@@ -238,7 +356,300 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
+```
+
+## Language
+
+### LanguageBuilder
+```
+set_class ( new_class )
+
+set_usage ( new_usage )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_variant ( variant )
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+```
+
+### LanguageVariantBuilder
+```
+set_type ( link_title,
+           role_URI,
+           href_URI = None )
+
+set_time_or_duration_ref ( time_or_duration_ref )
+
+set_substitute_attribute_type ( substitute_attribute_type )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+```
+
+### LanguageRefBuilder
+```
+set_link ( link_title,
+           href_URI = None )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_subdivision_link ( content_text,
+                       content_lang = None,
+                       link_title = None,
+                       href_URI = None,
+                       substitute = None )
+```
+
+## Object
+
+### ObjectBuilder
+```
+set_role ( new_role )
+
+set_class ( new_class )
+
+set_type ( new_type )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+set_organization ( link_title,
+                   link_href = None,
+                   id_content = None,
+                   id_content_lang = None )
+
+add_variant ( variant )
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+
+set_holdings ( versions_holdings_opt )
+```
+
+### ObjectVariantBuilder
+```
+set_type ( link_title,
+           role_URI,
+           href_URI = None )
+
+set_time_or_duration_ref ( time_or_duration_ref )
+
+set_substitute_attribute_type ( substitute_attribute_type )
+
+set_scheme ( new_scheme )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+```
+
+### ObjectRefBuilder
+```
+set_link ( link_title,
+           href_URI = None )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+```
+
+## Organization
+
+### OrganizationBuilder
+```
+set_type ( new_type )
+
+set_class ( new_class )
+
+set_scheme ( new_scheme )
+
+add_prequalifier ( prequalifier )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_variant ( variant )
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+```
+
+### OrganizationVariantBuilder
+```
+set_type ( link_title,
+           role_URI,
+           href_URI = None )
+
+set_time_or_duration_ref ( time_or_duration_ref )
+
+set_substitute_attribute_type ( substitute_attribute_type )
+
+set_scheme ( new_scheme )
+
+add_prequalifier ( prequalifier )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+```
+
+### OrganizationRefBuilder
+```
+set_link ( link_title,
+           href_URI = None )
+
+add_prequalifier ( prequalifier )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_subdivision_link ( content_text,
+                       content_lang = None,
+                       link_title = None,
+                       href_URI = None,
+                       substitute = None )
+```
+
+## Place
+
+### PlaceBuilder
+```
+set_role ( new_role )
+
+set_type ( new_type )
+
+set_class ( new_class )
+
+set_usage ( new_usage )
+
+set_scheme ( new_scheme )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_variant ( variant )
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+```
+
+### PlaceVariantBuilder
+```
+set_type ( link_title,
+           role_URI,
+           href_URI = None )
+
+set_time_or_duration_ref ( time_or_duration_ref )
+
+set_substitute_attribute_type ( substitute_attribute_type )
+
+set_scheme ( new_scheme )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
+
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           role_URI = None )
+```
+
+### PlaceRefBuilder
+```
+set_link ( link_title,
+           href_URI = None )
+
+add_name ( name_text,
+           lang = None,
+           translit = None,
+           nonfiling = 0 )
+
+add_qualifier ( qualifier )  # RefElement
 ```
 
 ## String
@@ -256,7 +667,7 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 
 add_variant ( variant )
 
@@ -283,7 +694,7 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
@@ -303,7 +714,7 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 ```
 
 ## Time
@@ -441,80 +852,6 @@ set_time_entry2 ( time_entry_content1,
                   time_entry_content2 = None)
 ```
 
-## Object
-
-### ObjectBuilder
-```
-set_role ( new_role )
-
-set_class ( new_class )
-
-set_type ( new_type )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-set_organization ( link_title,
-                   link_href = None,
-                   id_content = None,
-                   id_content_lang = None )
-
-add_variant ( variant )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-
-set_holdings ( versions_holdings_opt )
-```
-
-### ObjectVariantBuilder
-```
-set_type ( link_title,
-           role_URI,
-           href_URI = None )
-
-set_time_or_duration_ref ( time_or_duration_ref )
-
-set_substitute_attribute_type ( substitute_attribute_type )
-
-set_scheme ( new_scheme )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-### ObjectRefBuilder
-```
-set_link ( link_title,
-           href_URI = None )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-```
-
 ## Work
 
 ### WorkBuilder
@@ -531,7 +868,7 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 
 add_variant ( variant )
 
@@ -563,7 +900,7 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
@@ -584,306 +921,14 @@ add_name ( name_text,
            translit = None,
            nonfiling = 0 )
 
-add_qualifier ( qualifier )
+add_qualifier ( qualifier )  # RefElement
 ```
 
-## Language
-
-### LanguageBuilder
-```
-set_class ( new_class )
-
-set_usage ( new_usage )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_variant ( variant )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-### LanguageVariantBuilder
-```
-set_type ( link_title,
-           role_URI,
-           href_URI = None )
-
-set_time_or_duration_ref ( time_or_duration_ref )
-
-set_substitute_attribute_type ( substitute_attribute_type )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-### LanguageRefBuilder
-```
-set_link ( link_title,
-           href_URI = None )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_subdivision_link ( content_text,
-                       content_lang = None,
-                       link_title = None,
-                       href_URI = None,
-                       substitute = None )
-```
-
-## Concept
-
-### ConceptBuilder
-```
-set_type ( new_type )
-
-set_usage ( new_usage )
-
-set_subtype ( new_subtype )
-
-set_scheme ( new_scheme )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_variant ( variant )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-### ConceptVariantBuilder
-```
-set_type ( link_title,
-           role_URI,
-           href_URI = None )
-
-set_time_or_duration_ref ( time_or_duration_ref )
-
-set_substitute_attribute_type ( substitute_attribute_type )
-
-set_scheme ( new_scheme )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-### ConceptRefBuilder
-```
-set_link ( link_title,
-           href_URI = None )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_subdivision_link ( content_text,
-                       content_lang = None,
-                       link_title = None,
-                       href_URI = None,
-                       substitute = None )
-```
-
-## Organization
-
-### OrganizationBuilder
-```
-set_type ( new_type )
-
-set_class ( new_class )
-
-set_scheme ( new_scheme )
-
-add_prequalifier ( prequalifier )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_variant ( variant )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-### OrganizationVariantBuilder
-```
-set_type ( link_title,
-           role_URI,
-           href_URI = None )
-
-set_time_or_duration_ref ( time_or_duration_ref )
-
-set_substitute_attribute_type ( substitute_attribute_type )
-
-set_scheme ( new_scheme )
-
-add_prequalifier ( prequalifier )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-### OrganizationRefBuilder
-```
-set_link ( link_title,
-           href_URI = None )
-
-add_prequalifier ( prequalifier )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_subdivision_link ( content_text,
-                       content_lang = None,
-                       link_title = None,
-                       href_URI = None,
-                       substitute = None )
-```
-
-## Place
-
-### PlaceBuilder
-```
-set_role ( new_role )
-
-set_type ( new_type )
-
-set_class ( new_class )
-
-set_usage ( new_usage )
-
-set_scheme ( new_scheme )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_variant ( variant )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-### PlaceVariantBuilder
-```
-set_type ( link_title,
-           role_URI,
-           href_URI = None )
-
-set_time_or_duration_ref ( time_or_duration_ref )
-
-set_substitute_attribute_type ( substitute_attribute_type )
-
-set_scheme ( new_scheme )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-### PlaceRefBuilder
-```
-set_link ( link_title,
-           href_URI = None )
-
-add_name ( name_text,
-           lang = None,
-           translit = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )
-```
+------------------------------------------------------
 
 ## RelationshipBuilder
 ```
-set_type ( new_type )  # in
+set_type ( new_type )
 
 set_degree ( new_degree )
 
@@ -898,6 +943,8 @@ set_time_or_duration_ref ( time_or_duration_ref )
 
 set_element_ref ( element_ref )
 ```
+
+------------------------------------------------------
 
 ## Holdings
 

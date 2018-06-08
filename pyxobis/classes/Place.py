@@ -15,7 +15,7 @@ class Place(PrincipalElement):
     placePE |=
         element xobis:place {
             roleAttributes_,
-            attribute type { string "natural" | string "constructed" | string "juridictional" }?,
+            attribute type { string "natural" | string "constructed" | string "jurisdictional" }?,
             optClass_,
             attribute usage { string "subdivision" }?,
             element xobis:entry { optScheme_, _placeEntryContent },
@@ -28,7 +28,7 @@ class Place(PrincipalElement):
             optNoteList_
         }
     """
-    TYPES = ["natural", "constructed", "juridictional", None]
+    TYPES = ["natural", "constructed", "jurisdictional", None]
     USAGES = ["subdivision", None]
     def __init__(self, role_attributes, place_entry_content, \
                        type_=None, opt_class=OptClass(), usage=None, \

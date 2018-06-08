@@ -84,7 +84,9 @@ class ControlData(Component):
         control_data_e.append(id_e)
         # <types>
         types_e = E('types')
-        type_elements = list(filter(None, [type.serialize_xml() for type in self.types]))
+        type_elements = [type for type in  \
+                            [type.serialize_xml() for type in self.types]  \
+                         if type is not None]
         types_e.extend(type_elements)
         control_data_e.append(types_e)
         # <actions>

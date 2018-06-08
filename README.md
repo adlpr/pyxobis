@@ -4,8 +4,8 @@ Classes and builders for implementing XOBIS.
 Read in from MARC etc., serialize out to XML. <!-- and more?? -->
 
 ## Assignment method documentation
-* [Classes](../docs/classes.md)
-* [Builders](../docs/builders.md)
+<!-- * [Classes](./docs/classes.md) -->
+* [Builders](./docs/builders.md)
 
 ## Links
 
