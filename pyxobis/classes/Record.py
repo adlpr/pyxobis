@@ -13,24 +13,30 @@ E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",
 
 class Record(Component):
     """
-    <record>
-      <controlData>
-        <id>
-          {organization ref}
-          <value>   str
-        </id>
-        <types>
-          <type> (Type) *
-        <actions>
-          <action> *
-            <type> (Type)
-            {time/dur ref}
-      {PrincipalElement}
-      <relationships>
-        <relationship> (Relationship) *
+    element xobis:record {
+        attribute lang { text }?,
+        controlData,
+        (conceptPE
+        | beingPE
+        | stringPE
+        | languagePE
+        | orgPE
+        | placePE
+        | eventPE
+        | objectPE
+        | workPE),
+        element xobis:relationships {
+            element xobis:relationship {
+                attribute idref { xsd:IDREF }?,
+                _relationshipContent
+            }+
+        }?
+    }
     """
 
-    def __init__(self, control_data, principal_element, relationships=[]):
+    def __init__(self, control_data, principal_element, lang=None, relationships=[]):
+        if lang: assert isinstance(lang, str)
+        self.lang = lang
         assert isinstance(control_data, ControlData)
         self.control_data = control_data
         assert isinstance(principal_element, PrincipalElement), "Record must contain valid PrincipalElement"
@@ -39,7 +45,10 @@ class Record(Component):
         self.relationships = relationships
     def serialize_xml(self):
         # Returns an Element.
-        record_e = E('record')
+        record_attrs = {}
+        if self.lang:
+            record_attrs['lang'] = self.lang
+        record_e = E('record', **record_attrs)
         # <controlData>
         control_data_e = self.control_data.serialize_xml()
         record_e.append(control_data_e)
@@ -54,13 +63,24 @@ class Record(Component):
         return record_e
 
 
-
-
 class ControlData(Component):
     """
-    Information, such as date
-    created and maintained, record type, and its status history, is included
-    within ControlData's three container elements: ID, Types, and Actions.
+    controlData |=
+        element xobis:controlData {
+            element xobis:id {
+                orgRef,
+                element xobis:value { text },
+                # variant IDs??
+            },
+            element xobis:types { type_+ }?,
+            element xobis:actions {
+              element xobis:action {
+                  type_,
+                  (timeRef | durationRef)
+                  # optional note?
+              }+
+            }?
+        }
     """
     def __init__(self, id_org_ref, id_value, types=[], actions=[]):
         assert isinstance(id_org_ref, OrganizationRef)
@@ -83,17 +103,19 @@ class ControlData(Component):
         id_e.append(value_e)
         control_data_e.append(id_e)
         # <types>
-        types_e = E('types')
-        type_elements = [type for type in  \
-                            [type.serialize_xml() for type in self.types]  \
-                         if type is not None]
-        types_e.extend(type_elements)
-        control_data_e.append(types_e)
+        if self.types:
+            types_e = E('types')
+            type_elements = [type for type in  \
+                                [type.serialize_xml() for type in self.types]  \
+                             if type is not None]
+            types_e.extend(type_elements)
+            control_data_e.append(types_e)
         # <actions>
-        actions_e = E('actions')
-        action_elements = [action.serialize_xml() for action in self.actions]
-        actions_e.extend(action_elements)
-        control_data_e.append(actions_e)
+        if self.actions:
+            actions_e = E('actions')
+            action_elements = [action.serialize_xml() for action in self.actions]
+            actions_e.extend(action_elements)
+            control_data_e.append(actions_e)
         return control_data_e
 
 
@@ -105,23 +127,11 @@ class ControlDataAction(Component):
         self.time_or_duration_ref = time_or_duration_ref
     def serialize_xml(self):
         # Returns an Element.
-        control_data_e = E('controlData')
-        # <id>
-        id_e = E('id')
-        id_org_ref_e = self.id_org_ref.serialize_xml()
-        id_e.append(id_org_ref_e)
-        value_e = E('value')
-        value_e.text = self.id_value
-        id_e.append(value_e)
-        control_data_e.append(id_e)
-        # <types>
-        types_e = E('types')
-        type_elements = list(filter(None, [type.serialize_xml() for type in self.types]))
-        types_e.extend(type_elements)
-        control_data_e.append(types_e)
-        # <actions>
-        actions_e = E('actions')
-        action_elements = [action.serialize_xml() for action in self.actions]
-        actions_e.extend(action_elements)
-        control_data_e.append(actions_e)
-        return control_data_e
+        action_e = E('action')
+        # <type>
+        type_e = self.type.serialize_xml()
+        action_e.append(type_e)
+        # time/duration ref
+        time_or_duration_ref_e = self.time_or_duration_ref.serialize_xml()
+        action_e.append(time_or_duration_ref_e)
+        return action_e

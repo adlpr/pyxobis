@@ -9,12 +9,15 @@ class RecordBuilder:
     Interface for constructing a XOBIS Record element.
     """
     def __init__(self):
+        self.lang = None
         self.id_org_ref = None
         self.id_value = None
         self.types = []
         self.actions = []
         self.principal_element = None
         self.relationships = []
+    def set_lang(self, lang):
+        self.lang = lang
     def set_id_org_ref(self, id_org_ref):
         self.id_org_ref = id_org_ref
     def set_id_value(self, id_value):
@@ -51,5 +54,6 @@ class RecordBuilder:
                        self.actions
                    ),
                    self.principal_element,
+                   self.lang,
                    self.relationships
                )

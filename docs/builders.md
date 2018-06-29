@@ -1,11 +1,11 @@
-# Guide to Select Attributes
+# Recurring Attributes
 
-* **role** — Used on "substantive" Principal Elements (Place/Being/Object/Work) to indicate the role(s) served by the record: `authority`, `instance`, or `authority instance`.
-* **type** — Indicates membership as one of a limited group of prescribed choices for various elements.
-  - Record: _generic type_
+* **role** — Used on "substantive" Principal Elements (Place/Being/Object/Work) to indicate the _role(s) served by the record_: `authority`, `instance`, or `authority instance`.
+* **type** — Indicates membership as one of a _limited group of prescribed choices_ for various elements.
+  - Record: ***generic type***
   - Principal Elements
     - Being: `human`, `nonhuman`, `special`
-      - Being entry: _generic type_ (legal name, pseudonym, etc.)
+      - Being entry: ***generic type*** (legal name, pseudonym, etc.)
         - Being entry name parts: `given`, `surname`, `paternal surname`, `maternal surname`, `expansion`
     - Concept: `abstract`, `collective`, `control`, `specific`
       - Concept subtype: `general`, `form`, `topical`, `unspecified`
@@ -15,11 +15,11 @@
     - Organization: `business`, `government`, `nonprofit`, `other`
     - Place: `natural`, `constructed`, `jurisdictional`
     - String: `textual`, `numeric`, `mixed`
-    - Time: _generic type_
+    - Time: ***generic type***
     - Work: `intellectual`, `artistic`
       - Work Parts: `subtitle`, `section`, `generic`
   - Relationship: `subordinate`, `superordinate`, `preordinate`, `postordinate`, `associative`, `dissociative`
-* **class** — Represents a broad category of Entry, often `individual`, `collective`, or `referential`, but varies by Principal Element.
+* **class** — Represents a _broad category_ of Entry, often `individual`, `collective`, or `referential`, but varies by Principal Element.
   - Being: `individual`, `familial`, `collective`, `undifferentiated`, `referential`
   - Concept: _none_
   - Event: `individual`, `collective`, `referential`
@@ -32,9 +32,9 @@
   - String: `word`, `phrase`
   - Time: `individual`, `collective`, `referential`
   - Work: `individual`, `serial`, `collective`, `referential`
-* **degree** — Used on a Relationship to indicate its relative strength, usually `primary` or `secondary`, but for conceptual ones, also `broad` and `tertiary`.
-* **scheme** — Indicates the authoritative work containing the term used. Code (an entry substitute) for the Entry of a Work is used to control the value of another Entry or Variant, typically a Concept. e.g. `LCSH`, `MeSH`, ...
-* **substitute** — Indicates which Substitute Entry (`abbrev`/`citation`/`code`/`singular`) is used as a part of the Qualifiers element of another Entry or in a Relationship. Its absence means the Entry is used. The 'scheme' attribute uses `code` by default.
+* **degree** — Used on a Relationship to indicate its _relative strength_, usually `primary` or `secondary`, but for conceptual ones, also `broad` and `tertiary`.
+* **scheme** — Indicates the _authoritative work_ containing the term used. Code (an entry substitute) for the Entry of a Work is used to control the value of another Entry or Variant, typically a Concept. e.g. `LCSH`, `MeSH`, ...
+* **substitute** — Indicates _which Substitute Entry_ (`abbrev`/`citation`/`code`/`singular`) is used as a part of the Qualifiers element of another Entry or in a Relationship. Its absence means the Entry is used. The 'scheme' attribute uses `code` by default.
 
 
 # Builders
@@ -119,14 +119,14 @@ set_id_value( id_value )  # str
 # Type of record (e.g. original, derivative, suppressed?)
 add_type ( xlink_title = None,  # str
            xlink_href = None,   # URI
-           xlink_role = None )  # URI
+           xlink_role = None )  # URI  [Record Type(?)]
 
 set_principal_element ( principal_element )  # PrincipalElement
 
 add_action ( time_or_duration_ref,  # TimeRef or DurationRef
              xlink_title = None,    # str
              xlink_href = None,     # str (URI)
-             xlink_role = None )    # str (URI)
+             xlink_role = None )    # str (URI)  [*Action Type(?)]
 
 add_relationship ( relationship )   # Relationship
 ```
@@ -149,7 +149,7 @@ set_scheme ( new_scheme )  # str
 # be for real names or pseudonyms (unlike other principal elements).
 set_entry_type ( link_title,       # str
                  role_URI,         # str (URI)
-                 href_URI = None ) # str (URI)
+                 href_URI = None ) # str (URI)  [Variant Type]
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
@@ -660,7 +660,7 @@ set_type ( new_type )
 
 set_class ( new_class )
 
-set_grammar ( new_grammar )
+set_grammar ( new_grammar )  # ["noun", "verb", "pronoun", "adjective", "adverb", "preposition", "conjunction", "interjection", None]
 
 add_name ( name_text,
            lang = None,
@@ -928,7 +928,7 @@ add_qualifier ( qualifier )  # RefElement
 
 ## RelationshipBuilder
 ```
-set_type ( new_type )
+set_type ( new_type )  [????? this has a type aut though: Relationship Type]
 
 set_degree ( new_degree )
 
