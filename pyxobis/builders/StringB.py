@@ -14,15 +14,15 @@ class StringBuilder(PrincipalElementBuilder):
     # ADDITIONAL: set_grammar
     def __init__(self):
         super().__init__()
-        self.grammar = None
+        # self.grammar = None
     def set_role(self, *args, **kwargs):
         raise AttributeError("String element does not have property 'role'")
     def set_scheme(self, *args, **kwargs):
         raise AttributeError("String element does not have property 'scheme'")
     def set_usage(self, *args, **kwargs):
         raise AttributeError("String element does not have property 'usage'")
-    def set_grammar(self, new_grammar):
-        self.grammar = new_grammar
+    # def set_grammar(self, new_grammar):
+    #     self.grammar = new_grammar
     def add_variant(self, variant):
         # input should be an StringVariantEntry. use StringVariantBuilder to build.
         assert isinstance(variant, StringVariantEntry)
@@ -38,7 +38,7 @@ class StringBuilder(PrincipalElementBuilder):
                    ),
                    type_    = self.type,
                    class_   = self.class_,
-                   grammar  = self.grammar,
+                   # grammar  = self.grammar,
                    variants = self.variants,
                    opt_note_list = OptNoteList(self.note_list)
                )

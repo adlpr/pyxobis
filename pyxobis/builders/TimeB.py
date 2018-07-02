@@ -77,8 +77,8 @@ class TimeBuilder(PrincipalElementBuilder):
     def set_time_entry_content(self, new_time_entry_content):
         # assert isinstance(time_entry_content, TimeEntryContent)
         self.time_entry_content = new_time_entry_content
-    def set_calendar(self, new_calendar):
-        self.calendar = new_calendar
+    def set_calendar(self, calendar):
+        self.calendar = calendar
     def add_variant(self, variant):
         # input should be an TimeVariant
         # (containing a TimeInstanceEntry type entry, though this is not verified!).
@@ -188,8 +188,8 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
     def set_time_entry_content(self, new_time_entry_content):
         # assert isinstance(time_entry_content, TimeEntryContent)
         self.time_entry_content = new_time_entry_content
-    def set_calendar(self, new_calendar):
-        self.calendar = new_calendar
+    def set_calendar(self, calendar):
+        self.calendar = calendar
     def build(self):
         return TimeVariant(
                    TimeInstanceEntry(
@@ -282,8 +282,8 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
         if not isinstance(time_entry_content, TimeEntryContent):
             new_time_entry_content = XSDDateTime(new_time_entry_content)
         self.time_entry_content = new_time_entry_content
-    def set_calendar(self, new_calendar):
-        self.calendar = new_calendar
+    def set_calendar(self, calendar):
+        self.calendar = calendar
     def build(self):
         return TimeRef(
                    self.time_entry_content,
@@ -310,13 +310,15 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
     def add_qualifier(self, *args, **kwargs):
         raise AttributeError("DurationRef element does not have qualifiers")
     def add_subdivision_link(self, *args, **kwargs):
-        raise AttributeError("DurationRef element does not have subdivison")
+        raise AttributeError("DurationRef element does not have subdivision")
     def set_time_entry1(self, time_entry_content1, time_entry_content2=None):
         self.time_entry1 = TimeEntry(time_entry_content1, time_entry_content2)
     def set_time_entry2(self, time_entry_content1, time_entry_content2=None):
         self.time_entry2 = TimeEntry(time_entry_content1, time_entry_content2)
-    def set_calendar(self, new_calendar):
-        self.calendar = new_calendar
+    def set_calendar(self, calendar1, calendar2=""):
+        if calendar2 == "":  # use None for no calendar on time entry 2
+            calendar2 = calendar1
+        self.calendar1, self.calendar2 = calendar1, calendar2
     def build(self):
         return DurationRef(
                    self.time_entry1, # TimeEntry(time_entry_content1, time_entry_content2),

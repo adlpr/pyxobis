@@ -15,18 +15,10 @@ class String(PrincipalElement):
     stringPE |=
         element xobis:string {
             attribute type { string "textual" | string "numeric" | string "mixed" }?,
-            ((attribute class { string "word" },
-              attribute grammar {
-                  string "noun"
-                  | string "verb"
-                  | string "pronoun"
-                  | string "adjective"
-                  | string "adverb"
-                  | string "preposition"
-                  | string "conjunction"
-                  | string "interjection"
-              }?)
-             | attribute class { string "phrase" })?,
+
+            # 2.1: eliminated attribute "grammar", as this is better expressed using Category
+
+            attribute class { string "word" | string "phrase" }?,
             element xobis:entry { _stringEntryContent },
             element xobis:variant {
                 type_?,
@@ -39,19 +31,19 @@ class String(PrincipalElement):
     """
     TYPES = ["textual", "numeric", "mixed", None]
     CLASSES = ["word", "phrase", None]
-    GRAMMARS = ["noun", "verb", "pronoun", "adjective", "adverb", "preposition", "conjunction", "interjection", None]
+    # GRAMMARS = ["noun", "verb", "pronoun", "adjective", "adverb", "preposition", "conjunction", "interjection", None]
     def __init__(self, string_entry_content, \
-                       type_=None, class_=None, grammar=None, \
+                       type_=None, class_=None, \
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
         assert type_ in String.TYPES
         self.type = type_
         assert class_ in String.CLASSES
         self.class_ = class_
-        if grammar:
-            assert self.class_ == "word"
-            assert grammar in String.GRAMMARS
-            self.grammar = grammar
+        # if grammar:
+        #     assert self.class_ == "word"
+        #     assert grammar in String.GRAMMARS
+        #     self.grammar = grammar
         # for entry element
         assert isinstance(string_entry_content, StringEntryContent)
         self.string_entry_content = string_entry_content
@@ -69,8 +61,8 @@ class String(PrincipalElement):
             string_attrs['type'] = self.type
         if self.class_:
             string_attrs['class'] = self.class_
-            if self.grammar:
-                string_attrs['grammar'] = self.grammar
+            # if self.grammar:
+            #     string_attrs['grammar'] = self.grammar
         string_e = E('string', **string_attrs)
         # entry element
         entry_e = E('entry')

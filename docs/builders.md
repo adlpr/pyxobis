@@ -137,6 +137,8 @@ add_relationship ( relationship )   # Relationship
 
 ### BeingBuilder
 ```
+# Required: ROLE and at least one NAME
+
 set_role ( new_role )      # str
 
 set_type ( new_type )      # str
@@ -149,8 +151,9 @@ set_scheme ( new_scheme )  # str
 # be for real names or pseudonyms (unlike other principal elements).
 set_entry_type ( link_title,       # str
                  role_URI,         # str (URI)
-                 href_URI = None ) # str (URI)  [Variant Type]
+                 href_URI = None ) # str (URI)
 
+# Since Being entries have a generic type, this is separated out because it is referencing the time/duration of the entry TYPE.
 set_time_or_duration_ref ( time_or_duration_ref )
 
 add_name ( name_text,         # str
@@ -660,8 +663,6 @@ set_type ( new_type )
 
 set_class ( new_class )
 
-set_grammar ( new_grammar )  # ["noun", "verb", "pronoun", "adjective", "adverb", "preposition", "conjunction", "interjection", None]
-
 add_name ( name_text,
            lang = None,
            translit = None,
@@ -753,7 +754,7 @@ set_usage ( new_usage )
 
 set_scheme ( new_scheme )
 
-set_calendar ( new_calendar )
+set_calendar ( calendar )
 
 set_time_entry_content ( new_time_entry_content )
 
@@ -803,7 +804,7 @@ set_type ( link_title,
 
 set_scheme ( new_scheme )
 
-set_calendar ( new_calendar )
+set_calendar ( calendar )
 
 set_time_entry_content ( new_time_entry_content )
 ```
@@ -815,9 +816,11 @@ set_type ( link_title,
            role_URI,
            href_URI = None )
 
+# empty string defaults to same as scheme1; use None for no scheme2
 set_scheme ( scheme1,
-             scheme2 = "" )
+             scheme2 = "" )  
 
+# empty string defaults to same as calendar1; use None for no calendar2
 set_calendar ( calendar1,
                calendar2 = "" )
 
@@ -830,7 +833,7 @@ set_time_entry2 ( time_entry_content1,
 
 ### TimeRefBuilder
 ```
-set_calendar ( new_calendar )
+set_calendar ( calendar )
 
 set_link ( link_title,
            href_URI = None )
@@ -840,7 +843,9 @@ set_time_entry_content ( new_time_entry_content )
 
 ### DurationRefBuilder
 ```
-set_calendar ( new_calendar )
+# empty string defaults to same as calendar1; use None for no calendar2
+set_calendar ( calendar1,
+               calendar2 = "" )
 
 set_link ( link_title,
            href_URI = None )
