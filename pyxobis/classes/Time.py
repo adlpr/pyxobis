@@ -17,14 +17,14 @@ class Time(PrincipalElement):
             optClass_,
             attribute usage { "subdivision" }?,
             _timeInstanceEntry,
-            _timeVariant+,     # <-- treating this + as a mistake for *
+            element xobis:variants { anyVariant+ }?,
             optNoteList_
         }
         | element xobis:duration {
               optClass_,
               attribute usage { "subdivision" }?,
               _timeDurationEntry,
-              _timeVariant+,   # <-- treating this + as a mistake for *
+              element xobis:variants { anyVariant+ }?,
               optNoteList_
           }
     """
@@ -42,7 +42,7 @@ class Time(PrincipalElement):
         assert self.is_duration or isinstance(time_or_duration_entry, TimeInstanceEntry)
         self.time_or_duration_entry = time_or_duration_entry
         # for variant elements
-        assert all(isinstance(variant, TimeVariant) for variant in variants)
+        assert all(isinstance(variant, VariantEntry) for variant in variants)
         self.variants = variants
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
@@ -63,8 +63,11 @@ class Time(PrincipalElement):
         else:
             time_e.append(time_or_duration_entry_e)
         # variant elements
-        variant_elements = [variant.serialize_xml() for variant in self.variants]
-        time_e.extend(variant_elements)
+        if self.variants:
+            variant_elements = [variant.serialize_xml() for variant in self.variants]
+            variants_e = E('variants')
+            variants_e.extend(variant_elements)
+            time_e.append(variants_e)
         # note list
         opt_note_list_e = self.opt_note_list.serialize_xml()
         if opt_note_list_e is not None:
@@ -154,7 +157,7 @@ class TimeEntryContent(Component):
          | _milliseconds
          | genericName)
     """
-    CERTAINTIES = ["exact", "supplied", "questionable", "temporary", "approximate", None]
+    CERTAINTIES = ["exact", "supplied", "estimated", "temporary", "approximate", None]
     def __init__(self, time_contents, type_=Type(), certainty=None):
         assert isinstance(type_, Type)
         self.type = type_
@@ -230,29 +233,49 @@ class TimeEntryContent(Component):
 #         return certainty_e
 
 
-class TimeVariant(Component):
+class TimeVariant(VariantEntry):
     """
-    _timeVariant |= element xobis:variant { type_?, (_timeInstanceEntry | _timeDurationEntry) }
+    timeVariant |=
+        element xobis:time { type_?, _timeInstanceEntry }
     """
     def __init__(self, time_or_duration_entry, type_=Type()):
         assert isinstance(type_, Type)
         self.type = type_
-        self.is_duration = isinstance(time_or_duration_entry, TimeDurationEntry)
-        assert self.is_duration or isinstance(time_or_duration_entry, TimeInstanceEntry)
+        assert isinstance(time_or_duration_entry, TimeInstanceEntry)
         self.time_or_duration_entry = time_or_duration_entry
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('variant')
+        variant_e = E('time')
         # type
         type_e = self.type.serialize_xml()
         if type_e is not None:
             variant_e.append(type_e)
         # entry element
         time_or_duration_entry_e = self.time_or_duration_entry.serialize_xml()
-        if self.is_duration:
-            variant_e.extend(time_or_duration_entry_e)
-        else:
-            variant_e.append(time_or_duration_entry_e)
+        variant_e.append(time_or_duration_entry_e)
+        return variant_e
+
+
+class DurationVariant(VariantEntry):
+    """
+    durationVariant |=
+        element xobis:duration { type_?, _timeDurationEntry }
+    """
+    def __init__(self, time_or_duration_entry, type_=Type()):
+        assert isinstance(type_, Type)
+        self.type = type_
+        assert isinstance(time_or_duration_entry, TimeDurationEntry)
+        self.time_or_duration_entry = time_or_duration_entry
+    def serialize_xml(self):
+        # Returns an Element.
+        variant_e = E('duration')
+        # type
+        type_e = self.type.serialize_xml()
+        if type_e is not None:
+            variant_e.append(type_e)
+        # entry element
+        time_or_duration_entry_e = self.time_or_duration_entry.serialize_xml()
+        variant_e.extend(time_or_duration_entry_e)
         return variant_e
 
 

@@ -23,12 +23,7 @@ class Event(PrincipalElement):
             }?,
             optClass_,
             element xobis:entry { optScheme_, _eventEntryContent },
-            element xobis:variant {
-                type_?,
-                (timeRef | durationRef)?,
-                element xobis:entry { substituteAttribute, optScheme_, _eventEntryContent },
-                optNoteList_
-            }*,
+            element xobis:variants { anyVariant+ }?,
             optNoteList_
         }
     """
@@ -48,7 +43,7 @@ class Event(PrincipalElement):
         assert isinstance(event_entry_content, EventEntryContent)
         self.event_entry_content = event_entry_content
         # for variant elements
-        assert all(isinstance(variant, EventVariantEntry) for variant in variants)
+        assert all(isinstance(variant, VariantEntry) for variant in variants)
         self.variants = variants
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
@@ -69,8 +64,11 @@ class Event(PrincipalElement):
         entry_e.extend(event_entry_content_elements)
         event_e.append(entry_e)
         # variant elements
-        variant_elements = [variant.serialize_xml() for variant in self.variants]
-        event_e.extend(variant_elements)
+        if self.variants:
+            variant_elements = [variant.serialize_xml() for variant in self.variants]
+            variants_e = E('variants')
+            variants_e.extend(variant_elements)
+            event_e.append(variants_e)
         # note list
         opt_note_list_e = self.opt_note_list.serialize_xml()
         if opt_note_list_e is not None:
@@ -105,14 +103,15 @@ class EventEntryContent(Component):
         return elements
 
 
-class EventVariantEntry(Component):
+class EventVariantEntry(VariantEntry):
     """
-    element xobis:variant {
-        type_?,
-        (timeRef | durationRef)?,
-        element xobis:entry { substituteAttribute, optScheme_, _eventEntryContent },
-        optNoteList_
-    }
+    eventVariant |=
+        element xobis:event {
+            type_?,
+            (timeRef | durationRef)?,
+            element xobis:entry { substituteAttribute, optScheme_, _eventEntryContent },
+            optNoteList_
+        }
     """
     def __init__(self, event_entry_content, \
                        type_=Type(), time_or_duration_ref=None, \
@@ -134,7 +133,7 @@ class EventVariantEntry(Component):
         self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('variant')
+        variant_e = E('event')
         # type
         type_e = self.type.serialize_xml()
         if type_e is not None:

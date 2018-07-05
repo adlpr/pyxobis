@@ -17,12 +17,7 @@ class Language(PrincipalElement):
             optClass_,
             attribute usage { "subdivision" }?,
             element xobis:entry { _langEntryContent },
-            element xobis:variant {
-                type_?,
-                (timeRef | durationRef)?,
-                element xobis:entry { substituteAttribute, _langEntryContent },
-                optNoteList_
-            }*,
+            element xobis:variants { anyVariant+ }?,
             optNoteList_
         }
     """
@@ -39,7 +34,7 @@ class Language(PrincipalElement):
         assert isinstance(language_entry_content, LanguageEntryContent)
         self.language_entry_content = language_entry_content
         # for variant elements
-        assert all(isinstance(variant, LanguageVariantEntry) for variant in variants)
+        assert all(isinstance(variant, VariantEntry) for variant in variants)
         self.variants = variants
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
@@ -59,8 +54,11 @@ class Language(PrincipalElement):
         entry_e.extend(language_entry_content_elements)
         language_e.append(entry_e)
         # variant elements
-        variant_elements = [variant.serialize_xml() for variant in self.variants]
-        language_e.extend(variant_elements)
+        if self.variants:
+            variant_elements = [variant.serialize_xml() for variant in self.variants]
+            variants_e = E('variants')
+            variants_e.extend(variant_elements)
+            language_e.append(variants_e)
         # note list
         opt_note_list_e = self.opt_note_list.serialize_xml()
         if opt_note_list_e is not None:
@@ -91,14 +89,15 @@ class LanguageEntryContent(Component):
         return elements
 
 
-class LanguageVariantEntry(Component):
+class LanguageVariantEntry(VariantEntry):
     """
-    element xobis:variant {
-        type_?,
-        (timeRef | durationRef)?,
-        element xobis:entry { substituteAttribute, _langEntryContent },
-        optNoteList_
-    }
+    languageVariant |=
+        element xobis:language {
+            type_?,
+            (timeRef | durationRef)?,
+            element xobis:entry { substituteAttribute, _langEntryContent },
+            optNoteList_
+        }
     """
     def __init__(self, language_entry_content, \
                        type_=Type(), time_or_duration_ref=None, \
@@ -117,7 +116,7 @@ class LanguageVariantEntry(Component):
         self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('variant')
+        variant_e = E('language')
         # type
         type_e = self.type.serialize_xml()
         if type_e is not None:

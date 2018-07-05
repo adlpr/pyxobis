@@ -22,12 +22,7 @@ class Concept(PrincipalElement):
                  string "general" | string "form" | string "topical" | string "unspecified"
              })?,
             element xobis:entry { optScheme_, _conceptEntryContent },
-            element xobis:variant {
-                type_?,
-                (timeRef | durationRef)?,
-                element xobis:entry { substituteAttribute, optScheme_, _conceptEntryContent },
-                optNoteList_
-            }*,
+            element xobis:variants { anyVariant+ }?,
             optNoteList_
         }
     """
@@ -52,7 +47,7 @@ class Concept(PrincipalElement):
         assert isinstance(concept_entry_content, ConceptEntryContent)
         self.concept_entry_content = concept_entry_content
         # for variant elements
-        assert all(isinstance(variant, ConceptVariantEntry) for variant in variants)
+        assert all(isinstance(variant, VariantEntry) for variant in variants)
         self.variants = variants
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
@@ -73,8 +68,11 @@ class Concept(PrincipalElement):
         entry_e.extend(concept_entry_content_elements)
         concept_e.append(entry_e)
         # variant elements
-        variant_elements = [variant.serialize_xml() for variant in self.variants]
-        concept_e.extend(variant_elements)
+        if self.variants:
+            variant_elements = [variant.serialize_xml() for variant in self.variants]
+            variants_e = E('variants')
+            variants_e.extend(variant_elements)
+            concept_e.append(variants_e)
         # note list
         opt_note_list_e = self.opt_note_list.serialize_xml()
         if opt_note_list_e is not None:
@@ -103,14 +101,15 @@ class ConceptEntryContent(Component):
         return elements
 
 
-class ConceptVariantEntry(Component):
+class ConceptVariantEntry(VariantEntry):
     """
-    element xobis:variant {
-        type_?,
-        (timeRef | durationRef)?,
-        element xobis:entry { substituteAttribute, optScheme_, _conceptEntryContent },
-        optNoteList_
-    }
+    conceptVariant |=
+        element xobis:concept {
+            type_?,
+            (timeRef | durationRef)?,
+            element xobis:entry { substituteAttribute, optScheme_, _conceptEntryContent },
+            optNoteList_
+        }
     """
     def __init__(self, concept_entry_content, \
                        type_=Type(), time_or_duration_ref=None, \
@@ -132,7 +131,7 @@ class ConceptVariantEntry(Component):
         self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('variant')
+        variant_e = E('concept')
         # type
         type_e = self.type.serialize_xml()
         if type_e is not None:

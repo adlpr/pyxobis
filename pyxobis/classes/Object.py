@@ -82,13 +82,7 @@ class ObjectContent(Component):
           })
          | (attribute type { string "manufactured" }?,
             element xobis:entry { _objectEntryContent })),
-        element xobis:variant {
-            # NEEDED? attribute idref { xsd:IDREF }?,
-            type_?,
-            (timeRef | durationRef)?,
-            element xobis:entry { substituteAttribute, optScheme_, _objectEntryContent },
-            optNoteList_
-        }*,
+        element xobis:variants { anyVariant+ }?,
         optNoteList_
     """
     TYPES_1 = ["natural", "crafted", None]
@@ -115,7 +109,7 @@ class ObjectContent(Component):
         self.organization_link_attributes = organization_link_attributes
         self.organization_id_content = organization_id_content
         # for variant elements
-        assert all(isinstance(variant, ObjectVariantEntry) for variant in variants)
+        assert all(isinstance(variant, VariantEntry) for variant in variants)
         self.variants = variants
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
@@ -142,8 +136,11 @@ class ObjectContent(Component):
             entry_e.append(organization_e)
         elements.append(entry_e)
         # variant elements
-        variant_elements = [variant.serialize_xml() for variant in self.variants]
-        elements.extend(variant_elements)
+        if self.variants:
+            variant_elements = [variant.serialize_xml() for variant in self.variants]
+            variants_e = E('variants')
+            variants_e.extend(variant_elements)
+            elements.append(variants_e)
         # note list
         opt_note_list_e = self.opt_note_list.serialize_xml()
         if opt_note_list_e is not None:
@@ -171,15 +168,16 @@ class ObjectEntryContent(Component):
         return elements
 
 
-class ObjectVariantEntry(Component):
+class ObjectVariantEntry(VariantEntry):
     """
-    element xobis:variant {
-        # NEEDED? attribute idref { xsd:IDREF }?,
-        type_?,
-        (timeRef | durationRef)?,
-        element xobis:entry { substituteAttribute, optScheme_, _objectEntryContent },
-        optNoteList_
-    }
+    objectVariant |=
+        element xobis:object {
+            # NEEDED? attribute idref { xsd:IDREF }?,
+            type_?,
+            (timeRef | durationRef)?,
+            element xobis:entry { substituteAttribute, optScheme_, _objectEntryContent },
+            optNoteList_
+        }
     """
     def __init__(self, object_entry_content, \
                        type_=Type(), time_or_duration_ref=None, \
@@ -201,7 +199,7 @@ class ObjectVariantEntry(Component):
         self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('variant')
+        variant_e = E('object')
         # type
         type_e = self.type.serialize_xml()
         if type_e is not None:

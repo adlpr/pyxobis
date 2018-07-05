@@ -119,7 +119,7 @@ set_id_value( id_value )  # str
 # Type of record (e.g. original, derivative, suppressed?)
 add_type ( xlink_title = None,  # str
            xlink_href = None,   # URI
-           xlink_role = None )  # URI  [Record Type(?)]
+           xlink_role = None )  # URI  [Subset(?)]
 
 set_principal_element ( principal_element )  # PrincipalElement
 

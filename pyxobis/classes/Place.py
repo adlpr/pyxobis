@@ -19,12 +19,7 @@ class Place(PrincipalElement):
             optClass_,
             attribute usage { string "subdivision" }?,
             element xobis:entry { optScheme_, _placeEntryContent },
-            element xobis:variant {
-                type_?,
-                (timeRef | durationRef)?,
-                element xobis:entry { substituteAttribute, optScheme_, _placeEntryContent },
-                optNoteList_
-            }*,
+            element xobis:variants { anyVariant+ }?,
             optNoteList_
         }
     """
@@ -49,7 +44,7 @@ class Place(PrincipalElement):
         assert isinstance(place_entry_content, PlaceEntryContent)
         self.place_entry_content = place_entry_content
         # for variant elements
-        assert all(isinstance(variant, PlaceVariantEntry) for variant in variants)
+        assert all(isinstance(variant, VariantEntry) for variant in variants)
         self.variants = variants
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
@@ -74,8 +69,11 @@ class Place(PrincipalElement):
         entry_e.extend(place_entry_content_elements)
         place_e.append(entry_e)
         # variant elements
-        variant_elements = [variant.serialize_xml() for variant in self.variants]
-        place_e.extend(variant_elements)
+        if self.variants:
+            variant_elements = [variant.serialize_xml() for variant in self.variants]
+            variants_e = E('variants')
+            variants_e.extend(variant_elements)
+            place_e.append(variants_e)
         # note list
         opt_note_list_e = self.opt_note_list.serialize_xml()
         if opt_note_list_e is not None:
@@ -104,14 +102,15 @@ class PlaceEntryContent(Component):
         return elements
 
 
-class PlaceVariantEntry(Component):
+class PlaceVariantEntry(VariantEntry):
     """
-    element xobis:variant {
-        type_?,
-        (timeRef | durationRef)?,
-        element xobis:entry { substituteAttribute, optScheme_, _placeEntryContent },
-        optNoteList_
-    }
+    placeVariant |=
+        element xobis:place {
+            type_?,
+            (timeRef | durationRef)?,
+            element xobis:entry { substituteAttribute, optScheme_, _placeEntryContent },
+            optNoteList_
+        }
     """
     def __init__(self, place_entry_content, \
                        type_=Type(), time_or_duration_ref=None, \
@@ -133,7 +132,7 @@ class PlaceVariantEntry(Component):
         self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('variant')
+        variant_e = E('place')
         # type
         type_e = self.type.serialize_xml()
         if type_e is not None:

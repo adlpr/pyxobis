@@ -45,6 +45,13 @@ class PreQualifierRefElement(RefElement):
     pass
 
 
+class VariantEntry(Component):
+    """
+    Superclass for variants of principal element entries.
+    """
+    pass
+
+
 class GenericName(Component):
     """
     genericName |=

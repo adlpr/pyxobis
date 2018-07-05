@@ -19,12 +19,7 @@ class Organization(PrincipalElement):
             }?,
             optClass_,
             element xobis:entry { optScheme_, _orgEntryContent },
-            element xobis:variant {
-                type_?,
-                (timeRef | durationRef)?,
-                element xobis:entry { substituteAttribute, optScheme_, _orgEntryContent },
-                optNoteList_
-            }*,
+            element xobis:variants { anyVariant+ }?,
             optNoteList_
         }
     """
@@ -44,7 +39,7 @@ class Organization(PrincipalElement):
         assert isinstance(organization_entry_content, OrganizationEntryContent)
         self.organization_entry_content = organization_entry_content
         # for variant elements
-        assert all(isinstance(variant, OrganizationVariantEntry) for variant in variants)
+        assert all(isinstance(variant, VariantEntry) for variant in variants)
         self.variants = variants
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
@@ -65,8 +60,11 @@ class Organization(PrincipalElement):
         entry_e.extend(organization_entry_content_elements)
         organization_e.append(entry_e)
         # variant elements
-        variant_elements = [variant.serialize_xml() for variant in self.variants]
-        organization_e.extend(variant_elements)
+        if self.variants:
+            variant_elements = [variant.serialize_xml() for variant in self.variants]
+            variants_e = E('variants')
+            variants_e.extend(variant_elements)
+            organization_e.append(variants_e)
         # note list
         opt_note_list_e = self.opt_note_list.serialize_xml()
         if opt_note_list_e is not None:
@@ -101,14 +99,15 @@ class OrganizationEntryContent(Component):
         return elements
 
 
-class OrganizationVariantEntry(Component):
+class OrganizationVariantEntry(VariantEntry):
     """
-    element xobis:variant {
-        type_?,
-        (timeRef | durationRef)?,
-        element xobis:entry { substituteAttribute, optScheme_, _orgEntryContent },
-        optNoteList_
-    }
+    orgVariant |=
+        element xobis:organization {
+            type_?,
+            (timeRef | durationRef)?,
+            element xobis:entry { substituteAttribute, optScheme_, _orgEntryContent },
+            optNoteList_
+        }
     """
     def __init__(self, organization_entry_content, \
                        type_=Type(), time_or_duration_ref=None, \
@@ -130,7 +129,7 @@ class OrganizationVariantEntry(Component):
         self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('variant')
+        variant_e = E('organization')
         # type
         type_e = self.type.serialize_xml()
         if type_e is not None:

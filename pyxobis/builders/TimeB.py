@@ -165,7 +165,7 @@ class DurationBuilder(PrincipalElementBuilder):
 
 class TimeVariantBuilder(PrincipalElementVariantBuilder):
     """
-    Interface for constructing a TimeVariant (instance).
+    Interface for constructing a TimeVariant.
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: add_name, add_qualifier, set_time_or_duration_ref,
@@ -203,7 +203,7 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
 
 class DurationVariantBuilder(PrincipalElementVariantBuilder):
     """
-    Interface for constructing a TimeVariant (duration).
+    Interface for constructing a DurationVariant.
     """
     #  METHODS DEVIATION FROM SUPER
     #  ALTERNATE: set_scheme
@@ -241,7 +241,7 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
             calendar2 = calendar1
         self.calendar1, self.calendar2 = calendar1, calendar2
     def build(self):
-        return TimeVariant(
+        return DurationVariant(
                    TimeDurationEntry(
                        TimeDurationEntryPart(
                            self.time_entry1,
