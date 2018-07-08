@@ -145,11 +145,10 @@ class TimeEntryContent(Component):
         #
         attribute certainty {
             string "exact"
-            | string "supplied"      # [2018]
-            | string "questionable"  # 2018?
-            | string "temporary"     # <2018>
-            | string "approximate"   # approximately 2018
-            | string "unknown"       #
+            | string "implied"       # [2018]
+            | string "estimated"     # 2018?
+            | string "approximate"   # approximately 2018/ca. 2018
+            # | string "temporary"     # <2018> -- indefinite
         }?,
         ((_year, _month?, _day?, (_hour, _tzHour?)?, (_minute, _tzMinute?)?, _second?, _milliseconds?)
          | (_month, _day?, (_hour, _tzHour?)?, (_minute, _tzMinute?)?, _second?, _milliseconds?)
@@ -157,13 +156,12 @@ class TimeEntryContent(Component):
          | _milliseconds
          | genericName)
     """
-    CERTAINTIES = ["exact", "supplied", "estimated", "temporary", "approximate", None]
+    CERTAINTIES = ["exact", "implied", "estimated", "approximate", None]
     def __init__(self, time_contents, type_=Type(), certainty=None):
         assert isinstance(type_, Type)
         self.type = type_
-        if certainty:
-            # assert isinstance(certainty, Certainty)
-            assert certainty in CERTAINTIES
+        # assert isinstance(certainty, Certainty)
+        assert certainty in self.CERTAINTIES
         self.certainty = certainty
         # parse out what the content passed in represents.
         try:
@@ -192,6 +190,52 @@ class TimeEntryContent(Component):
         elif any((self.hour, self.tz_hour, self.minute, self.tz_minute, self.second)):
             # type 1, 2, 3
             assert any((self.year, self.month, self.day))
+    def __str__(self):
+        # Convert to readable standardized-ish string
+        # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        # THIS IS TENTATIVE AND NOT ABLE TO REPRESENT EVERYTHING UNAMBIGUOUSLY!!!
+        # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        if self.generic_name:
+            if self.generic_name.is_parts:
+                return ' '.join([content.text for content in self.generic_name.name_content])
+            else:
+                return self.generic_name.name_content.text
+        else:
+            # ISO 8601
+            result = ''
+            if self.year:
+                result += self.year.value
+            elif self.month or self.day:
+                result += '-'
+            if self.month or self.day:
+                if self.month:
+                    result += '-' + self.month.value
+                    if self.day:
+                        result += '-' + self.day.value
+                elif self.day:
+                    result += '-' + self.day.value.zfill(3)
+            if self.hour:
+                if self.year or self.month or self.day:
+                    result += 'T'
+                result += self.hour.value
+                if self.minute:
+                    result += ':' + self.minute.value
+                    if self.second:
+                        result += ':' + self.second.value
+                        if self.millisecond:
+                            result += ':' + self.second.value
+                if self.tz_hour:
+                    if int(self.tz_hour.value) == 0 and (not self.tz_minute or (self.tz_minute and int(self.tz_minute.value) == 0)):
+                        result += 'Z'
+                    else:
+                        if int(self.tz_hour.value) > 0 or (self.tz_minute and int(self.tz_minute.value) > 0):
+                            result += '+'
+                        else:
+                            result += '-'
+                        result += str(int(self.tz_hour.value))
+            elif self.milliseconds:
+                result = str(self.milliseconds.value / 1000.0)
+            return result
     def serialize_xml(self):
         # Returns a list of one to eleven Elements and a dict of parent attributes.
         attrs = {}
@@ -294,7 +338,8 @@ class TimeRef(RefElement):
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
         self.is_time_entry = isinstance(time_entry_content, TimeEntryContent)
-        assert self.is_time_entry or isinstance(time_entry_content, XSDDateTime)
+        assert self.is_time_entry or isinstance(time_entry_content, XSDDateTime), \
+            "time_entry_content is {}, must be TimeEntryContent or XSDDateTime".format(type(time_entry_content))
         self.time_entry_content = time_entry_content
     def serialize_xml(self):
         # Returns an Element.
@@ -439,9 +484,9 @@ _tzMinute |= element xobis:TZMinute { xsd:integer }
 """
 
 class TimePart(Component):
-    def __init__(self, value):
+    def __init__(self, value, zf=2):
         assert is_positive_integer(value)
-        self.value = str(int(value))
+        self.value = str(int(value)).zfill(zf)
     def serialize_xml(self, tag):
         # Returns an Element.
         e = E(tag)
@@ -449,6 +494,10 @@ class TimePart(Component):
         return e
 
 class Year(TimePart):
+    def __init__(self, value, zf=4):
+        assert isinstance(value, int) or value.isdigit()
+        self.value  = '-' if int(value) != abs(int(value)) else ''
+        self.value += str(abs(int(value))).zfill(zf)
     def serialize_xml(self):
         return super().serialize_xml('year')
 
@@ -473,14 +522,18 @@ class Second(TimePart):
         return super().serialize_xml('second')
 
 class Milliseconds(TimePart):
+    def __init__(self, value):
+        super().__init__(value, zf=0)
     def serialize_xml(self):
         return super().serialize_xml('millisecs')
 
 
 class TimeZonePart(Component):
-    def __init__(self, value):
+    def __init__(self, value, zf=2):
         assert isinstance(value, int) or value.isdigit()
-        self.value = int(value)
+        self.is_negative = int(value) != abs(int(value))
+        self.value  = '-' if self.is_negative else ''
+        self.value += str(abs(int(value))).zfill(zf)
     def serialize_xml(self, tag):
         # Returns an Element.
         e = E(tag)

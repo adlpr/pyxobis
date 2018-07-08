@@ -726,9 +726,7 @@ set_type ( link_title,
            role_URI,
            href_URI = None )
 
-set_certainty ( text,
-                lang = None,
-                set_ = None )
+set_certainty ( certainty )  # ["exact", "implied", "estimated", "approximate", None]
 
 add_name ( name_text,
            lang = None,

@@ -42,10 +42,8 @@ class TimeEntryContentBuilder:
                         xlink_role = XSDAnyURI( role_URI ) \
                                      if role_URI else None
                     )
-    def set_certainty(self, text, lang=None, set_=None):
-        self.certainty = Certainty( Content( text,
-                                             lang = lang ),
-                                    set_ = set_ )
+    def set_certainty(self, certainty):
+        self.certainty = certainty
     def build(self):
         time_contents = GenericName(self.name_content)  \
                         if self.name_content else self.time_content
@@ -321,8 +319,9 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
         self.calendar1, self.calendar2 = calendar1, calendar2
     def build(self):
         return DurationRef(
-                   self.time_entry1, # TimeEntry(time_entry_content1, time_entry_content2),
-                   self.time_entry2, # TimeEntry(time_entry_content1, time_entry_content2),
-                   calendar = self.calendar,
+                   time_entry1 = self.time_entry1,
+                   calendar1   = self.calendar1,
+                   time_entry2 = self.time_entry2,
+                   calendar2   = self.calendar2,
                    link_attributes = self.link_attributes
                )
