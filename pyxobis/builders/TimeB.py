@@ -20,6 +20,7 @@ class TimeEntryContentBuilder:
         self.certainty = None
     def add_name(self, name_text, lang=None, translit=None, nonfiling=0):
         assert not self.time_content, "Time already has numerical contents"
+        assert name_text, "Name must not be empty"
         self.name_content.append(
             NameContent(name_text, lang, translit, nonfiling)
         )
@@ -45,11 +46,16 @@ class TimeEntryContentBuilder:
     def set_certainty(self, certainty):
         self.certainty = certainty
     def build(self):
-        time_contents = GenericName(self.name_content)  \
-                        if self.name_content else self.time_content
-        return TimeEntryContent(time_contents,
-                                type_     = self.type,
-                                certainty = self.certainty)
+        if self.name_content:
+            name_content = self.name_content if len(self.name_content) > 1  \
+                                             else self.name_content[0]
+            return TimeEntryContent(GenericName(name_content),
+                                    type_     = self.type,
+                                    certainty = self.certainty)
+        else:
+            return TimeEntryContent(self.time_content,
+                                    type_     = self.type,
+                                    certainty = self.certainty)
 
 
 
@@ -277,7 +283,7 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
     def set_time_entry_content(self, new_time_entry_content):
         # can be TimeEntryContent *or* XSDDateTime.
         # if not the former, assumes input is a string to convert to the latter
-        if not isinstance(time_entry_content, TimeEntryContent):
+        if not isinstance(new_time_entry_content, TimeEntryContent):
             new_time_entry_content = XSDDateTime(new_time_entry_content)
         self.time_entry_content = new_time_entry_content
     def set_calendar(self, calendar):

@@ -132,7 +132,7 @@ class TimeEntry(Component):
                 part_e.extend(time_entry_content_elements)
                 elements.append(part_e)
             return elements, {}
-        return self.time_entry_contents.serialize_xml()
+        return self.time_entry_contents[0].serialize_xml()
 
 
 class TimeEntryContent(Component):
@@ -345,7 +345,7 @@ class TimeRef(RefElement):
         # Returns an Element.
         # attributes
         attrs = {}
-        if self.time:
+        if self.calendar:
             attrs['calendar'] = self.calendar
         if self.link_attributes:
             link_attributes_attrs = self.link_attributes.serialize_xml()
@@ -448,6 +448,7 @@ class DurationRef(RefElement):
     def serialize_xml(self):
         # Returns an Element.
         # duration attributes
+        attrs = {}
         if self.link_attributes:
             link_attributes_attrs = self.link_attributes.serialize_xml()
             attrs.update(link_attributes_attrs)
@@ -461,7 +462,7 @@ class DurationRef(RefElement):
         time1_e.extend(time_entry1_elements)
         duration_e.append(time1_e)
         # time 2
-        if time_entry2 is not None:
+        if self.time_entry2 is not None:
             time_entry2_elements, time_entry2_attrs = self.time_entry2.serialize_xml()
             if self.calendar2:
                 time_entry2_attrs['calendar'] = self.calendar2
