@@ -17,6 +17,11 @@ INDEX = None
 BIB_INF_NAME = "bibmfhd.20180613.0941"
 AUT_INF_NAME = "aut.20180628.0951"
 
+# constants for lookups unable to be resolved,
+# either due to conflict or having no match
+CONFLICT   = "conflict"
+UNVERIFIED = "unverified"
+
 class Indexer:
     def __init__(self, inf_names=(BIB_INF_NAME, AUT_INF_NAME)):
         # Store index as json
@@ -58,20 +63,20 @@ class Indexer:
         # Mark conflicts
         for element_type, conflict in conflicts:
             # print("CONFLICTED IDENTITY:", str(conflict))
-            index[element_type][conflict] = "CONFLICT"
+            index[element_type][conflict] = CONFLICT
         self.index = index
 
     def lookup(self, field, element_type):
         """
         Given a pymarc field interpreted as a particular XOBIS element type,
         look up its associated control number.
-        Identities with multiple ctrl nos will return "CONFLICT";
-        with none, will return "UNVERIFIED"
+        Identities with multiple ctrl nos will return CONFLICT;
+        with none, will return UNVERIFIED
         """
         assert element_type in self.index, "element type {} not indexed".format(element_type)
         identity = LaneMARCRecord.get_field_identity(field, element_type)
         value = self.index[element_type].get(identity)
-        return value if value is not None else "UNVERIFIED"
+        return value if value is not None else UNVERIFIED
 
     def quick_lookup(self, text, element_type):
         """
@@ -86,4 +91,4 @@ class Indexer:
         return self.lookup(Field('   ','  ',[subf, text]), element_type)
 
     def list_conflicts(self):
-        return { element_type : [identity for identity, value in index.items() if value == "CONFLICT"] for element_type, index in self.index.items() }
+        return { element_type : [identity for identity, value in index.items() if value == CONFLICT] for element_type, index in self.index.items() }

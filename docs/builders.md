@@ -720,13 +720,15 @@ add_qualifier ( qualifier )  # RefElement
 
 ## Time
 
-### TimeEntryContentBuilder
+### TimeContentBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           role_URI,    # Time Type
            href_URI = None )
 
 set_certainty ( certainty )  # ["exact", "implied", "estimated", "approximate", None]
+
+set_quality ( quality )  # ["before", "after", "early", "mid", "late", None] (+)
 
 add_name ( name_text,
            lang = None,
@@ -754,7 +756,7 @@ set_scheme ( new_scheme )
 
 set_calendar ( calendar )
 
-set_time_entry_content ( new_time_entry_content )
+set_time_content ( time_content )
 
 add_variant ( variant )
 
@@ -778,11 +780,11 @@ set_scheme ( scheme1,
 set_calendar ( calendar1,
                calendar2 = "" )
 
-set_time_entry1 ( time_entry_content1,
-                  time_entry_content2 = None)
+set_time_entry1 ( time_content1,
+                  time_content2 = None)
 
-set_time_entry2 ( time_entry_content1,
-                  time_entry_content2 = None)
+set_time_entry2 ( time_content1,
+                  time_content2 = None)
 
 add_variant ( variant )
 
@@ -804,7 +806,7 @@ set_scheme ( new_scheme )
 
 set_calendar ( calendar )
 
-set_time_entry_content ( new_time_entry_content )
+set_time_content ( time_content )
 ```
 
 
@@ -816,17 +818,23 @@ set_type ( link_title,
 
 # empty string defaults to same as scheme1; use None for no scheme2
 set_scheme ( scheme1,
-             scheme2 = "" )  
+             scheme2 = "" )
 
 # empty string defaults to same as calendar1; use None for no calendar2
 set_calendar ( calendar1,
                calendar2 = "" )
 
-set_time_entry1 ( time_entry_content1,
-                  time_entry_content2 = None)
+set_time_entry1 ( time_content1,
+                  time_content2 = None )
 
-set_time_entry2 ( time_entry_content1,
-                  time_entry_content2 = None)
+set_time_entry1_link ( link_title,
+                       href_URI = None )
+
+set_time_entry2 ( time_content1,
+                  time_content2 = None )
+
+set_time_entry2_link ( link_title,
+                       href_URI = None )
 ```
 
 ### TimeRefBuilder
@@ -836,7 +844,8 @@ set_calendar ( calendar )
 set_link ( link_title,
            href_URI = None )
 
-set_time_entry_content ( new_time_entry_content )
+set_time_entry ( time_content1,
+                 time_content2 = None )
 ```
 
 ### DurationRefBuilder
@@ -848,11 +857,17 @@ set_calendar ( calendar1,
 set_link ( link_title,
            href_URI = None )
 
-set_time_entry1 ( time_entry_content1,
-                  time_entry_content2 = None)
+set_time_entry1 ( time_content1,
+                  time_content2 = None )
 
-set_time_entry2 ( time_entry_content1,
-                  time_entry_content2 = None)
+set_time_entry1_link ( link_title,
+                       href_URI = None )
+
+set_time_entry2 ( time_content1,
+                  time_content2 = None )
+
+set_time_entry2_link ( link_title,
+                       href_URI = None )
 ```
 
 ## Work

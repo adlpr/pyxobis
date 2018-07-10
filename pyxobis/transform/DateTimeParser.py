@@ -3,31 +3,31 @@
 
 import regex as re
 from pyxobis.builders import *
-from .LaneMARCRecord import LaneMARCRecord
 from .Indexer import Indexer
-from .tf_being import *
 from .tf_common import *
 
+# Default starting and ending Time Types by PE type
+DEFAULT_TIME_TYPES = {
+    BEING : ("Born", "Died"),
+    EVENT : ("Began", "Ended")
+    # ORGANIZATION : ("Began", "Ended")
+    # OBJECT : ("Created", "Destroyed"),
+}
 
 class DateTimeParser:
-    def __init__(self, element_type=BEING):
-        self.ix = Indexer()
-        self.set_element_type(element_type)
+    def __init__(self):
+        self.__set_default_type_kwargs()
 
-    def set_element_type(self, element_type):
-        """
-        Element type that the datetime pertains to
-        (sets defaults: Born/Died vs Began/Ended etc.).
-        """
-        self.element_type = element_type
+    ix = Indexer()
 
-    def parse(self, datestring):
+    def parse(self, datestring, element_type):
         """
         Parse out a time or duration string into a Time or Duration ref element.
         """
         # Various preprocessing normalization
         # Punctuation
-        dts = datestring.rstrip('.,: ').strip('() ').strip()
+        dts = datestring.strip('.,: ').strip('() ').strip()
+        dts = re.sub(r"([\d\-]+)~", r"approximately \1", dts)
         dts = re.sub(r"[\u200c-\u200f]", "", dts)
         # Arabic
         dts = re.sub(r"حو(الي|\.?) +", "approximately ", dts).replace('؟','?')
@@ -47,10 +47,12 @@ class DateTimeParser:
         dts = re.sub(r"נפ?[׳'] +", "died ", dts)
         dts = re.sub(r" +או +", " or ", dts)
 
-        # BEING-SPECIFIC PARSING
+        # --------
+        # ELEMENT-SPECIFIC PARSING
+        # --------
         type_kwargs = {}
 
-        if self.element_type == BEING:
+        if element_type == BEING:
             # If this is an "active" date, make that the Type for all Contents.
             if re.match(r"(active|fl?(\.| ))", dts, flags=re.I):
                 dts = re.sub(r"^(active|fl?\.?)\s*", '', dts, flags=re.I).strip()
@@ -65,22 +67,28 @@ class DateTimeParser:
             elif re.match(r"d(ied |\. ?|\.? )", dts):
                 # "Died" date --> Born Unknown.
                 dts = 'Unknown-' + re.sub(r"^d(ied |\. ?|\.? )", '', dts).strip()
-        elif self.element_type == ORGANIZATION:
-            ...
-            ...
-            ...
-        elif self.element_type == EVENT:
-            ...
-            ...
-            ...
-        elif self.element_type == OBJECT:
-            ...
-            ...
-            ...
+        # elif element_type == OBJECT:
+        #     ...
+        #     ...
+        #     ...
+        # elif element_type == ORGANIZATION:
+        #     ...
+        #     ...
+        #     ...
+        # elif element_type == EVENT:
+        #     ...
+        #     ...
+        #     ...
 
+        # calendar indication on ranges:
         # "AD" should only be dates that span from BC to AD, so not needed.
         dts = re.sub(r"\s+A\.?D", "", dts).strip()
+        # copy calendar indicators over.
+        dts = re.sub(r"^([\d\-]+)-([\d\-]+) ([^\d ]+)$", r"\1 \3-\2 \3", dts)
 
+        # --------
+        # SPLIT
+        # --------
         # Attempt to split dates at an appropriate hyphen; should result in 1-2.
         split_dates = re.split(r'-(?!\d\d(?:[\-\.]|$))', dts)
 
@@ -94,18 +102,15 @@ class DateTimeParser:
 
             # TIME ENTRIES
             date = split_dates[0]
-            time_content1, time_content2 = self.__parse_for_double_date(date, type_kwargs)
+            time_content1, time_content2 = self.__parse_for_double(date, type_kwargs)
 
-            # !!!!!!!!!!! A single Time ref doesn't allow for double dates??
-            trb.set_time_entry_content(time_content1)
+            trb.set_time_entry(time_content1, time_content2)
 
             # LINK
-            # try to look it up in the index
             if time_content2 is None:
-                # print(str(time_content1))
-                self.ix.quick_lookup(date, TIME)
-                ...
-                ...
+                time_content_str = str(time_content1)
+                # print(date, ":", time_content_str, ":", self.ix.quick_lookup(time_content_str, TIME))
+                trb.set_link(time_content_str, self.ix.quick_lookup(time_content_str, TIME))
 
             return trb.build()
 
@@ -126,24 +131,18 @@ class DateTimeParser:
             if date2 and not date1: date1 = "Unknown"
             if date1 and not date2: date2 = "Present"
 
-            if date1.isdigit() and date2.isdigit():
-                if int(date1) > int(date2):
-                    print("\nPROBLEM: {} > {}".format(date1, date2))
+            date1, date2 = self.__resolve_abbreviation(date1, date2)
 
             if type_kwargs:
                 start_type_kwargs = end_type_kwargs = type_kwargs
             else:
-                start_type_kwargs = { 'link_title' : "Born",
-                    'role_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
-                    'href_URI' : self.ix.quick_lookup("Born", RELATIONSHIP) }
-                end_type_kwargs = { 'link_title' : "Died",
-                    'role_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
-                    'href_URI' : self.ix.quick_lookup("Died", RELATIONSHIP) } \
-                    if date2 not in ["Unknown","Present"] else {}
+                start_type_kwargs, end_type_kwargs = self.default_type_kwargs[element_type]
+                if date2 in ["Unknown","Present"]:
+                    end_type_kwargs = {}
 
             # parse further for potential double dates
-            time_content_s1, time_content_s2 = self.__parse_for_double_date(date1, start_type_kwargs)
-            time_content_e1, time_content_e2 = self.__parse_for_double_date(date2, end_type_kwargs)
+            time_content_s1, time_content_s2 = self.__parse_for_double(date1, start_type_kwargs)
+            time_content_e1, time_content_e2 = self.__parse_for_double(date2, end_type_kwargs)
 
             drb.set_time_entry1(time_content_s1, time_content_s2)
             drb.set_time_entry2(time_content_e1, time_content_e2)
@@ -151,23 +150,23 @@ class DateTimeParser:
             # LINK
             # Doesn't make sense here, unless this is a named Duration (?);
             # these are decades centuries etc? but those wouldn't be used in Beings.
-            # not sure how to look this up in that case...
+            # not sure how to look this up in that case
 
             return drb.build()
 
         else:
-            # Did not split as expected...
+            # Did not split as expected
             raise ValueError("problem parsing date: {}".format(datestring))
 
 
-    def __parse_for_double_date(self, datestring, type_kwargs):
+    def __parse_for_double(self, datestring, type_kwargs):
         # double dates might be separated with a slash:
         dts_split_slash = datestring.split('/')
         if len(dts_split_slash) == 2:
             # good! now parse each of these
-            date1, date2 = dts_split_slash
-            return self.__parse_single_datetime_to_time_entry(date1.strip(), type_kwargs),  \
-                   self.__parse_single_datetime_to_time_entry(date2.strip(), type_kwargs)
+            date1, date2 = self.__resolve_abbreviation(*dts_split_slash)
+            return self.__parse_single(date1.strip(), type_kwargs),  \
+                   self.__parse_single(date2.strip(), type_kwargs)
         elif len(dts_split_slash) > 2:
             raise ValueError("problem parsing date: {}".format(datestring))
 
@@ -176,22 +175,33 @@ class DateTimeParser:
         dts_split_or = re.split(r" +or +", datestring)
         if len(dts_split_or) == 2:
             # good! now parse each of these
-            date1, date2 = dts_split_or
-            return self.__parse_single_datetime_to_time_entry(date1.strip()+'?', type_kwargs),  \
-                   self.__parse_single_datetime_to_time_entry(date2.strip()+'?', type_kwargs)
+            date1, date2 = self.__resolve_abbreviation(*dts_split_or)
+            return self.__parse_single(date1.strip()+'?', type_kwargs),  \
+                   self.__parse_single(date2.strip()+'?', type_kwargs)
         elif len(dts_split_or) > 2:
             raise ValueError("problem parsing date: {}".format(datestring))
 
         # not a double date
-        return self.__parse_single_datetime_to_time_entry(datestring, type_kwargs), None
+        return self.__parse_single(datestring, type_kwargs), None
 
 
-    def __parse_single_datetime_to_time_entry(self, datestring, type_kwargs):
+    def __resolve_abbreviation(self, date1, date2):
         """
-        Parses a single date string (preprocessed by parse_date > __parse_for_double_date)
+        Resolves cases of second-element abbreviation such as "1996/7",
+        "851-73", etc.
+        """
+        if date1.lstrip('-').isdigit() and date2.lstrip('-').isdigit():
+            if len(date1) > len(date2) and int(date1) > int(date2):
+                date2 = date1[:-len(date2)] + date2
+        return date1, date2
+
+
+    def __parse_single(self, datestring, type_kwargs):
+        """
+        Parses a single date string (preprocessed by parse_date > __parse_for_double)
         into a TimeEntryContent object.
         """
-        tecb = TimeEntryContentBuilder()
+        tecb = TimeContentBuilder()
 
         # TYPE: Active/Born/Died
         if type_kwargs:
@@ -273,3 +283,18 @@ class DateTimeParser:
             time_kwargs['tz_hour'] = time_kwargs['tz_minute'] = 0
 
         return time_kwargs
+
+
+    def __set_default_type_kwargs(self):
+        # turn global into full map
+        self.default_type_kwargs = {
+            element_type : (
+                { 'link_title' : time_types[0],
+                  'role_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
+                  'href_URI' : self.ix.quick_lookup(time_types[0], RELATIONSHIP) },
+                { 'link_title' : time_types[1],
+                  'role_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
+                  'href_URI' : self.ix.quick_lookup(time_types[1], RELATIONSHIP) }
+            ) for element_type, time_types in DEFAULT_TIME_TYPES.items()
+        }
+        self.default_type_kwargs[ORGANIZATION] = self.default_type_kwargs[EVENT]

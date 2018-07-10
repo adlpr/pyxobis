@@ -520,15 +520,15 @@ class XSDAnyURI(Component):
         # Returns a text string.
         return self.anyURI
 
-class XSDDateTime(Component):
-    def __init__(self, date_time):
-        # verify match to ISO 8601 extended format
-        assert re.match(r"-?\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(Z|[+-]\d\d:\d\d])?$", date_time), \
-            "Datetime ({}) must match ISO 8601 extended format".format(date_time)
-        self.date_time = date_time
-    def serialize_xml(self):
-        # Returns a text string.
-        return self.date_time
+# class XSDDateTime(Component):
+#     def __init__(self, date_time):
+#         # verify match to ISO 8601 extended format
+#         assert re.match(r"-?\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(Z|[+-]\d\d:\d\d])?$", date_time), \
+#             "Datetime ({}) must match ISO 8601 extended format".format(date_time)
+#         self.date_time = date_time
+#     def serialize_xml(self):
+#         # Returns a text string.
+#         return self.date_time
 
 # functions
 
