@@ -5,6 +5,8 @@ import regex as re
 from pyxobis.builders import *
 from .LaneMARCRecord import LaneMARCRecord
 from .Indexer import Indexer
+from .DateTimeParser import DateTimeParser
+from .NameParser import NameParser
 from .tf_being import *
 from .tf_common import *
 
@@ -13,6 +15,8 @@ class Transformer:
     def __init__(self):
         self.lane_org_ref = self.__build_lane_org_ref()
         self.ix = Indexer()
+        self.dp = DateTimeParser()
+        self.np = NameParser()
 
     def transform(self, record):
         record.__class__ = LaneMARCRecord

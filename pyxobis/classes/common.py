@@ -102,25 +102,24 @@ class Content(Component):
 class NameContent(Component):
     """
     nameContent_ |=
-        (attribute lang { text },
-         attribute translit { text }?)?,
+        attribute lang { text }?,
+        attribute script { text }?,
         attribute nonfiling { xsd:positiveInteger }?,
         text
     """
-    def __init__(self, text, lang=None, translit=None, nonfiling=0):
+    def __init__(self, text, lang=None, script=None, nonfiling=0):
         self.text = text
         self.lang = lang
-        if translit: assert lang
-        self.translit = translit
-        assert is_positive_integer(nonfiling)
+        self.script = script
+        assert is_non_negative_int(nonfiling)
         self.nonfiling = str(nonfiling)
     def serialize_xml(self):
         # Returns a text string and a dict of parent attributes.
         attrs = {}
         if self.lang:
             attrs['lang'] = self.lang
-            if self.translit:
-                attrs['translit'] = self.translit
+        if self.script:
+            attrs['script'] = self.script
         attrs['nonfiling'] = self.nonfiling
         return self.text, attrs
 
@@ -532,5 +531,5 @@ class XSDAnyURI(Component):
 
 # functions
 
-def is_positive_integer(s):
+def is_non_negative_int(s):
     return (isinstance(s, int) or s.isdigit()) and int(s) >= 0

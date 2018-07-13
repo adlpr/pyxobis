@@ -105,24 +105,38 @@ class BeingEntryContent(Component):
     _beingEntryContent |=
         element xobis:name {
             nameContent_
-            | (element xobis:part {
-                   attribute type { string "given" | string "surname" | string "expansion" },
-                   nameContent_
-               }+
-               | element xobis:part {
-                     attribute type {
-                         string "given"
-                         | string "paternal surname"
-                         | string "maternal surname"
-                         | string "expansion"
-                     },
-                     nameContent_
-                 }+)
+            | element xobis:part {
+                _beingNamePartTypes1,
+                nameContent_
+              }+
+            | element xobis:part {
+                _beingNamePartTypes2,
+                nameContent_
+              }+
         },
         qualifiersOpt
+    _beingNamePartTypes1 |=
+        attribute type {
+          string "given"
+          | string "surname"
+          | string "patronym"
+          | string "matronym"
+          | string "teknonym"
+          | string "expansion"
+        }
+    _beingNamePartTypes2 |=
+        attribute type {
+          string "given"
+          | string "paternal surname"
+          | string "maternal surname"
+          | string "patronym"
+          | string "matronym"
+          | string "teknonym"
+          | string "expansion"
+        }
     """
-    PART_TYPES_1 = ["given", "surname", "expansion"]
-    PART_TYPES_2 = ["given", "paternal surname", "maternal surname", "expansion"]
+    PART_TYPES_1 = ["given", "surname", "patronym", "matronym", "teknonym", "expansion"]
+    PART_TYPES_2 = ["given", "paternal surname", "maternal surname", "patronym", "matronym", "teknonym", "expansion"]
     def __init__(self, name_content, qualifiers_opt=QualifiersOpt()):
         # name_content should be either NameContent,
         # or a list of tuples of form (type string, NameContent)

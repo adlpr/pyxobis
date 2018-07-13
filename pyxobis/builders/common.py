@@ -14,14 +14,14 @@ class Builder:
     def __init__(self):
         self.name_content = []  # NameContent objs (parts of entry name)
         self.qualifiers = []     # RefElement objs
-    def add_name(self, name_text, lang=None, translit=None, nonfiling=0):
+    def add_name(self, name_text, lang=None, script=None, nonfiling=0):
         self.name_content.append(
-            NameContent(name_text, lang, translit, nonfiling)
+            NameContent(name_text, lang, script, nonfiling)
         )
-    def add_name_tuple(self, name_text, type_="generic", lang=None, translit=None, nonfiling=0):
+    def add_name_tuple(self, name_text, type_="generic", lang=None, script=None, nonfiling=0):
         self.name_content.append((
             type_,
-            NameContent(name_text, lang=lang, translit=translit, nonfiling=nonfiling)
+            NameContent(name_text, lang=lang, script=script, nonfiling=nonfiling)
         ))
     def add_qualifier(self, qualifier):
         # assert isinstance(qualifier, RefElement)
@@ -221,7 +221,7 @@ class VersionsHoldingsBuilder(Builder):
             print("WARNING: versions list is non-empty!\nemptying to set holdings: {}".format(text))
         self.versions = [ Holdings( Content(text, lang) ) ]
         self.is_holdings_only = True
-    def add_version(self, version_text, holdings_text, version_lang=None, version_translit=None, version_nonfiling=0, holdings_lang=None, qualifiers=[], notes=[]):
+    def add_version(self, version_text, holdings_text, version_lang=None, version_script=None, version_nonfiling=0, holdings_lang=None, qualifiers=[], notes=[]):
         if not all(isinstance(version, Version) for version in self.versions):
             print("WARNING: versions list contains non-Version!\nemptying to add version: {}".format(version_text))
             self.versions = []
@@ -229,7 +229,7 @@ class VersionsHoldingsBuilder(Builder):
             NameContent(
                 version_text,
                 lang=version_lang,
-                translit=version_translit,
+                script=version_script,
                 nonfiling=version_nonfiling
             ),
             Holdings( Content(holdings_text, holdings_lang) ),

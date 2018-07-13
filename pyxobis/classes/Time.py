@@ -80,7 +80,7 @@ class TimeInstanceEntry(Component):
     _timeInstanceEntry |=
         element xobis:entry {
             optScheme_,
-            attribute calendar { text }?,
+            _calendar?,
             _timeContent
         }
     """
@@ -89,6 +89,8 @@ class TimeInstanceEntry(Component):
         self.time_content = time_content
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
+        if calendar is not None:
+            assert isinstance(calendar, Calendar)
         self.calendar = calendar
     def serialize_xml(self):
         # Returns an Element.
@@ -96,12 +98,13 @@ class TimeInstanceEntry(Component):
         entry_attrs = {}
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
         entry_attrs.update(opt_scheme_attrs)
-        if self.calendar:
-            entry_attrs['calendar'] = self.calendar
         # contents
         time_content_elements, time_content_attrs = self.time_content.serialize_xml()
         entry_attrs.update(time_content_attrs)
         entry_e = E('entry', **entry_attrs)
+        if self.calendar is not None:
+            calendar_e = self.calendar.serialize_xml()
+            entry_e.append(calendar_e)
         entry_e.extend(time_content_elements)
         return entry_e
 
@@ -268,7 +271,7 @@ class TimeContent(Component):
         for prop in (self.type, self.year, self.month, self.day, \
                      self.hour, self.tz_hour, self.minute, self.tz_minute, \
                      self.second, self.milliseconds, self.generic_name):
-            if prop:
+            if prop is not None:
                 prop_e = prop.serialize_xml()
                 if prop_e is not None:
                     elements.append(prop_e)
@@ -325,25 +328,24 @@ class TimeRef(RefElement):
     """
     timeRef |=
         element xobis:time {
-            attribute calendar { text }?,
+            _calendar?,
             _timeEntry
         }
     """
     def __init__(self, time_entry, calendar=None):
+        if calendar is not None:
+            assert isinstance(calendar, Calendar)
         self.calendar = calendar
         assert isinstance(time_entry, TimeEntry),  \
             "time_entry is {}, must be TimeEntry".format(type(time_entry))
         self.time_entry = time_entry
     def serialize_xml(self):
         # Returns an Element.
-        # attributes
-        attrs = {}
-        if self.calendar:
-            attrs['calendar'] = self.calendar
-        # content
         time_entry_elements, time_entry_attrs = self.time_entry.serialize_xml()
-        attrs.update(time_entry_attrs)
-        time_e = E('time', **attrs)
+        time_e = E('time', **time_entry_attrs)
+        if self.calendar is not None:
+            calendar_e = self.calendar.serialize_xml()
+            time_e.append(calendar_e)
         time_e.extend(time_entry_elements)
         return time_e
 
@@ -353,12 +355,12 @@ class DurationEntry(Component):
     _durationEntry |=
         element xobis:entry {
             optScheme_,
-            attribute calendar { text }?,
+            _calendar?,
             _timeEntry
         },
         element xobis:entry {
             optScheme_,
-            attribute calendar { text }?,
+            _calendar?,
             _timeEntry
         }
     """
@@ -378,7 +380,7 @@ class DurationEntryPart(Component):
     """
     element xobis:entry {
         optScheme_,
-        attribute calendar { text }?,
+        _calendar?,
         _timeEntry
     }
     """
@@ -387,6 +389,8 @@ class DurationEntryPart(Component):
         self.time_entry = time_entry
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
+        if calendar is not None:
+            assert isinstance(calendar, Calendar)
         self.calendar = calendar
     def serialize_xml(self):
         # Returns an Element.
@@ -394,12 +398,13 @@ class DurationEntryPart(Component):
         entry_attrs = {}
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
         entry_attrs.update(opt_scheme_attrs)
-        if self.calendar:
-            entry_attrs['calendar'] = self.calendar
         # contents
         time_entry_elements, time_entry_attrs = self.time_entry.serialize_xml()
         entry_attrs.update(time_entry_attrs)
         entry_e = E('entry', **entry_attrs)
+        if self.calendar is not None:
+            calendar_e = self.calendar.serialize_xml()
+            entry_e.append(calendar_e)
         entry_e.extend(time_entry_elements)
         return entry_e
 
@@ -410,11 +415,11 @@ class DurationRef(RefElement):
         element xobis:duration {
             linkAttributes_?,
             element xobis:time {
-                attribute calendar { text }?,
+                _calendar?,
                 _timeEntry
             },
             element xobis:time {
-                attribute calendar { text }?,
+                _calendar?,
                 _timeEntry
             }
         }
@@ -424,9 +429,13 @@ class DurationRef(RefElement):
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
         assert isinstance(time_entry1, TimeEntry)
+        if calendar1 is not None:
+            assert isinstance(calendar1, Calendar)
         self.calendar1 = calendar1
         self.time_entry1 = time_entry1
         assert isinstance(time_entry2, TimeEntry)
+        if calendar2 not in [None, ""]:
+            assert isinstance(calendar2, Calendar)
         self.calendar2 = calendar1 if calendar2 == "" else calendar2
         self.time_entry2 = time_entry2
     def serialize_xml(self):
@@ -440,19 +449,48 @@ class DurationRef(RefElement):
         # content
         # time 1
         time_entry1_elements, time_entry1_attrs = self.time_entry1.serialize_xml()
-        if self.calendar1:
-            time_entry1_attrs['calendar'] = self.calendar1
         time1_e = E('time', **time_entry1_attrs)
         time1_e.extend(time_entry1_elements)
+        if self.calendar1 is not None:
+            calendar1_e = self.calendar1.serialize_xml()
+            time1_e.append(calendar1_e)
         duration_e.append(time1_e)
         # time 2
         time_entry2_elements, time_entry2_attrs = self.time_entry2.serialize_xml()
-        if self.calendar2:
-            time_entry2_attrs['calendar'] = self.calendar2
         time2_e = E('time', **time_entry2_attrs)
         time2_e.extend(time_entry2_elements)
+        if self.calendar2 is not None:
+            calendar2_e = self.calendar2.serialize_xml()
+            time2_e.append(calendar2_e)
         duration_e.append(time2_e)
         return duration_e
+
+
+class Calendar(Component):
+    """
+    # structure of Calendar looks the same as generic Type (but not optional)
+    _calendar |=
+        element xobis:calendar {
+            linkAttributes_,
+            attribute xlink:role { xsd:anyURI },
+            empty
+        }
+    """
+    def __init__(self, link_attributes, xlink_role):
+        assert isinstance(link_attributes, LinkAttributes)
+        self.link_attributes = link_attributes
+        assert isinstance(xlink_role, XSDAnyURI)
+        self.xlink_role = xlink_role
+    def serialize_xml(self):
+        # Returns an Element.
+        attrs = {}
+        link_attributes = self.link_attributes.serialize_xml()
+        attrs.update(link_attributes)
+        xlink_role_text = self.xlink_role.serialize_xml()
+        attrs['{%s}role' % nsmap['xlink']] = xlink_role_text
+        type_e = E('calendar', **attrs)
+        return type_e
+
 
 
 """
@@ -469,7 +507,7 @@ class DurationRef(RefElement):
 
 class TimePart(Component):
     def __init__(self, value, zf=2):
-        assert is_positive_integer(value)
+        assert is_non_negative_int(value)
         self.value = str(int(value)).zfill(zf)
     def serialize_xml(self, tag):
         # Returns an Element.

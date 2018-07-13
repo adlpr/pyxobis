@@ -43,8 +43,8 @@
 ## Builder
 ```
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -157,9 +157,9 @@ set_entry_type ( link_title,       # str
 set_time_or_duration_ref ( time_or_duration_ref )
 
 add_name ( name_text,         # str
-           type_ = "generic", # str
-           lang  = None,      # str (ISO 639-2/B?)
-           translit = None,   # str (ISO 15924?)
+           type_  = "generic", # str ("generic" -or- <part>s with "given", "surname", "patronym", etc.)
+           lang   = None,      # str (ISO 639-2/B?)
+           script = None,   # str (ISO 15924?)
            nonfiling = 0 )     # int (>=0)
 
 add_qualifier ( qualifier )  # RefElement
@@ -185,9 +185,9 @@ set_substitute_attribute_type ( substitute_attribute_type )
 set_scheme ( new_scheme )
 
 add_name ( name_text,
-           type_ = "generic",
-           lang  = None,
-           translit = None,
+           type_  = "generic",
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -203,9 +203,9 @@ add_note ( content_text,
 ### BeingRefBuilder
 ```
 add_name ( name_text,
-           type_ = "generic",
-           lang  = None,
-           translit = None,
+           type_  = "generic",
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -227,8 +227,8 @@ set_subtype ( new_subtype )
 set_scheme ( new_scheme )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -256,8 +256,8 @@ set_substitute_attribute_type ( substitute_attribute_type )
 set_scheme ( new_scheme )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -276,8 +276,8 @@ set_link ( link_title,
            href_URI = None )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -302,8 +302,8 @@ set_scheme ( new_scheme )
 add_prequalifier ( prequalifier )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -333,8 +333,8 @@ set_scheme ( new_scheme )
 add_prequalifier ( prequalifier )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -355,8 +355,8 @@ set_link ( link_title,
 add_prequalifier ( prequalifier )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -371,8 +371,8 @@ set_class ( new_class )
 set_usage ( new_usage )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -398,8 +398,8 @@ set_time_or_duration_ref ( time_or_duration_ref )
 set_substitute_attribute_type ( substitute_attribute_type )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -418,8 +418,8 @@ set_link ( link_title,
            href_URI = None )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -442,8 +442,8 @@ set_class ( new_class )
 set_type ( new_type )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -478,8 +478,8 @@ set_substitute_attribute_type ( substitute_attribute_type )
 set_scheme ( new_scheme )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -498,8 +498,8 @@ set_link ( link_title,
            href_URI = None )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -518,8 +518,8 @@ set_scheme ( new_scheme )
 add_prequalifier ( prequalifier )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -549,8 +549,8 @@ set_scheme ( new_scheme )
 add_prequalifier ( prequalifier )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -571,8 +571,8 @@ set_link ( link_title,
 add_prequalifier ( prequalifier )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -599,8 +599,8 @@ set_usage ( new_usage )
 set_scheme ( new_scheme )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -628,8 +628,8 @@ set_substitute_attribute_type ( substitute_attribute_type )
 set_scheme ( new_scheme )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -648,8 +648,8 @@ set_link ( link_title,
            href_URI = None )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -664,8 +664,8 @@ set_type ( new_type )
 set_class ( new_class )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -691,8 +691,8 @@ set_time_or_duration_ref ( time_or_duration_ref )
 set_substitute_attribute_type ( substitute_attribute_type )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -711,8 +711,8 @@ set_link ( link_title,
            href_URI = None )
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -731,8 +731,8 @@ set_certainty ( certainty )  # ["exact", "implied", "estimated", "approximate", 
 set_quality ( quality )  # ["before", "after", "early", "mid", "late", None] (+)
 
 add_name ( name_text,
-           lang = None,
-           translit = None,
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 set_time_contents ( year = None,
@@ -754,7 +754,9 @@ set_usage ( new_usage )
 
 set_scheme ( new_scheme )
 
-set_calendar ( calendar )
+set_calendar ( link_title,
+               role_URI,
+               href_URI = None )
 
 set_time_content ( time_content )
 
@@ -777,8 +779,17 @@ set_usage ( new_usage )
 set_scheme ( scheme1,
              scheme2 = "" )
 
-set_calendar ( calendar1,
-               calendar2 = "" )
+set_calendar ( link_title,
+               role_URI,
+               href_URI = None )
+
+set_calendar1 ( link_title,
+                role_URI,
+                href_URI = None )
+
+set_calendar2 ( link_title,
+                role_URI,
+                href_URI = None )
 
 set_time_entry1 ( time_content1,
                   time_content2 = None)
@@ -804,7 +815,9 @@ set_type ( link_title,
 
 set_scheme ( new_scheme )
 
-set_calendar ( calendar )
+set_calendar ( link_title,
+               role_URI,
+               href_URI = None )
 
 set_time_content ( time_content )
 ```
@@ -820,9 +833,17 @@ set_type ( link_title,
 set_scheme ( scheme1,
              scheme2 = "" )
 
-# empty string defaults to same as calendar1; use None for no calendar2
-set_calendar ( calendar1,
-               calendar2 = "" )
+set_calendar ( link_title,
+               role_URI,
+               href_URI = None )
+
+set_calendar1 ( link_title,
+                role_URI,
+                href_URI = None )
+
+set_calendar2 ( link_title,
+                role_URI,
+                href_URI = None )
 
 set_time_entry1 ( time_content1,
                   time_content2 = None )
@@ -839,7 +860,9 @@ set_time_entry2_link ( link_title,
 
 ### TimeRefBuilder
 ```
-set_calendar ( calendar )
+set_calendar ( link_title,
+               role_URI,
+               href_URI = None )
 
 set_link ( link_title,
            href_URI = None )
@@ -850,9 +873,17 @@ set_time_entry ( time_content1,
 
 ### DurationRefBuilder
 ```
-# empty string defaults to same as calendar1; use None for no calendar2
-set_calendar ( calendar1,
-               calendar2 = "" )
+set_calendar ( link_title,
+               role_URI,
+               href_URI = None )
+
+set_calendar1 ( link_title,
+                role_URI,
+                href_URI = None )
+
+set_calendar2 ( link_title,
+                role_URI,
+                href_URI = None )
 
 set_link ( link_title,
            href_URI = None )
@@ -881,9 +912,9 @@ set_role ( new_role )
 set_class ( new_class )
 
 add_name ( name_text,
-           type_ = "generic",
-           lang  = None,
-           translit = None,
+           type_  = "generic",
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -913,9 +944,9 @@ set_substitute_attribute_type ( substitute_attribute_type )
 set_scheme ( new_scheme )
 
 add_name ( name_text,
-           type_ = "generic",
-           lang  = None,
-           translit = None,
+           type_  = "generic",
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
@@ -934,9 +965,9 @@ set_link ( link_title,
            href_URI = None )
 
 add_name ( name_text,
-           type_ = "generic",
-           lang  = None,
-           translit = None,
+           type_  = "generic",
+           lang   = None,
+           script = None,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement

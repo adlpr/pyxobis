@@ -8,6 +8,7 @@ from .tf_common import *
 
 # Default starting and ending Time Types by PE type
 DEFAULT_TIME_TYPES = {
+    None  : ("",""),
     BEING : ("Born", "Died"),
     EVENT : ("Began", "Ended")
     # ORGANIZATION : ("Began", "Ended")
@@ -20,21 +21,24 @@ class DateTimeParser:
 
     ix = Indexer()
 
-    def parse(self, datestring, element_type):
+    def parse(self, datestring, element_type=None, default_start_type=None, default_end_type=None):
         """
         Parse out a time or duration string into a Time or Duration ref element.
         """
         # Various preprocessing normalization
         # Punctuation
         dts = datestring.strip('.,: ').strip('() ').strip()
-        dts = re.sub(r"([\d\-]+)~", r"approximately \1", dts)
+        if not dts:
+            return None
+        dts = re.sub(r"([\d\-s]+)~", r"approximately \1", dts)
         dts = re.sub(r"[\u200c-\u200f]", "", dts)
         # Arabic
-        dts = re.sub(r"حو(الي|\.?) +", "approximately ", dts).replace('؟','?')
+        dts = re.sub(r"(حو(الي|\.?)|نحو) +", "approximately ", dts).replace('؟','?')
         dts = re.sub(r"ت(وفي|\.) +", "died ", dts)
         dts = re.sub(r" +[اأ]و +", " or ", dts)
         dts = re.sub(r"إزدهر +", "active ", dts)
         dts = re.sub(r"هـ", "AH", dts)
+        dts = re.sub(r"\s+م([\s\.]+|$)", "", dts)  # abbr of تقويم ميلادي
         for i,d in enumerate('٠١٢٣٤٥٦٧٨٩'):
             dts = dts.replace(d,str(i))
 
@@ -56,12 +60,9 @@ class DateTimeParser:
             # If this is an "active" date, make that the Type for all Contents.
             if re.match(r"(active|fl?(\.| ))", dts, flags=re.I):
                 dts = re.sub(r"^(active|fl?\.?)\s*", '', dts, flags=re.I).strip()
-                type_kwargs = { 'link_title' : "Active",
-                                'role_URI'   : self.ix.quick_lookup("Time Type", CONCEPT),
-                                'href_URI'   : self.ix.quick_lookup("Active", RELATIONSHIP) }
-
+                type_kwargs = self.__type_string_to_kwargs("Active")
             # Test for born/died and add appropriate other half.
-            if re.match(r"b(orn |\. ?|\.? )", dts):
+            elif re.match(r"b(orn |\. ?|\.? )", dts):
                 # "Born" date --> Died Unknown;
                 dts = re.sub(r"^b(orn |\. ?|\.? )", '', dts).strip() + '-Unknown'
             elif re.match(r"d(ied |\. ?|\.? )", dts):
@@ -81,8 +82,6 @@ class DateTimeParser:
         #     ...
 
         # calendar indication on ranges:
-        # "AD" should only be dates that span from BC to AD, so not needed.
-        dts = re.sub(r"\s+A\.?D", "", dts).strip()
         # copy calendar indicators over.
         dts = re.sub(r"^([\d\-]+)-([\d\-]+) ([^\d ]+)$", r"\1 \3-\2 \3", dts)
 
@@ -96,12 +95,16 @@ class DateTimeParser:
             # This should be a TimeRef.
             trb = TimeRefBuilder()
 
+            date = split_dates[0]
+
             # CALENDAR
-            # right now the only calendar supported is Gregorian
-            # trb.set_calendar("Calendar, Gregorian")
+            calendar, date = self.__extract_calendar(date)
+            if calendar:
+                trb.set_calendar(calendar,
+                                 self.ix.quick_lookup("Calendars", CONCEPT),
+                                 self.ix.quick_lookup(calendar, CONCEPT))
 
             # TIME ENTRIES
-            date = split_dates[0]
             time_content1, time_content2 = self.__parse_for_double(date, type_kwargs)
 
             trb.set_time_entry(time_content1, time_content2)
@@ -118,15 +121,21 @@ class DateTimeParser:
             # This should be a DurationRef.
             drb = DurationRefBuilder()
 
-            # CALENDAR
-            # right now the only calendar supported is Gregorian
-            # drb.set_calendar("Calendar, Gregorian")
-
-            # TIME ENTRIES
-            # if there are no type_kwargs (Active dates) already,
-            # start is Born and end is Died
             date1, date2 = split_dates
 
+            # CALENDAR(S)
+            calendar1, date1 = self.__extract_calendar(date1)
+            if calendar1:
+                trb.set_calendar1(calendar1,
+                                  self.ix.quick_lookup("Calendars", CONCEPT),
+                                  self.ix.quick_lookup(calendar1, CONCEPT))
+            calendar2, date2 = self.__extract_calendar(date2)
+            if calendar2:
+                drb.set_calendar2(calendar2,
+                                  self.ix.quick_lookup("Calendars", CONCEPT),
+                                  self.ix.quick_lookup(calendar2, CONCEPT))
+
+            # TIME ENTRIES
             # Blank dates
             if date2 and not date1: date1 = "Unknown"
             if date1 and not date2: date2 = "Present"
@@ -137,7 +146,12 @@ class DateTimeParser:
                 start_type_kwargs = end_type_kwargs = type_kwargs
             else:
                 start_type_kwargs, end_type_kwargs = self.default_type_kwargs[element_type]
-                if date2 in ["Unknown","Present"]:
+                # defaults given as arguments override the defaults by element
+                if default_start_type:
+                    start_type_kwargs = self.__type_string_to_kwargs(default_start_type)
+                if default_end_type:
+                    end_type_kwargs = self.__type_string_to_kwargs(default_end_type)
+                elif date2 in ["Unknown","Present"]:
                     end_type_kwargs = {}
 
             # parse further for potential double dates
@@ -147,10 +161,17 @@ class DateTimeParser:
             drb.set_time_entry1(time_content_s1, time_content_s2)
             drb.set_time_entry2(time_content_e1, time_content_e2)
 
-            # LINK
-            # Doesn't make sense here, unless this is a named Duration (?);
-            # these are decades centuries etc? but those wouldn't be used in Beings.
-            # not sure how to look this up in that case
+            # LINKS
+            # Main Duration link only makes sense for a named Duration
+            # (decades centuries etc.?? wouldnt that just be a Time??);
+            # wouldn't be used here, but individual TimeContents can have links
+
+            if time_content_s2 is None:
+                time_content_s1_str = str(time_content_s1)
+                drb.set_time_entry1_link(time_content_s1_str, self.ix.quick_lookup(time_content_s1_str, TIME))
+            if time_content_e2 is None:
+                time_content_e1_str = str(time_content_e1)
+                drb.set_time_entry2_link(time_content_e1_str, self.ix.quick_lookup(time_content_e1_str, TIME))
 
             return drb.build()
 
@@ -196,6 +217,18 @@ class DateTimeParser:
         return date1, date2
 
 
+    def __extract_calendar(self, datestring):
+        """
+        Returns calendar, if applicable, and datestring stripped of calendar indicator.
+        """
+        # calendar = "Calendar, Gregorian"
+        calendar = ""
+        if re.search(r" A\.?H\.?$", datestring):
+            datestring = re.sub(r" A\.?H\.?$", "", datestring).strip()
+            calendar = "Calendar, Islamic"
+        return calendar, datestring
+
+
     def __parse_single(self, datestring, type_kwargs):
         """
         Parses a single date string (preprocessed by parse_date > __parse_for_double)
@@ -223,8 +256,13 @@ class DateTimeParser:
         if re.match(r"approx", dts, flags=re.I):
             dts = re.sub(r"^approx(imate(ly)?|\.)?", "", dts, flags=re.I).strip()
             certainty = "approximate"
+        if re.match(r"c(irca|\.)", dts, flags=re.I):
+            dts = re.sub(r"^c(irca|\.) +", "", dts, flags=re.I).strip()
+            certainty = "approximate"
         tecb.set_certainty(certainty)
 
+        # "AD" should only be dates that span from BC to AD, so not needed.
+        dts = re.sub(r"(^A\.?D\.?\s+|\s+A\.?D\.?$)", "", dts).strip()
         # BC(E)
         if re.search(r" +B\.?C\.?E?\.?$", dts, flags=re.I):
             dts = '-' + re.sub(r" +B\.?C\.?E?\.?$", "", dts, flags=re.I).strip()
@@ -237,9 +275,9 @@ class DateTimeParser:
         dts = re.sub(r" +feb(ruary|\.)? +", "-02-", dts, flags=re.I)
         dts = re.sub(r" +mar(ch|\.)? +",    "-03-", dts, flags=re.I)
         dts = re.sub(r" +apr(il|\.)? +",    "-04-", dts, flags=re.I)
-        dts = re.sub(r" +may +",         "-05-", dts, flags=re.I)
-        dts = re.sub(r" +jun[e\.]? +",       "-06-", dts, flags=re.I)
-        dts = re.sub(r" +jul[y\.]? +",       "-07-", dts, flags=re.I)
+        dts = re.sub(r" +may +",            "-05-", dts, flags=re.I)
+        dts = re.sub(r" +jun[e\.]? +",      "-06-", dts, flags=re.I)
+        dts = re.sub(r" +jul[y\.]? +",      "-07-", dts, flags=re.I)
         dts = re.sub(r" +aug(ust|\.)? +",   "-08-", dts, flags=re.I)
         dts = re.sub(r" +sep(t(ember|\.)?|\.)? +", "-09-", dts, flags=re.I)
         dts = re.sub(r" +oct(ober|\.)? +",  "-10-", dts, flags=re.I)
@@ -252,7 +290,7 @@ class DateTimeParser:
         # make sure DOTM is zero padded
         dts = re.sub(r"(\-\d\d\-)(\d(?:[^\d]|$))", r"\g<1>0\g<2>", dts, flags=re.I)
 
-        # try to parse dts as ISO 8601, otherwise treat as a name
+        # finally try to parse dts as ISO 8601, otherwise treat as a name
         time_kwargs = self.__parse_as_iso_datetime(dts)
         if time_kwargs:
             tecb.set_time_contents(**time_kwargs)
@@ -285,16 +323,19 @@ class DateTimeParser:
         return time_kwargs
 
 
+    def __type_string_to_kwargs(self, type_string):
+        return { 'link_title' : type_string,
+                 'role_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
+                 'href_URI' : self.ix.quick_lookup(type_string, RELATIONSHIP) }  \
+               if type_string else {}
+
+
     def __set_default_type_kwargs(self):
         # turn global into full map
         self.default_type_kwargs = {
             element_type : (
-                { 'link_title' : time_types[0],
-                  'role_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
-                  'href_URI' : self.ix.quick_lookup(time_types[0], RELATIONSHIP) },
-                { 'link_title' : time_types[1],
-                  'role_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
-                  'href_URI' : self.ix.quick_lookup(time_types[1], RELATIONSHIP) }
+                self.__type_string_to_kwargs(time_types[0]),
+                self.__type_string_to_kwargs(time_types[1])
             ) for element_type, time_types in DEFAULT_TIME_TYPES.items()
         }
         self.default_type_kwargs[ORGANIZATION] = self.default_type_kwargs[EVENT]
