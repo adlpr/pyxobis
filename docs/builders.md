@@ -35,7 +35,12 @@
 * **degree** — Used on a Relationship to indicate its _relative strength_, usually `primary` or `secondary`, but for conceptual ones, also `broad` and `tertiary`.
 * **scheme** — Indicates the _authoritative work_ containing the term used. Code (an entry substitute) for the Entry of a Work is used to control the value of another Entry or Variant, typically a Concept. e.g. `LCSH`, `MeSH`, ...
 * **substitute** — Indicates _which Substitute Entry_ (`abbrev`/`citation`/`code`/`singular`) is used as a part of the Qualifiers element of another Entry or in a Relationship. Its absence means the Entry is used. The 'scheme' attribute uses `code` by default.
-
+* **class** of **note**
+  - `transcription`: Designates transcribed information and may contain supplied data in brackets; could be quoted in display
+  - `annotation`: Data supplied by the cataloger for public display
+  - `documentation`: Data supplied by the cataloger typically not for public display
+  - `description`: A transitional value when description cannot be parsed for association with the proper Principal Element or Relationship
+  - `unspecified`
 
 # Builders
 
@@ -56,7 +61,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -86,7 +91,7 @@ set_scheme ( new_scheme )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -176,11 +181,13 @@ add_note ( content_text,        # str
 
 ### BeingVariantBuilder
 ```
-set_type ( new_type )
+set_type ( link_title,
+           role_URI,
+           href_URI = None )  # variant type (pseudonym/birth name/etc)
 
-set_time_or_duration_ref ( time_or_duration_ref )
+set_time_or_duration_ref ( time_or_duration_ref )  # time/duration qualifier for the type
 
-set_substitute_attribute_type ( substitute_attribute_type )
+set_substitute_attribute_type ( substitute_attribute_type )  # optional
 
 set_scheme ( new_scheme )
 
@@ -194,7 +201,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -237,7 +244,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -264,7 +271,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -312,7 +319,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -341,7 +348,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -381,7 +388,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -406,7 +413,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -457,7 +464,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -486,7 +493,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -528,7 +535,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -557,7 +564,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -609,7 +616,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -636,7 +643,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -674,7 +681,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -699,7 +706,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -764,7 +771,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -801,7 +808,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -923,7 +930,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )
@@ -953,7 +960,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
            role_URI = None )

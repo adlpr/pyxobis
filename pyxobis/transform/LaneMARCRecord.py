@@ -100,9 +100,9 @@ class LaneMARCRecord(Record):
         """
         if 'Suppressed' in self.get_subsets():
             return (), None, None
-        ctrl_no = self.get_control_number()
+        ctrlno = self.get_control_number()
         # @@@@ TEMPORARY? IS AN "IDENTITY" NECESSARY FOR HOLDINGS? @@@@
-        if ctrl_no is None or ctrl_no.startswith('H'):
+        if ctrlno is None or ctrlno.startswith('H'):
             return (), None, None
         # which 1xx field contains the identity?
         id_field = None
@@ -111,27 +111,25 @@ class LaneMARCRecord(Record):
                 id_field = self[tag]
                 break
         if id_field is None:
-            print("PROBLEM: no id found:", ctrl_no)
+            print("PROBLEM: no id found:", ctrlno)
             return (), None, None
         # get the identity
         element_type = self.get_xobis_element_type()
         identity = self.get_field_identity(id_field, element_type)
-        return ctrl_no, element_type, identity
+        return ctrlno, element_type, identity
 
-    IDENTITY_SUBFIELD_MAP = {
-                             WORK_INST: 'adhklnpqs',  # 149
-                             WORK_AUT: 'adfghklnpqs', # 130
-                             BEING: 'abcdq',          # 100
-                             ORGANIZATION: 'abcdn',   # 110
-                             EVENT: 'acden',          # 111
-                             OBJECT: 'adhklnpqs',     # 149
-                             CONCEPT: 'amx',          # 150/155/180
-                             TIME: 'a',               # 150
-                             LANGUAGE: 'a',           # 150
-                             PLACE: 'az',             # 151
-                             RELATIONSHIP: 'a',       # 155
-                             STRING: 'yqg3'           # 182
-                            }
+    IDENTITY_SUBFIELD_MAP = { WORK_INST:    'adhklnpqs',   # 149
+                              WORK_AUT:     'adfghklnpqs', # 130
+                              BEING:        'abcdq',       # 100
+                              ORGANIZATION: 'abcdn',       # 110
+                              EVENT:        'acden',       # 111
+                              OBJECT:       'adhklnpqs',   # 149
+                              CONCEPT:      'amx',         # 150/155/180
+                              TIME:         'a',           # 150
+                              LANGUAGE:     'a',           # 150
+                              PLACE:        'az',          # 151
+                              RELATIONSHIP: 'a',           # 155
+                              STRING:       'yqg3' }       # 182
 
     @classmethod
     def get_field_identity(cls, field, element_type):

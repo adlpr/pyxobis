@@ -8,6 +8,7 @@ from .Indexer import Indexer
 from .DateTimeParser import DateTimeParser
 from .NameParser import NameParser
 from .tf_being import *
+from .tf_variants import *
 from .tf_common import *
 
 
@@ -52,6 +53,16 @@ class Transformer:
             return None
         rb.set_id_value(record_control_no)
 
+        # Additional identifiers
+        # LCCN (010)
+        # ISSN (020)
+        # Other (024)
+        ...
+        ...
+        ...
+        ...
+        ...
+
         # -------
         # TYPES
         # -------
@@ -68,9 +79,12 @@ class Transformer:
         # -------
         # ACTIONS
         # -------
-        # Metametadata (from fields that are to be inserted by RIM?)...
+        # Administrative metadata (get this from??? oracle???)
         # Action Types
         # created; modified;
+        ...
+        ...
+        ...
         ...
         ...
         ...
@@ -102,7 +116,7 @@ class Transformer:
 
         principal_element = transform_function(record)
 
-        if transform_function == transform_being:
+        if transform_function == self.transform_being:
             return principal_element
 
         rb.set_principal_element(principal_element)
@@ -110,26 +124,26 @@ class Transformer:
         # -------------
         # RELATIONSHIPS
         # -------------
-
-        # ...
+        ...
+        ...
+        ...
+        ...
+        ...
+        ...
 
         return None
 
-    def parse_being_name(self, name):
-        """
-        Parse out a Being name from a X00 into a list of labeled name parts.
-        """
-        name = name.rstrip(', ')
-        # convert Arabic comma to regular
-        ...
-        ...
-        ...
-        return name
-
-
 
     # bring imported methods into class scope
+    # (temporary solution for the sake of organization)
     transform_being = transform_being
+
+    transform_variants = transform_variants
+    transform_variant_being = transform_variant_being
+    transform_variant_organization = transform_variant_organization
+    transform_variant_concept = transform_variant_concept
+    transform_variant_string = transform_variant_string
+
 
     def transform_work_instance(self, record):
         return None
@@ -173,3 +187,30 @@ class Transformer:
                      "Z1584")
         orb.add_name("Lane Medical Library", 'eng')
         return orb.build()
+
+    def get_type_and_time_from_relator(self, field):
+        """
+        For 1XX and 4XX fields, the ^e "relator" and its time/duration qualifiers ^8 and ^9
+        aren't describing an actual relationship, but rather a "type" of main or variant entry.
+
+        Returns a Type kwarg dict and a Time/Duration Ref object, for use in a Builder.
+        """
+        type_kwargs, type_time_or_duration_ref = {}, None
+
+        # Type "relator"
+        entry_type = field['e']
+        if entry_type:
+            entry_type = entry_type.rstrip(':').strip()
+            type_kwargs = { 'link_title' : entry_type,
+                             'role_URI'  : self.ix.quick_lookup("Variant Type", CONCEPT),
+                             'href_URI'  : self.ix.quick_lookup(entry_type, CONCEPT) }
+
+        # Time or Duration
+        start_type_datetime, end_type_datetime = field['8'], field['9']
+        type_datetime = start_type_datetime + end_type_datetime  \
+                        if start_type_datetime and end_type_datetime  \
+                        else end_type_datetime or start_type_datetime
+        if type_datetime:
+            type_time_or_duration_ref = self.dp.parse(type_datetime, None)
+
+        return type_kwargs, type_time_or_duration_ref

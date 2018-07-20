@@ -112,7 +112,6 @@ class DateTimeParser:
             # LINK
             if time_content2 is None:
                 time_content_str = str(time_content1)
-                # print(date, ":", time_content_str, ":", self.ix.quick_lookup(time_content_str, TIME))
                 trb.set_link(time_content_str, self.ix.quick_lookup(time_content_str, TIME))
 
             return trb.build()

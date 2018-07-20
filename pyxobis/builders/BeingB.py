@@ -35,8 +35,7 @@ class BeingBuilder(PrincipalElementBuilder):
         # assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
     def add_variant(self, variant):
-        # input should be a BeingVariantEntry. use BeingVariantBuilder to build.
-        assert isinstance(variant, BeingVariantEntry)
+        # assert isinstance(variant, VariantEntry)
         super().add_variant(variant)
     def build(self):
         name_content = self.name_content[0][1]                       \

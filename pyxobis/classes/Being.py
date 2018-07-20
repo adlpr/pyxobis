@@ -59,7 +59,8 @@ class Being(PrincipalElement):
         assert isinstance(being_entry_content, BeingEntryContent)
         self.being_entry_content = being_entry_content
         # for variant elements
-        assert all(isinstance(variant, VariantEntry) for variant in variants)
+        assert all(isinstance(variant, VariantEntry) for variant in variants), \
+            "Invalid type(s) for variant: {}".format(', '.join(repr(variant) for variant in variants if not isinstance(variant, VariantEntry)))
         self.variants = variants
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
@@ -144,7 +145,8 @@ class BeingEntryContent(Component):
         if self.is_parts:
             assert name_content
             assert all(len(t) == 2 for t in name_content)
-            assert all(t[0] in PART_TYPES_1 for t in name_content) or all(t[0] in PART_TYPES_2 for t in name_content)
+            assert all(t[0] in self.PART_TYPES_1 for t in name_content) or all(t[0] in self.PART_TYPES_2 for t in name_content), \
+                "Invalid part type set: {}".format(', '.join(t[0] for t in name_content))
             assert all(isinstance(t[1], NameContent) for t in name_content)
         self.name_content = name_content
         assert isinstance(qualifiers_opt, QualifiersOpt)

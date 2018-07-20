@@ -5,6 +5,7 @@
 Enables quick lookup of a record ID by identity tuple.
 """
 
+import os
 from pymarc import MARCReader, Field
 from .LaneMARCRecord import LaneMARCRecord
 from .tf_common import *
@@ -15,8 +16,8 @@ INDEX = None
 
 # @@@@@@ TEMPORARY, ONLY WORKS FROM DIR WITH THESE FILES,
 #        DO SOMETHING BETTER WITH INPUT FILENAMES
-BIB_INF_NAME = "bibmfhd.20180613.0941"
-AUT_INF_NAME = "aut.20180628.0951"
+BIB_INF_NAME = "bibmfhd.20180716.1009"
+AUT_INF_NAME = "aut.20180713.0828"
 
 # constants for lookups unable to be resolved,
 # either due to conflict or having no match
@@ -44,7 +45,7 @@ class Indexer:
 
     def __generate_index(self, inf_names):
         # Generate index from given input MARC files.
-        print("generating index...")
+        print("generating index in {}...".format(os.getcwd()))
         index = {}
         conflicts = set()
         for inf_name in inf_names:
@@ -52,7 +53,7 @@ class Indexer:
                 reader = MARCReader(inf)
                 for record in tqdm(reader):
                     record.__class__ = LaneMARCRecord  # adds extra methods
-                    ctrl_no, element_type, id_string = record.get_identity()
+                    ctrlno, element_type, id_string = record.get_identity()
                     if element_type and id_string:
                         if element_type not in index:
                             index[element_type] = {}
@@ -60,7 +61,7 @@ class Indexer:
                             # Multiple records with same identity tuple.
                             conflicts.add((element_type, id_string))
                         else:
-                            index[element_type][id_string] = ctrl_no
+                            index[element_type][id_string] = ctrlno
         # Mark conflicts
         for element_type, conflict in conflicts:
             # print("CONFLICTED IDENTITY:", str(conflict))

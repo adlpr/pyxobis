@@ -33,7 +33,6 @@ class Record(Component):
         }?
     }
     """
-
     def __init__(self, control_data, principal_element, lang=None, relationships=[]):
         if lang: assert isinstance(lang, str)
         self.lang = lang
@@ -68,9 +67,10 @@ class ControlData(Component):
     controlData |=
         element xobis:controlData {
             element xobis:id {
-                orgRef,
-                element xobis:value { text },
-                # variant IDs??
+                idContent,
+                element xobis:variants {
+                    element xobis:id { idContent }+
+                }?
             },
             element xobis:types { type_+ }?,
             element xobis:actions {
@@ -82,11 +82,11 @@ class ControlData(Component):
             }?
         }
     """
-    def __init__(self, id_org_ref, id_value, types=[], actions=[]):
-        assert isinstance(id_org_ref, OrganizationRef)
-        self.id_org_ref = id_org_ref
-        assert isinstance(id_value, str), "id_value is {}, must be str".format(type(id_value))
-        self.id_value = id_value
+    def __init__(self, id_content, id_variants=[], types=[], actions=[]):
+        assert isinstance(id_content, IDContent)
+        self.id_content = id_content
+        assert all(isinstance(id_variant, IDContent) for id_variant in id_variants)
+        self.id_variants = id_variants
         assert all(isinstance(type, Type) for type in types)
         self.types = types
         assert all(isinstance(action, ControlDataAction) for action in actions)
@@ -96,11 +96,16 @@ class ControlData(Component):
         control_data_e = E('controlData')
         # <id>
         id_e = E('id')
-        id_org_ref_e = self.id_org_ref.serialize_xml()
-        id_e.append(id_org_ref_e)
-        value_e = E('value')
-        value_e.text = self.id_value
-        id_e.append(value_e)
+        id_content_elements = self.id_content.serialize_xml()
+        id_e.extend(id_content_elements)
+        if self.id_variants:
+            variants_e = E('variants')
+            for id_variant in self.id_variants:
+                id_variant_e = E('id')
+                id_variant_elements = id_variant.serialize_xml()
+                id_variant_e.extend(id_variant_elements)
+                variants_e.append(id_variant_e)
+            id_e.append(variants_e)
         control_data_e.append(id_e)
         # <types>
         if self.types:
@@ -135,3 +140,27 @@ class ControlDataAction(Component):
         time_or_duration_ref_e = self.time_or_duration_ref.serialize_xml()
         action_e.append(time_or_duration_ref_e)
         return action_e
+
+
+class IDContent(Component):
+    """
+    idContent |=
+        orgRef,
+        element xobis:value { text }
+    """
+    def __init__(self, id_org_ref, id_value):
+        assert isinstance(id_org_ref, OrganizationRef)
+        self.id_org_ref = id_org_ref
+        assert isinstance(id_value, str), "id_value is {}, must be str".format(type(id_value))
+        self.id_value = id_value
+    def serialize_xml(self):
+        # Returns two Elements.
+        elements = []
+        # Org ref
+        id_org_ref_e = self.id_org_ref.serialize_xml()
+        elements.append(id_org_ref_e)
+        # <value>
+        value_e = E('value')
+        value_e.text = self.id_value
+        elements.append(value_e)
+        return elements
