@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from .common import Component, Content, RefElement
+from .common import Component, GenericContent, RefElement
 from .Time import TimeRef, DurationRef
 
 from lxml.builder import ElementMaker
@@ -24,7 +24,7 @@ class Relationship(Component):
 
 class RelationshipContent(Component):
     """
-    _relationshipContent =
+    relationshipContent |=
         attribute xobis:type {
             string "subordinate"
             | string "superordinate"
@@ -38,14 +38,14 @@ class RelationshipContent(Component):
             attribute xobis:degree {
               string "primary" | string "secondary" | string "tertiary" | string "broad"
             }?,
-            _relationshipName,
+            relationshipName,
             (timeRef | durationRef)?,
             conceptRef
           )
          |
           (
             attribute xobis:degree { string "primary" | string "secondary" }?,
-            _relationshipName,
+            relationshipName,
             (timeRef | durationRef)?,
             (beingRef | stringRef | languageRef | orgRef | placeRef | eventRef | objectRef | workRef)
           )
@@ -91,19 +91,19 @@ class RelationshipContent(Component):
 
 class RelationshipName(Component):
     """
-    _relationshipName |=
-        element xobis:name { content_ },
+    relationshipName |=
+        element xobis:name { genericContent },
         element xobis:modifier {
             attribute nonfiling { xsd:positiveInteger }?,
-            content_
+            genericContent
         }?
     """
     def __init__(self, name_content, modifier_nonfiling=0, modifier_content=None):
-        assert isinstance(name_content, Content)
+        assert isinstance(name_content, GenericContent)
         self.name_content = name_content
         assert isinstance(modifier_nonfiling, int) and modifier_nonfiling >= 0
         self.modifier_nonfiling = modifier_nonfiling
-        if modifier_content: assert isinstance(modifier_content, Content)
+        if modifier_content: assert isinstance(modifier_content, GenericContent)
         self.modifier_content = modifier_content
     def serialize_xml(self):
         # Returns a list of one or two Elements.

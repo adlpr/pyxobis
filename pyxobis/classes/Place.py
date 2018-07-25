@@ -14,13 +14,13 @@ class Place(PrincipalElement):
     """
     placePE |=
         element xobis:place {
-            roleAttributes_,
+            roleAttributes,
             attribute type { string "natural" | string "constructed" | string "jurisdictional" }?,
-            optClass_,
+            optClass,
             attribute usage { string "subdivision" }?,
-            element xobis:entry { optScheme_, _placeEntryContent },
+            element xobis:entry { optScheme, placeEntryContent },
             element xobis:variants { anyVariant+ }?,
-            optNoteList_
+            optNoteList
         }
     """
     TYPES = ["natural", "constructed", "jurisdictional", None]
@@ -85,7 +85,7 @@ class Place(PrincipalElement):
 
 class PlaceEntryContent(Component):
     """
-    _placeEntryContent |= genericName, qualifiersOpt
+    placeEntryContent |= genericName, qualifiersOpt
     """
     def __init__(self, generic_name, qualifiers_opt=QualifiersOpt()):
         assert isinstance(generic_name, GenericName)
@@ -106,24 +106,25 @@ class PlaceVariantEntry(VariantEntry):
     """
     placeVariant |=
         element xobis:place {
-            type_?,
+            genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { substituteAttribute, optScheme_, _placeEntryContent },
-            optNoteList_
+            element xobis:entry { optSubstituteAttribute, optScheme, placeEntryContent },
+            optNoteList
         }
     """
     def __init__(self, place_entry_content, \
-                       type_=Type(), time_or_duration_ref=None, \
-                       substitute_attribute=SubstituteAttribute(), \
+                       type_=None, time_or_duration_ref=None, \
+                       opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_scheme=OptScheme(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(type_, Type)
+        if type_ is not None:
+            assert isinstance(type_, GenericType)
         self.type = type_
-        if time_or_duration_ref:
+        if time_or_duration_ref is not None:
             assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
-        assert isinstance(substitute_attribute, SubstituteAttribute)
-        self.substitute_attribute = substitute_attribute
+        assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
+        self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
         assert isinstance(place_entry_content, PlaceEntryContent)
@@ -134,18 +135,18 @@ class PlaceVariantEntry(VariantEntry):
         # Returns an Element.
         variant_e = E('place')
         # type
-        type_e = self.type.serialize_xml()
-        if type_e is not None:
+        if self.type is not None:
+            type_e = self.type.serialize_xml()
             variant_e.append(type_e)
         # time/duration ref
-        if self.time_or_duration_ref:
+        if self.time_or_duration_ref is not None:
             time_or_duration_ref_e = self.time_or_duration_ref.serialize_xml()
             variant_e.append(time_or_duration_ref_e)
         # entry element
         # --> attrs
         entry_attrs = {}
-        substitute_attribute_attrs = self.substitute_attribute.serialize_xml()
-        entry_attrs.update(substitute_attribute_attrs)
+        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
+        entry_attrs.update(opt_substitute_attribute_attrs)
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
         entry_attrs.update(opt_scheme_attrs)
         entry_e = E('entry', **entry_attrs)
@@ -163,12 +164,14 @@ class PlaceVariantEntry(VariantEntry):
 
 class PlaceRef(PreQualifierRefElement):
     """
-    placeRef |= element xobis:place { linkAttributes_?, _placeEntryContent }
+    placeRef |= element xobis:place { linkAttributes?, optSubstituteAttribute, placeEntryContent }
     """
-    def __init__(self, place_entry_content, link_attributes=None):
+    def __init__(self, place_entry_content, link_attributes=None, opt_substitute_attribute=OptSubstituteAttribute()):
         if link_attributes:
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
+        assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
+        self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(place_entry_content, PlaceEntryContent)
         self.place_entry_content = place_entry_content
     def serialize_xml(self):
@@ -177,6 +180,8 @@ class PlaceRef(PreQualifierRefElement):
         if self.link_attributes:
             link_attributes_attrs = self.link_attributes.serialize_xml()
             attrs.update(link_attributes_attrs)
+        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
+        attrs.update(opt_substitute_attribute_attrs)
         variant_e = E('place', **attrs)
         place_entry_content_elements = self.place_entry_content.serialize_xml()
         variant_e.extend(place_entry_content_elements)

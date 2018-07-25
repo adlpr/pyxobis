@@ -15,21 +15,21 @@ class BeingBuilder(PrincipalElementBuilder):
     # ADDITIONAL: set_entry_type, set_time_or_duration_ref
     def __init__(self):
         super().__init__()
-        self.entry_type = Type()
+        self.entry_type = None
         self.time_or_duration_ref = None
     def add_name(self, *args, **kwargs):
         super().add_name_tuple(*args, **kwargs)
     def set_usage(self, *args, **kwargs):
         raise AttributeError("Being element does not have property 'usage'")
-    def set_entry_type(self, link_title, role_URI, href_URI=None):
-        self.entry_type = Type(
+    def set_entry_type(self, link_title, set_URI, href_URI=None):
+        self.entry_type = GenericType(
                               LinkAttributes(
                                   link_title,
                                   xlink_href = XSDAnyURI( href_URI ) \
                                                if href_URI else None
                               ),
-                              xlink_role = XSDAnyURI( role_URI ) \
-                                           if role_URI else None
+                              set_ref = XSDAnyURI( set_URI ) \
+                                           if set_URI else None
                           )
     def set_time_or_duration_ref(self, time_or_duration_ref):
         # assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
@@ -82,7 +82,7 @@ class BeingVariantBuilder(PrincipalElementVariantBuilder):
                    ),
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
-                   substitute_attribute = SubstituteAttribute(self.substitute_attribute_type),
+                   opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
                    opt_scheme = OptScheme(self.scheme),
                    opt_note_list = OptNoteList(self.note_list)
                )

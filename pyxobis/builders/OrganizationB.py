@@ -69,7 +69,7 @@ class OrganizationVariantBuilder(PrincipalElementVariantBuilder):
                    ),
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
-                   substitute_attribute = SubstituteAttribute(self.substitute_attribute_type),
+                   opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
                    opt_scheme    = OptScheme(self.scheme),
                    opt_note_list = OptNoteList(self.note_list)
                )
@@ -99,5 +99,5 @@ class OrganizationRefBuilder(PrincipalElementRefBuilder):
                        QualifiersOpt(self.qualifiers)
                    ),
                    link_attributes = self.link_attributes,
-                   opt_subdivision = OptSubdivision(self.subdivision_link_contents)
+                   opt_subdivision = OptSubdivisions(self.subdivision_link_contents)
                )

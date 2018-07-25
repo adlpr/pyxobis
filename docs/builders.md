@@ -32,86 +32,20 @@
   - String: `word`, `phrase`
   - Time: `individual`, `collective`, `referential`
   - Work: `individual`, `serial`, `collective`, `referential`
-* **degree** — Used on a Relationship to indicate its _relative strength_, usually `primary` or `secondary`, but for conceptual ones, also `broad` and `tertiary`.
-* **scheme** — Indicates the _authoritative work_ containing the term used. Code (an entry substitute) for the Entry of a Work is used to control the value of another Entry or Variant, typically a Concept. e.g. `LCSH`, `MeSH`, ...
-* **substitute** — Indicates _which Substitute Entry_ (`abbrev`/`citation`/`code`/`singular`) is used as a part of the Qualifiers element of another Entry or in a Relationship. Its absence means the Entry is used. The 'scheme' attribute uses `code` by default.
 * **class** of **note**
   - `transcription`: Designates transcribed information and may contain supplied data in brackets; could be quoted in display
   - `annotation`: Data supplied by the cataloger for public display
   - `documentation`: Data supplied by the cataloger typically not for public display
   - `description`: A transitional value when description cannot be parsed for association with the proper Principal Element or Relationship
   - `unspecified`
+* **degree** — Used on a Relationship to indicate its _relative strength_, usually `primary` or `secondary`, but for conceptual ones, also `broad` and `tertiary`.
+* **scheme** — Indicates the _authoritative work_ containing the term used. Code (an entry substitute) for the Entry of a Work is used to control the value of another Entry or Variant, typically a Concept. e.g. `LCSH`, `MeSH`, ...
+* **substitute** — <del>Indicates _which Substitute Entry_ (`abbrev`/`citation`/`code`/`singular`) is used as a part of the Qualifiers element of another Entry or in a Relationship. Its absence means the Entry is used. The 'scheme' attribute uses `code` by default.</del> A boolean attribute indicating:
+  - whether the text of a particular variant may be used as a substitute for the text of the main entry in a reference, or
+  - whether a reference to an entry is using such a substitute value.
+* **set** — Used within a link to designate the category of records expected to be used in this sort of link. E.g. as a main or variant entry type: link href --> "Pseudonym"; set --> "Variant Type".
 
 # Builders
-
-<!--
-## Builder
-```
-add_name ( name_text,
-           lang   = None,
-           script = None,
-           nonfiling = 0 )
-
-add_qualifier ( qualifier )  # RefElement
-```
-
-## PrincipalElementBuilder
-```
-add_variant ( variant )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-
-set_type ( new_type )
-
-set_role ( new_role )
-
-set_scheme ( new_scheme )
-
-set_class ( new_class )
-
-set_usage ( new_usage )
-```
-
-## PrincipalElementVariantBuilder
-```
-set_type ( link_title,
-           role_URI,
-           href_URI = None )
-
-set_time_or_duration_ref ( time_or_duration_ref )
-
-set_substitute_attribute_type ( substitute_attribute_type )
-
-set_scheme ( new_scheme )
-
-add_note ( content_text,
-           content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
-           link_title = None,
-           href_URI = None,
-           role_URI = None )
-```
-
-## PrincipalElementRefBuilder
-```
-set_link ( link_title,
-           href_URI = None )
-
-add_subdivision_link ( content_text,
-                       content_lang = None,
-                       link_title = None,
-                       href_URI = None,
-                       substitute = None )
-```
-
-VersionsHoldingsBuilder
-...
--->
 
 ## RecordBuilder
 ```
@@ -119,19 +53,23 @@ VersionsHoldingsBuilder
 set_id_org_ref ( id_org_ref )  # OrganizationRef
 
 # Record ID.
-set_id_value( id_value )  # str
+set_id_value ( id_value )  # str
+
+# Other record IDs (LCCN, etc.).
+add_id_alternate ( id_org_ref,
+                   id_value )
 
 # Type of record (e.g. original, derivative, suppressed?)
 add_type ( xlink_title = None,  # str
            xlink_href = None,   # URI
-           xlink_role = None )  # URI  [Subset(?)]
+           set_ref = None )  # URI  [Subset(?)]
 
 set_principal_element ( principal_element )  # PrincipalElement
 
 add_action ( time_or_duration_ref,  # TimeRef or DurationRef
              xlink_title = None,    # str
              xlink_href = None,     # str (URI)
-             xlink_role = None )    # str (URI)  [*Action Type(?)]
+             set_ref = None )    # str (URI)  [*Action Type(?)]
 
 add_relationship ( relationship )   # Relationship
 ```
@@ -155,7 +93,7 @@ set_scheme ( new_scheme )  # str
 # Most main entries don't have a generic type, but Being records may
 # be for real names or pseudonyms (unlike other principal elements).
 set_entry_type ( link_title,       # str
-                 role_URI,         # str (URI)
+                 set_URI,         # str (URI)
                  href_URI = None ) # str (URI)
 
 # Since Being entries have a generic type, this is separated out because it is referencing the time/duration of the entry TYPE.
@@ -176,18 +114,18 @@ add_note ( content_text,        # str
            class_ = None,       # str
            link_title = None,   # str
            href_URI = None,     # str (URI)
-           role_URI = None )    # str (URI)
+           set_URI = None )    # str (URI)
 ```
 
 ### BeingVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )  # variant type (pseudonym/birth name/etc)
 
 set_time_or_duration_ref ( time_or_duration_ref )  # time/duration qualifier for the type
 
-set_substitute_attribute_type ( substitute_attribute_type )  # optional
+set_substitute_attribute ( substitute_attribute )  # optional
 
 set_scheme ( new_scheme )
 
@@ -204,7 +142,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### BeingRefBuilder
@@ -247,18 +185,18 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### ConceptVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
-set_substitute_attribute_type ( substitute_attribute_type )
+set_substitute_attribute ( substitute_attribute )
 
 set_scheme ( new_scheme )
 
@@ -274,7 +212,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### ConceptRefBuilder
@@ -322,18 +260,18 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### EventVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
-set_substitute_attribute_type ( substitute_attribute_type )
+set_substitute_attribute ( substitute_attribute )
 
 set_scheme ( new_scheme )
 
@@ -351,7 +289,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### EventRefBuilder
@@ -391,18 +329,18 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### LanguageVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
-set_substitute_attribute_type ( substitute_attribute_type )
+set_substitute_attribute ( substitute_attribute )
 
 add_name ( name_text,
            lang   = None,
@@ -416,7 +354,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### LanguageRefBuilder
@@ -467,7 +405,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 
 set_holdings ( versions_holdings_opt )
 ```
@@ -475,12 +413,12 @@ set_holdings ( versions_holdings_opt )
 ### ObjectVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
-set_substitute_attribute_type ( substitute_attribute_type )
+set_substitute_attribute ( substitute_attribute )
 
 set_scheme ( new_scheme )
 
@@ -496,7 +434,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### ObjectRefBuilder
@@ -538,18 +476,18 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### OrganizationVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
-set_substitute_attribute_type ( substitute_attribute_type )
+set_substitute_attribute ( substitute_attribute )
 
 set_scheme ( new_scheme )
 
@@ -567,7 +505,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### OrganizationRefBuilder
@@ -619,18 +557,18 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### PlaceVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
-set_substitute_attribute_type ( substitute_attribute_type )
+set_substitute_attribute ( substitute_attribute )
 
 set_scheme ( new_scheme )
 
@@ -646,7 +584,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### PlaceRefBuilder
@@ -684,18 +622,18 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### StringVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
-set_substitute_attribute_type ( substitute_attribute_type )
+set_substitute_attribute ( substitute_attribute )
 
 add_name ( name_text,
            lang   = None,
@@ -709,7 +647,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### StringRefBuilder
@@ -730,7 +668,7 @@ add_qualifier ( qualifier )  # RefElement
 ### TimeContentBuilder
 ```
 set_type ( link_title,
-           role_URI,    # Time Type
+           set_URI,    # Time Type
            href_URI = None )
 
 set_certainty ( certainty )  # ["exact", "implied", "estimated", "approximate", None]
@@ -762,7 +700,7 @@ set_usage ( new_usage )
 set_scheme ( new_scheme )
 
 set_calendar ( link_title,
-               role_URI,
+               set_URI,
                href_URI = None )
 
 set_time_content ( time_content )
@@ -774,7 +712,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### DurationBuilder
@@ -787,15 +725,15 @@ set_scheme ( scheme1,
              scheme2 = "" )
 
 set_calendar ( link_title,
-               role_URI,
+               set_URI,
                href_URI = None )
 
 set_calendar1 ( link_title,
-                role_URI,
+                set_URI,
                 href_URI = None )
 
 set_calendar2 ( link_title,
-                role_URI,
+                set_URI,
                 href_URI = None )
 
 set_time_entry1 ( time_content1,
@@ -811,19 +749,19 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### TimeVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 set_scheme ( new_scheme )
 
 set_calendar ( link_title,
-               role_URI,
+               set_URI,
                href_URI = None )
 
 set_time_content ( time_content )
@@ -833,7 +771,7 @@ set_time_content ( time_content )
 ### DurationVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 # empty string defaults to same as scheme1; use None for no scheme2
@@ -841,15 +779,15 @@ set_scheme ( scheme1,
              scheme2 = "" )
 
 set_calendar ( link_title,
-               role_URI,
+               set_URI,
                href_URI = None )
 
 set_calendar1 ( link_title,
-                role_URI,
+                set_URI,
                 href_URI = None )
 
 set_calendar2 ( link_title,
-                role_URI,
+                set_URI,
                 href_URI = None )
 
 set_time_entry1 ( time_content1,
@@ -868,7 +806,7 @@ set_time_entry2_link ( link_title,
 ### TimeRefBuilder
 ```
 set_calendar ( link_title,
-               role_URI,
+               set_URI,
                href_URI = None )
 
 set_link ( link_title,
@@ -881,15 +819,15 @@ set_time_entry ( time_content1,
 ### DurationRefBuilder
 ```
 set_calendar ( link_title,
-               role_URI,
+               set_URI,
                href_URI = None )
 
 set_calendar1 ( link_title,
-                role_URI,
+                set_URI,
                 href_URI = None )
 
 set_calendar2 ( link_title,
-                role_URI,
+                set_URI,
                 href_URI = None )
 
 set_link ( link_title,
@@ -933,7 +871,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 
 set_holdings ( versions_holdings_opt )
 ```
@@ -941,12 +879,12 @@ set_holdings ( versions_holdings_opt )
 ### WorkVariantBuilder
 ```
 set_type ( link_title,
-           role_URI,
+           set_URI,
            href_URI = None )
 
 set_time_or_duration_ref ( time_or_duration_ref )
 
-set_substitute_attribute_type ( substitute_attribute_type )
+set_substitute_attribute ( substitute_attribute )
 
 set_scheme ( new_scheme )
 
@@ -963,7 +901,7 @@ add_note ( content_text,
            class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
            link_title = None,
            href_URI = None,
-           role_URI = None )
+           set_URI = None )
 ```
 
 ### WorkRefBuilder

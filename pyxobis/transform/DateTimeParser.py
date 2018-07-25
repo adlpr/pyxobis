@@ -107,7 +107,7 @@ class DateTimeParser:
             # TIME ENTRIES
             time_content1, time_content2 = self.__parse_for_double(date, type_kwargs)
 
-            trb.set_time_entry(time_content1, time_content2)
+            trb.set_time_content(time_content1, time_content2)
 
             # LINK
             if time_content2 is None:
@@ -154,23 +154,23 @@ class DateTimeParser:
                     end_type_kwargs = {}
 
             # parse further for potential double dates
-            time_content_s1, time_content_s2 = self.__parse_for_double(date1, start_type_kwargs)
-            time_content_e1, time_content_e2 = self.__parse_for_double(date2, end_type_kwargs)
+            time_content_single_s1, time_content_single_s2 = self.__parse_for_double(date1, start_type_kwargs)
+            time_content_single_e1, time_content_single_e2 = self.__parse_for_double(date2, end_type_kwargs)
 
-            drb.set_time_entry1(time_content_s1, time_content_s2)
-            drb.set_time_entry2(time_content_e1, time_content_e2)
+            drb.set_time_content1(time_content_single_s1, time_content_single_s2)
+            drb.set_time_content2(time_content_single_e1, time_content_single_e2)
 
             # LINKS
             # Main Duration link only makes sense for a named Duration
             # (decades centuries etc.?? wouldnt that just be a Time??);
             # wouldn't be used here, but individual TimeContents can have links
 
-            if time_content_s2 is None:
-                time_content_s1_str = str(time_content_s1)
-                drb.set_time_entry1_link(time_content_s1_str, self.ix.quick_lookup(time_content_s1_str, TIME))
-            if time_content_e2 is None:
-                time_content_e1_str = str(time_content_e1)
-                drb.set_time_entry2_link(time_content_e1_str, self.ix.quick_lookup(time_content_e1_str, TIME))
+            if time_content_single_s2 is None:
+                time_content_single_s1_str = str(time_content_single_s1)
+                drb.set_time_content1_link(time_content_single_s1_str, self.ix.quick_lookup(time_content_single_s1_str, TIME))
+            if time_content_single_e2 is None:
+                time_content_single_e1_str = str(time_content_single_e1)
+                drb.set_time_content2_link(time_content_single_e1_str, self.ix.quick_lookup(time_content_single_e1_str, TIME))
 
             return drb.build()
 
@@ -233,7 +233,7 @@ class DateTimeParser:
         Parses a single date string (preprocessed by parse_date > __parse_for_double)
         into a TimeEntryContent object.
         """
-        tecb = TimeContentBuilder()
+        tecb = TimeContentSingleBuilder()
 
         # TYPE: Active/Born/Died
         if type_kwargs:
@@ -324,7 +324,7 @@ class DateTimeParser:
 
     def __type_string_to_kwargs(self, type_string):
         return { 'link_title' : type_string,
-                 'role_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
+                 'set_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
                  'href_URI' : self.ix.quick_lookup(type_string, RELATIONSHIP) }  \
                if type_string else {}
 

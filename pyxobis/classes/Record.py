@@ -68,26 +68,26 @@ class ControlData(Component):
         element xobis:controlData {
             element xobis:id {
                 idContent,
-                element xobis:variants {
+                element xobis:alternates {
                     element xobis:id { idContent }+
                 }?
             },
-            element xobis:types { type_+ }?,
+            element xobis:types { genericType+ }?,
             element xobis:actions {
               element xobis:action {
-                  type_,
+                  genericType,
                   (timeRef | durationRef)
                   # optional note?
               }+
             }?
         }
     """
-    def __init__(self, id_content, id_variants=[], types=[], actions=[]):
+    def __init__(self, id_content, id_alternates=[], types=[], actions=[]):
         assert isinstance(id_content, IDContent)
         self.id_content = id_content
-        assert all(isinstance(id_variant, IDContent) for id_variant in id_variants)
-        self.id_variants = id_variants
-        assert all(isinstance(type, Type) for type in types)
+        assert all(isinstance(id_alternate, IDContent) for id_alternate in id_alternates)
+        self.id_alternates = id_alternates
+        assert all(isinstance(type, GenericType) for type in types)
         self.types = types
         assert all(isinstance(action, ControlDataAction) for action in actions)
         self.actions = actions
@@ -98,13 +98,13 @@ class ControlData(Component):
         id_e = E('id')
         id_content_elements = self.id_content.serialize_xml()
         id_e.extend(id_content_elements)
-        if self.id_variants:
-            variants_e = E('variants')
-            for id_variant in self.id_variants:
-                id_variant_e = E('id')
-                id_variant_elements = id_variant.serialize_xml()
-                id_variant_e.extend(id_variant_elements)
-                variants_e.append(id_variant_e)
+        if self.id_alternates:
+            variants_e = E('alternates')
+            for id_alternate in self.id_alternates:
+                id_alternate_e = E('id')
+                id_alternate_elements = id_alternate.serialize_xml()
+                id_alternate_e.extend(id_alternate_elements)
+                variants_e.append(id_alternate_e)
             id_e.append(variants_e)
         control_data_e.append(id_e)
         # <types>
@@ -125,8 +125,15 @@ class ControlData(Component):
 
 
 class ControlDataAction(Component):
+    """
+    element xobis:action {
+        genericType,
+        (timeRef | durationRef)
+        # optional note?
+    }
+    """
     def __init__(self, type, time_or_duration_ref):
-        assert isinstance(type, Type)
+        assert isinstance(type, GenericType)
         self.type = type
         assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref

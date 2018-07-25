@@ -129,17 +129,13 @@ def transform_variant_being(self, field):
     if type_time_or_duration_ref is not None:
         bvb.set_time_or_duration_ref(type_time_or_duration_ref)
 
-    # Substitute type
+    # Substitute
     # ---
-    # ?????? figure this out in the schema first!!!
-    # might just get rid of this?? is this really just a Type?
-    ...
-    ...
-    ...
+    # n/a for now
 
     # Scheme
     # ---
-    # consider this n/a for now
+    # n/a for now
 
     # Name(s) & Qualifier(s)
     # ---
@@ -156,10 +152,10 @@ def transform_variant_being(self, field):
     for note_text in field.get_subfields('2','j'):
         bvb.add_note( content_text = note_text,
                       content_lang = field_lang,
-                      class_     = "description",
+                      class_       = "description",
                       link_title = None,
-                      href_URI   = None,
-                      role_URI   = None )
+                      href_URI = None,
+                      set_URI  = None )
 
     return bvb.build()
 
@@ -239,9 +235,8 @@ def transform_variant_string(self, field):
     if type_time_or_duration_ref is not None:
         svb.set_time_or_duration_ref(type_time_or_duration_ref)
 
-    # Substitute type
+    # Substitute
     # ---
-    # ??????
     ...
     ...
     ...

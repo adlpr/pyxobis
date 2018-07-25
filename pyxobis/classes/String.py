@@ -15,18 +15,14 @@ class String(PrincipalElement):
     stringPE |=
         element xobis:string {
             attribute type { string "textual" | string "numeric" | string "mixed" }?,
-
-            # 2.1: eliminated attribute "grammar", as this is better expressed using Category
-
             attribute class { string "word" | string "phrase" }?,
-            element xobis:entry { _stringEntryContent },
+            element xobis:entry { stringEntryContent },
             element xobis:variants { anyVariant+ }?,
-            optNoteList_
+            optNoteList
         }
     """
     TYPES = ["textual", "numeric", "mixed", None]
     CLASSES = ["word", "phrase", None]
-    # GRAMMARS = ["noun", "verb", "pronoun", "adjective", "adverb", "preposition", "conjunction", "interjection", None]
     def __init__(self, string_entry_content, \
                        type_=None, class_=None, \
                        variants=[], opt_note_list=OptNoteList()):
@@ -35,10 +31,6 @@ class String(PrincipalElement):
         self.type = type_
         assert class_ in String.CLASSES
         self.class_ = class_
-        # if grammar:
-        #     assert self.class_ == "word"
-        #     assert grammar in String.GRAMMARS
-        #     self.grammar = grammar
         # for entry element
         assert isinstance(string_entry_content, StringEntryContent)
         self.string_entry_content = string_entry_content
@@ -56,8 +48,6 @@ class String(PrincipalElement):
             string_attrs['type'] = self.type
         if self.class_:
             string_attrs['class'] = self.class_
-            # if self.grammar:
-            #     string_attrs['grammar'] = self.grammar
         string_e = E('string', **string_attrs)
         # entry element
         entry_e = E('entry')
@@ -81,7 +71,7 @@ class String(PrincipalElement):
 
 class StringEntryContent(Component):
     """
-    _stringEntryContent |= genericName, qualifiersOpt
+    stringEntryContent |= genericName, qualifiersOpt
     """
     def __init__(self, generic_name, qualifiers_opt=QualifiersOpt()):
         assert isinstance(generic_name, GenericName)
@@ -102,23 +92,24 @@ class StringVariantEntry(VariantEntry):
     """
     stringVariant |=
         element xobis:string {
-            type_?,
+            genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { substituteAttribute, _stringEntryContent },
-            optNoteList_
+            element xobis:entry { optSubstituteAttribute, stringEntryContent },
+            optNoteList
         }
     """
     def __init__(self, string_entry_content, \
-                       type_=Type(), time_or_duration_ref=None, \
-                       substitute_attribute=SubstituteAttribute(), \
+                       type_=None, time_or_duration_ref=None, \
+                       opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(type_, Type)
+        if type_ is not None:
+            assert isinstance(type_, GenericType)
         self.type = type_
-        if time_or_duration_ref:
+        if time_or_duration_ref is not None:
             assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
-        assert isinstance(substitute_attribute, SubstituteAttribute)
-        self.substitute_attribute = substitute_attribute
+        assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
+        self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(string_entry_content, StringEntryContent)
         self.string_entry_content = string_entry_content
         assert isinstance(opt_note_list, OptNoteList)
@@ -127,18 +118,18 @@ class StringVariantEntry(VariantEntry):
         # Returns an Element.
         variant_e = E('string')
         # type
-        type_e = self.type.serialize_xml()
-        if type_e is not None:
+        if self.type is not None:
+            type_e = self.type.serialize_xml()
             variant_e.append(type_e)
         # time/duration ref
-        if self.time_or_duration_ref:
+        if self.time_or_duration_ref is not None:
             time_or_duration_ref_e = self.time_or_duration_ref.serialize_xml()
             variant_e.append(time_or_duration_ref_e)
         # entry element
         # --> attrs
         entry_attrs = {}
-        substitute_attribute_attrs = self.substitute_attribute.serialize_xml()
-        entry_attrs.update(substitute_attribute_attrs)
+        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
+        entry_attrs.update(opt_substitute_attribute_attrs)
         entry_e = E('entry', **entry_attrs)
         # --> content
         string_entry_content_elements = self.string_entry_content.serialize_xml()
@@ -153,12 +144,14 @@ class StringVariantEntry(VariantEntry):
 
 class StringRef(RefElement):
     """
-    stringRef |= element xobis:string { linkAttributes_?, _stringEntryContent }
+    stringRef |= element xobis:string { linkAttributes?, optSubstituteAttribute, stringEntryContent }
     """
-    def __init__(self, string_entry_content, link_attributes=None):
+    def __init__(self, string_entry_content, link_attributes=None, opt_substitute_attribute=OptSubstituteAttribute()):
         if link_attributes:
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
+        assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
+        self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(string_entry_content, StringEntryContent)
         self.string_entry_content = string_entry_content
     def serialize_xml(self):
@@ -167,6 +160,8 @@ class StringRef(RefElement):
         if self.link_attributes:
             link_attributes_attrs = self.link_attributes.serialize_xml()
             attrs.update(link_attributes_attrs)
+        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
+        attrs.update(opt_substitute_attribute_attrs)
         variant_e = E('string', **attrs)
         string_entry_content_elements = self.string_entry_content.serialize_xml()
         variant_e.extend(string_entry_content_elements)

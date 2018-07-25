@@ -74,13 +74,13 @@ class PrincipalElementBuilder(Builder):
     #     super().add_qualifier(*args, **kwargs)
     def add_variant(self, variant):
         self.variants.append(variant)
-    def add_note(self, content_text, content_lang=None, class_=None, link_title=None, href_URI=None, role_URI=None):
+    def add_note(self, content_text, content_lang=None, class_=None, link_title=None, href_URI=None, set_URI=None):
         self.note_list.append(Note(
             Content(content_text, content_lang),
             class_ = class_,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
-            xlink_role = XSDAnyURI(role_URI) if role_URI else None
+            set_ref = XSDAnyURI(set_URI) if set_URI else None
         ))
     def set_type(self, new_type):
         self.type = new_type
@@ -102,7 +102,7 @@ COMMON ATTRIBUTES
 * self.qualifiers
 self.type
 self.time_or_duration_ref
-self.substitute_attribute_type
+self.substitute_attribute
 self.scheme
 self.note_list
 
@@ -111,7 +111,7 @@ COMMON METHODS
 * add_qualifier
 set_type
 set_time_or_duration_ref
-set_substitute_attribute_type
+set_substitute_attribute
 set_scheme
 add_note
 """
@@ -122,31 +122,31 @@ class PrincipalElementVariantBuilder(Builder):
     """
     def __init__(self):
         super().__init__()
-        self.type = Type()
+        self.type = None
         self.time_or_duration_ref = None
-        self.substitute_attribute_type = None
+        self.substitute_attribute = None
         self.scheme = None
         self.note_list = []     # Note objs
-    def set_type(self, link_title, role_URI, href_URI=None):
-        self.type = Type(
+    def set_type(self, link_title, set_URI, href_URI=None):
+        self.type = GenericType(
                         LinkAttributes(
                             link_title,
                             xlink_href = XSDAnyURI( href_URI ) \
                                          if href_URI else None
                         ),
-                        xlink_role = XSDAnyURI( role_URI ) \
-                                     if role_URI else None
+                        set_ref = XSDAnyURI( set_URI ) \
+                                     if set_URI else None
                     )
     def set_time_or_duration_ref(self, time_or_duration_ref):
         # assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
-    def set_substitute_attribute_type(self, substitute_attribute_type):
+    def set_substitute_attribute(self, substitute_attribute):
         # string
-        self.substitute_attribute_type = substitute_attribute_type
+        self.substitute_attribute = substitute_attribute
     def set_scheme(self, new_scheme):
         # string
         self.scheme = new_scheme
-    def add_note(self, content_text, content_lang=None, class_=None, link_title=None, href_URI=None, role_URI=None):
+    def add_note(self, content_text, content_lang=None, class_=None, link_title=None, href_URI=None, set_URI=None):
         if link_title:
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None)
         else:
@@ -155,7 +155,7 @@ class PrincipalElementVariantBuilder(Builder):
             Content(content_text, content_lang),
             class_ = class_,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = link_attributes,
-            xlink_role = XSDAnyURI(role_URI) if role_URI else None
+            set_ref = XSDAnyURI(set_URI) if set_URI else None
         ))
 
 

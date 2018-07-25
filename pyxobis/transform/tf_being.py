@@ -47,6 +47,7 @@ def transform_being(self, record):
     # undifferentiated: 655 77 ^a Persons, Undifferentiated
     # referential: things like Mc/Mac, St.: 008/09 = 'b' or 'c'
 
+    being_class = None
     if 'Persons, Undifferentiated' in subsets:
         being_class = 'undifferentiated'
     elif record['008'].data[9] in 'bc':
@@ -54,7 +55,8 @@ def transform_being(self, record):
     elif broad_category == 'Peoples':
         if record['100'].indicator1 != '9':
             print("PROBLEM: Peoples without ind 9#: {}".format(record['001'].data))
-        being_class = 'collective'
+        else:
+            being_class = 'collective'
     elif broad_category == 'Persons, Families or Groups':
         if record['100'].indicator1 != '3':
             print("PROBLEM: Family/Group without ind 3#: {}".format(record['001'].data))

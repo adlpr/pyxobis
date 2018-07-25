@@ -85,7 +85,7 @@ class Indexer:
         Given just a single string of text, assume it's the value of
         the primary subfield of the identity,
         and look up its associated control number.
-        Useful for Builders to look up Types for set/role control.
+        Useful for Builders to look up Types for set control.
         (could Type control numbers maybe live in some separate cache?)
         """
         assert element_type in self.index, "element type {} not indexed".format(element_type)

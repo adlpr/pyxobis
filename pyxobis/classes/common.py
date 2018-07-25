@@ -56,8 +56,8 @@ class GenericName(Component):
     """
     genericName |=
         element xobis:name {
-            nameContent_
-            | element xobis:part { nameContent_ }+
+            nameContent
+            | element xobis:part { nameContent }+
         }
     """
     def __init__(self, name_content):
@@ -82,9 +82,9 @@ class GenericName(Component):
         return name_e
 
 
-class Content(Component):
+class GenericContent(Component):
     """
-    content_ |=
+    genericContent |=
         attribute lang { text }?,
         text
     """
@@ -101,7 +101,7 @@ class Content(Component):
 
 class NameContent(Component):
     """
-    nameContent_ |=
+    nameContent |=
         attribute lang { text }?,
         attribute script { text }?,
         attribute nonfiling { xsd:positiveInteger }?,
@@ -126,7 +126,7 @@ class NameContent(Component):
 
 class OptScheme(Component):
     """
-    optScheme_ |= attribute scheme { text }?
+    optScheme |= attribute scheme { text }?
     """
     def __init__(self, scheme=None):
         self.scheme = scheme
@@ -156,7 +156,7 @@ class Value(Component):
 
 class OptClass(Component):
     """
-    optClass_ |= attribute class { string "individual" | string "collective" | string "referential" }?
+    optClass |= attribute class { string "individual" | string "collective" | string "referential" }?
     """
     CLASSES = ["individual", "collective", "referential", None]
     def __init__(self, class_=None):
@@ -170,27 +170,9 @@ class OptClass(Component):
         return attrs
 
 
-class OptSubdivision(Component):
-    """
-    optSubdivision_ |= element xobis:subdivision { linkContent_ }*
-    """
-    def __init__(self, link_contents=[]):
-        assert all(isinstance(link_content, LinkContent) for link_content in link_contents)
-        self.link_contents = link_contents
-    def serialize_xml(self):
-        # Returns a list of zero or more Elements.
-        subdivision_elements = []
-        for link_content in self.link_contents:
-            link_content_text, link_content_attrs = link_content.serialize_xml()
-            subdivision_e = E('subdivison', **link_content_attrs)
-            subdivision_e.text = link_content_text
-            subdivision_elements.append(subdivision_e)
-        return subdivision_elements
-
-
 class RoleAttributes(Component):
     """
-    roleAttributes_ |=
+    roleAttributes |=
         attribute role { string "instance" | string "authority" | string "authority instance" }
     """
     ROLES = ["instance", "authority", "authority instance"]
@@ -202,38 +184,35 @@ class RoleAttributes(Component):
         return {'role' : self.role}
 
 
-class Type(Component):
+class GenericType(Component):
     """
-    type_ |=
+    genericType |=
         element xobis:type {
-            linkAttributes_,
-            attribute xlink:role { xsd:anyURI },
+            linkAttributes,
+            attribute set { xsd:anyURI },
             empty
-        }?
+        }
     """
-    def __init__(self, link_attributes=None, xlink_role=None):
-        assert not (bool(link_attributes) ^ bool(xlink_role)), "Need both or neither: link / role"
-        self.no_attrs = link_attributes is None
-        if not self.no_attrs:
-            assert isinstance(link_attributes, LinkAttributes)
-            assert isinstance(xlink_role, XSDAnyURI)
+    def __init__(self, link_attributes, set_ref):
+        assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
-        self.xlink_role = xlink_role
+        assert isinstance(set_ref, XSDAnyURI)
+        self.set_ref = set_ref
     def serialize_xml(self):
-        # Returns either an Element or None.
-        if self.no_attrs:
-            return None
+        # Returns an Element.
+        attrs = {}
         link_attributes = self.link_attributes.serialize_xml()
-        type_e = E('type', **link_attributes)
-        xlink_role_text = self.xlink_role.serialize_xml()
-        type_e.attrib['{%s}role' % nsmap['xlink']] = xlink_role_text
+        attrs.update(link_attributes)
+        set_ref_text = self.set_ref.serialize_xml()
+        attrs.update( { 'set' : set_ref_text } )
+        type_e = E('type', **attrs)
         return type_e
 
 
 
 class LinkAttributes(Component):
     """
-    linkAttributes_ =
+    linkAttributes |=
         attribute xlink:href { xsd:anyURI }?,
         attribute xlink:title { text }
     """
@@ -253,24 +232,59 @@ class LinkAttributes(Component):
 
 
 
-class LinkContent(Component):
+class OptSubstituteAttribute(Component):
     """
-    linkContent_ =
-        (linkAttributes_,
-         attribute substitute {
-             string "abbrev" | string "citation" | string "code" | string "singular"
-         }?)?,
-        content_
+    optSubstituteAttribute |=
+        attribute substitute { xsd:boolean }?
     """
-    SUBSTITUTES = ["abbrev", "citation", "code", "singular"]
-    def __init__(self, content, link_attributes=None, substitute=None):
-        if link_attributes: assert isinstance(link_attributes, LinkAttributes)
+    TYPES = [True, False, None]
+    def __init__(self, type_=None):
+        assert type_ in OptSubstituteAttribute.TYPES
+        self.type = type_
+    def serialize_xml(self):
+        # Returns a dict of parent attributes.
+        attrs = {}
+        if self.type is not None:
+            attrs['type'] = str(self.type).lower()
+        return attrs
+
+
+class OptSubdivisions(Component):
+    """
+    optSubdivisions |=
+        element xobis:subdivision { subdivisonContent }*
+    """
+    def __init__(self, subdiv_contents=[]):
+        assert all(isinstance(subdiv_content, SubdivisionContent)  \
+                   for subdiv_content in subdiv_contents)
+        self.subdiv_contents = subdiv_contents
+    def serialize_xml(self):
+        # Returns a list of zero or more Elements.
+        subdivision_elements = []
+        for subdiv_content in self.subdiv_contents:
+            subdiv_content_text, subdiv_content_attrs = subdiv_content.serialize_xml()
+            subdivision_e = E('subdivison', **subdiv_content_attrs)
+            subdivision_e.text = subdiv_content_text
+            subdivision_elements.append(subdivision_e)
+        return subdivision_elements
+
+
+class SubdivisionContent(Component):
+    """
+    subdivisonContent |=
+        ( linkAttributes,
+          optSubstituteAttribute )?,
+        genericContent
+    """
+    def __init__(self, content, link_attributes=None, opt_substitute_attribute=OptSubstituteAttribute()):
+        if link_attributes is not None:
+            assert isinstance(link_attributes, LinkAttributes)
+            assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
+            self.opt_substitute_attribute = opt_substitute_attribute
+        else:
+            self.opt_substitute_attribute = OptSubstituteAttribute()
         self.link_attributes = link_attributes
-        if substitute:
-            assert link_attributes
-            assert substitute in LinkContent.SUBSTITUTES
-        self.substitute = substitute
-        assert isinstance(content, Content)
+        assert isinstance(content, GenericContent)
         self.content = content
     def serialize_xml(self):
         # Returns a text string and a dict of parent attributes.
@@ -278,35 +292,18 @@ class LinkContent(Component):
         if self.link_attributes:
             link_attributes_attrs = self.link_attributes.serialize_xml()
             attrs.update(link_attributes_attrs)
-        if self.substitute:
-            attrs['substitute'] = self.substitute
+        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
+        attrs.update(opt_substitute_attribute_attrs)
         content_text, content_attrs = self.content.serialize_xml()
         attrs.update(content_attrs)
         return content_text, attrs
 
 
-class SubstituteAttribute(Component):
-    """
-    substituteAttribute |=
-        attribute type { string "abbrev" | string "citation" | string "code" | string "singular" }?
-    """
-    TYPES = ["abbrev", "citation", "code", "singular", None]
-    def __init__(self, type_=None):
-        assert type_ in SubstituteAttribute.TYPES
-        self.type = type_
-    def serialize_xml(self):
-        # Returns a dict of parent attributes.
-        attrs = {}
-        if self.type:
-            attrs['type'] = self.type
-        return attrs
-
-
 class OptNoteList(Component):
     """
-    optNoteList_ |=
-         (element xobis:noteList { note_+ }
-          | note_)?
+    optNoteList |=
+        ( note
+          | element xobis:noteList { note+ } )?
     """
     def __init__(self, notes=[]):
         assert all(isinstance(note, Note) for note in notes)
@@ -326,41 +323,39 @@ class OptNoteList(Component):
 
 class Note(Component):
     """
-    note_ |=
-       element xobis:note {
-           attribute class { "transcription" | "annotation" | "documentation" | "description" }?,
-           (linkAttributes_,
-            attribute xlink:role { xsd:anyURI })?,
-           content_
-       }
+    note |=
+        element xobis:note {
+            attribute type { "transcription" | "annotation" | "documentation" | "description" }?,
+            ( linkAttributes,
+              attribute set { xsd:anyURI } )?,
+            genericContent
+        }
     """
-    NOTECLASSES = ["transcription", "annotation", "documentation", "description", None]
-    def __init__(self, content, class_=None, link_attributes=None, xlink_role=None):
-        assert class_ in Note.NOTECLASSES
-        self.class_ = class_
-        assert not (bool(link_attributes) ^ bool(xlink_role)), "Need both or neither: link / role"
-        if link_attributes:
+    TYPES = ["transcription", "annotation", "documentation", "description", None]
+    def __init__(self, content, type=None, link_attributes=None, set_ref=None):
+        assert type in Note.TYPES
+        self.type = type
+        assert not (bool(link_attributes) ^ bool(set_ref)), "Need both or neither: link / set"
+        if link_attributes is not None:
             assert isinstance(link_attributes, LinkAttributes)
-            assert isinstance(xlink_role, XSDAnyURI)
+            assert isinstance(set_ref, XSDAnyURI)
         self.link_attributes = link_attributes
-        self.xlink_role = xlink_role
-        assert isinstance(content, Content)
+        self.set_ref = set_ref
+        assert isinstance(content, GenericContent)
         self.content = content
     def serialize_xml(self):
         # Returns an Element.
-        note_e = E('note')
-        if self.class_:
-            note_e.attrib['class'] = self.class_
-        if self.link_attributes:
+        attrs = {}
+        if self.type:
+            attrs['type'] = self.class_
+        if self.link_attributes is not None:
             link_attributes_attrs = self.link_attributes.serialize_xml()
-            for k,v in link_attributes_attrs.items():
-                note_e.attrib[k] = v
-            if self.xlink_role:
-                xlink_role_text = self.xlink_role.serialize_xml()
-                note_e.attrib['{%s}role' % nsmap['xlink']] = xlink_role_text
+            attrs.update(link_attributes_attrs)
+            set_ref_text = self.set_ref.serialize_xml()
+            attrs['set'] = set_ref_text
         content_text, content_attrs = self.content.serialize_xml()
-        for k,v in content_attrs.items():
-            note_e.attrib[k] = v
+        attrs.update(content_attrs)
+        note_e = E('note', **attrs)
         note_e.text = content_text
         return note_e
 
@@ -424,14 +419,14 @@ class VersionsHoldingsOpt(Component):
         (element xobis:versions {
              element xobis:version {
                  element xobis:entry {
-                     element xobis:name { nameContent_ },
+                     element xobis:name { nameContent },
                      qualifiersOpt
                  },
-                 optNoteList_,
-                 _holdings
+                 optNoteList,
+                 holdings
              }+
          }
-         | _holdings)?
+         | holdings)?
     """
     def __init__(self, versions=None):
         self.is_none = not bool(versions)
@@ -455,12 +450,12 @@ class VersionsHoldingsOpt(Component):
 class Version(Component):
     """
     element xobis:version {
-         element xobis:entry {
-             element xobis:name { nameContent_ },
-             qualifiersOpt
-         },
-         optNoteList_,
-         _holdings
+        element xobis:entry {
+            element xobis:name { nameContent },
+            qualifiersOpt
+        },
+        optNoteList,
+        holdings
     }
     """
     def __init__(self, name_content, holdings, qualifiers_opt=QualifiersOpt(), opt_note_list=OptNoteList()):
@@ -496,10 +491,10 @@ class Version(Component):
 class Holdings(Component):
     """
     ### PLACEHOLDER FOR A BETTER SCHEMA FOR HOLDINGS ###
-    _holdings |= element xobis:holdings { content_ }
+    holdings |= element xobis:holdings { genericContent }
     """
     def __init__(self, content):
-        assert isinstance(content, Content)
+        assert isinstance(content, GenericContent)
         self.content = content
     def serialize_xml(self):
         # Returns an Element.

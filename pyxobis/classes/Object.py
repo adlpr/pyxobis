@@ -16,11 +16,11 @@ class Object(PrincipalElement):
         element xobis:object {
             (attribute role { string "instance" | string "authority instance" },
              attribute class { string "individual" | string "collective" }?,
-             _objectContent,
+             objectContent,
              versionsHoldingsOpt)
             | (attribute role { string "authority" },
-               optClass_,
-               _objectContent)
+               optClass,
+               objectContent)
         }
     """
     ROLES_1 = ["instance", "authority instance"]
@@ -71,19 +71,19 @@ class Object(PrincipalElement):
 
 class ObjectContent(Component):
     """
-    _objectContent |=
+    objectContent |=
         ((attribute type { string "natural" | string "crafted" }?,
           element xobis:entry {
-              _objectEntryContent,
+              objectEntryContent,
               element xobis:organization {
-                  linkAttributes_,
-                  element xobis:identifier { content_ }?
+                  linkAttributes,
+                  element xobis:identifier { genericContent }?
               }
           })
          | (attribute type { string "manufactured" }?,
-            element xobis:entry { _objectEntryContent })),
+            element xobis:entry { objectEntryContent })),
         element xobis:variants { anyVariant+ }?,
-        optNoteList_
+        optNoteList
     """
     TYPES_1 = ["natural", "crafted", None]
     TYPES_2 = ["manufactured", None]
@@ -101,7 +101,7 @@ class ObjectContent(Component):
                 "non-manufactured Object type ({}) must be in: {}".format(type_, str(ObjectContent.TYPES_1))
             assert isinstance(organization_link_attributes, LinkAttributes)
             if organization_id_content:
-                assert isinstance(organization_id_content, Content)
+                assert isinstance(organization_id_content, GenericContent)
         self.type = type_
         # for entry element
         assert isinstance(object_entry_content, ObjectEntryContent)
@@ -151,7 +151,7 @@ class ObjectContent(Component):
 
 class ObjectEntryContent(Component):
     """
-    _objectEntryContent |= genericName, qualifiersOpt
+    objectEntryContent |= genericName, qualifiersOpt
     """
     def __init__(self, generic_name, qualifiers_opt=QualifiersOpt()):
         assert isinstance(generic_name, GenericName)
@@ -172,25 +172,25 @@ class ObjectVariantEntry(VariantEntry):
     """
     objectVariant |=
         element xobis:object {
-            # NEEDED? attribute idref { xsd:IDREF }?,
-            type_?,
+            genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { substituteAttribute, optScheme_, _objectEntryContent },
-            optNoteList_
+            element xobis:entry { optSubstituteAttribute, optScheme, objectEntryContent },
+            optNoteList
         }
     """
     def __init__(self, object_entry_content, \
-                       type_=Type(), time_or_duration_ref=None, \
-                       substitute_attribute=SubstituteAttribute(), \
+                       type_=None, time_or_duration_ref=None, \
+                       opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_scheme=OptScheme(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(type_, Type)
+        if type_ is not None:
+            assert isinstance(type_, GenericType)
         self.type = type_
-        if time_or_duration_ref:
+        if time_or_duration_ref is not None:
             assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
-        assert isinstance(substitute_attribute, SubstituteAttribute)
-        self.substitute_attribute = substitute_attribute
+        assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
+        self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
         assert isinstance(object_entry_content, ObjectEntryContent)
@@ -201,8 +201,8 @@ class ObjectVariantEntry(VariantEntry):
         # Returns an Element.
         variant_e = E('object')
         # type
-        type_e = self.type.serialize_xml()
-        if type_e is not None:
+        if self.type is not None:
+            type_e = self.type.serialize_xml()
             variant_e.append(type_e)
         # time/duration ref
         if self.time_or_duration_ref:
@@ -211,8 +211,8 @@ class ObjectVariantEntry(VariantEntry):
         # entry element
         # --> attrs
         entry_attrs = {}
-        substitute_attribute_attrs = self.substitute_attribute.serialize_xml()
-        entry_attrs.update(substitute_attribute_attrs)
+        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
+        entry_attrs.update(opt_substitute_attribute_attrs)
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
         entry_attrs.update(opt_scheme_attrs)
         entry_e = E('entry', **entry_attrs)
@@ -229,12 +229,14 @@ class ObjectVariantEntry(VariantEntry):
 
 class ObjectRef(RefElement):
     """
-    objectRef |= element xobis:object { linkAttributes_?, _objectEntryContent }
+    objectRef |= element xobis:object { linkAttributes?, optSubstituteAttribute, objectEntryContent }
     """
-    def __init__(self, object_entry_content, link_attributes=None):
+    def __init__(self, object_entry_content, link_attributes=None, opt_substitute_attribute=OptSubstituteAttribute()):
         if link_attributes:
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
+        assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
+        self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(object_entry_content, ObjectEntryContent)
         self.object_entry_content = object_entry_content
     def serialize_xml(self):
@@ -243,6 +245,8 @@ class ObjectRef(RefElement):
         if self.link_attributes:
             link_attributes_attrs = self.link_attributes.serialize_xml()
             attrs.update(link_attributes_attrs)
+        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
+        attrs.update(opt_substitute_attribute_attrs)
         variant_e = E('object', **attrs)
         object_entry_content_elements = self.object_entry_content.serialize_xml()
         variant_e.extend(object_entry_content_elements)

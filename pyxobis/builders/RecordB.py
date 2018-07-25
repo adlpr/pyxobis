@@ -12,7 +12,7 @@ class RecordBuilder:
         self.lang = None
         self.id_org_ref = None
         self.id_value = None
-        self.id_variants = []
+        self.id_alternates = []
         self.types = []
         self.actions = []
         self.principal_element = None
@@ -23,25 +23,25 @@ class RecordBuilder:
         self.id_org_ref = id_org_ref
     def set_id_value(self, id_value):
         self.id_value = id_value
-    def add_id_variant(self, id_org_ref, id_value):
-        self.id_variants.append( IDContent(id_org_ref, id_value) )
-    def add_type(self, xlink_title=None, xlink_href=None, xlink_role=None):
+    def add_id_alternate(self, id_org_ref, id_value):
+        self.id_alternates.append( IDContent(id_org_ref, id_value) )
+    def add_type(self, xlink_title=None, xlink_href=None, set_ref=None):
         self.types.append(
-            Type( LinkAttributes(xlink_title, XSDAnyURI(xlink_href)  \
+            GenericType( LinkAttributes(xlink_title, XSDAnyURI(xlink_href)  \
                                                   if xlink_href else None)  \
                       if xlink_title else None,
-                  XSDAnyURI(xlink_role) if xlink_role else None )
+                  XSDAnyURI(set_ref) if set_ref else None )
         )
     def set_principal_element(self, principal_element):
         # assert isinstance(principal_element, RefElement)
         self.principal_element = principal_element
-    def add_action(self, time_or_duration_ref, xlink_title=None, xlink_href=None, xlink_role=None):
+    def add_action(self, time_or_duration_ref, xlink_title=None, xlink_href=None, set_ref=None):
         self.actions.append(
             ControlDataAction(
-                Type( LinkAttributes(xlink_title, XSDAnyURI(xlink_href)  \
+                GenericType( LinkAttributes(xlink_title, XSDAnyURI(xlink_href)  \
                                                       if xlink_href else None)  \
                           if xlink_title else None,
-                      XSDAnyURI(xlink_role) if xlink_role else None ),
+                      XSDAnyURI(set_ref) if set_ref else None ),
                 time_or_duration_ref
             )
         )
@@ -52,7 +52,7 @@ class RecordBuilder:
         return Record(
                    ControlData(
                        IDContent(self.id_org_ref, self.id_value),
-                       self.id_variants,
+                       self.id_alternates,
                        self.types,
                        self.actions
                    ),

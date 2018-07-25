@@ -54,12 +54,29 @@ class Transformer:
         rb.set_id_value(record_control_no)
 
         # Additional identifiers
-        # LCCN (010)
-        # ISSN (020)
-        # Other (024)
+
+        # Fields that should be relationships instead:
+        # 015  National Bibliography Number (NR)
+        # 017  Copyright Registration Number (R)
+        # 020  International Standard Book Number (R)
+        # 022  International Standard Serial Number (R)
+        # 024  Other Standard Identifier (incl ISBN 13) (R)
+        # 027  Standard Technical Report Number (R)
+        # 030  CODEN Designation (R)
+        # 032  Postal Registration Number (R)
+        # 042  Authentication Code (NR)
+        # 050  Library of Congress Call Number (R)
+        # 055  [NON-LANE] Classification Numbers Assigned in Canada (R)
+        # 060  National Library of Medicine Call Number (R)
+        # 072  Subject Category Code (Lane: MeSH tree no.) (R)
+        # 074  GPO Item Number (R)
+        # 075  Qualifiers Allowed with Descriptor (Lane: cf. new 925) (R)
+        # 086  Government Document Classification Number (R)
+        # 088  Report Number (R)
         ...
         ...
         ...
+        # rb.add_id_alternate(...)
         ...
         ...
 
@@ -74,7 +91,7 @@ class Transformer:
                 href = field['0'] or self.ix.quick_lookup(title, CONCEPT)
                 rb.add_type(title,
                             xlink_href = href,
-                            xlink_role = self.ix.quick_lookup("Subset", CONCEPT))
+                            set_ref    = self.ix.quick_lookup("Subset", CONCEPT))
 
         # -------
         # ACTIONS
@@ -202,7 +219,7 @@ class Transformer:
         if entry_type:
             entry_type = entry_type.rstrip(':').strip()
             type_kwargs = { 'link_title' : entry_type,
-                             'role_URI'  : self.ix.quick_lookup("Variant Type", CONCEPT),
+                             'set_URI'  : self.ix.quick_lookup("Variant Type", CONCEPT),
                              'href_URI'  : self.ix.quick_lookup(entry_type, CONCEPT) }
 
         # Time or Duration
