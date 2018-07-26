@@ -132,10 +132,16 @@ def transform_variant_being(self, field):
     # Substitute
     # ---
     # n/a for now
+    # ...
+    # ...
+    # ...
 
     # Scheme
     # ---
     # n/a for now
+    # ...
+    # ...
+    # ...
 
     # Name(s) & Qualifier(s)
     # ---
@@ -152,7 +158,7 @@ def transform_variant_being(self, field):
     for note_text in field.get_subfields('2','j'):
         bvb.add_note( content_text = note_text,
                       content_lang = field_lang,
-                      class_       = "description",
+                      class_       = "annotation",
                       link_title = None,
                       href_URI = None,
                       set_URI  = None )
@@ -170,7 +176,6 @@ def transform_variant_being(self, field):
     7  ID for included names, L1, L2, etc. (R)
     8  Beginning/earliest date of relationship (Lane) (R)
     9  Single or ending/latest date of relationship (Lane) (R)
-
     a  Personal name (R)
     b  Numeration (R)
     c  Titles and other words associated with a name (R)

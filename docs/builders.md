@@ -163,11 +163,12 @@ set_link ( link_title,
 
 ### ConceptBuilder
 ```
-set_type ( new_type )
+set_type ( new_type )  # abstract, collective, control, specific
 
-set_usage ( new_usage )
+set_usage ( new_usage )  # subdivision ?
 
-set_subtype ( new_subtype )
+# Only used when usage = "subdivision"; type of subdivision
+set_subtype ( new_subtype )  # general, form, topical, unspecified
 
 set_scheme ( new_scheme )
 
@@ -604,9 +605,9 @@ add_qualifier ( qualifier )  # RefElement
 
 ### StringBuilder
 ```
-set_type ( new_type )
+set_type ( new_type )  # "textual", "numeric", "mixed"
 
-set_class ( new_class )
+set_class ( new_class )  # "word", "phrase"
 
 add_name ( name_text,
            lang   = None,

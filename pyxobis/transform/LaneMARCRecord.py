@@ -51,7 +51,7 @@ class LaneMARCRecord(Record):
 
     def get_all_categories(self):
         # return [(field.indicator1, field.indicator2, field['a']) for field in self.get_fields('655')]
-        return self.get_subfields('655','a')
+        return [field['a'] for field in self.get_fields('655') if field.indicator1 not in '78']
 
     def get_xobis_element_type(self):
         """
@@ -94,6 +94,15 @@ class LaneMARCRecord(Record):
         else:
             return None
 
+    def get_id_field(self):
+        """
+        Returns field containing the identity.
+        """
+        for tag in ('149','100','110','111','130','150','151','155','180','182'):
+            if tag in self:
+                return self[tag]
+        return None
+
     def get_identity(self):
         """
         Returns control number, XOBIS element type, and identity string for this record as a whole.
@@ -105,11 +114,7 @@ class LaneMARCRecord(Record):
         if ctrlno is None or ctrlno.startswith('H'):
             return (), None, None
         # which 1xx field contains the identity?
-        id_field = None
-        for tag in ('149','100','110','111','130','150','151','155','180','182'):
-            if tag in self:
-                id_field = self[tag]
-                break
+        id_field = self.get_id_field()
         if id_field is None:
             print("PROBLEM: no id found:", ctrlno)
             return (), None, None
