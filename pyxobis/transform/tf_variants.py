@@ -158,7 +158,7 @@ def transform_variant_being(self, field):
     for note_text in field.get_subfields('2','j'):
         bvb.add_note( content_text = note_text,
                       content_lang = field_lang,
-                      class_       = "annotation",
+                      type = "annotation",
                       link_title = None,
                       href_URI = None,
                       set_URI  = None )

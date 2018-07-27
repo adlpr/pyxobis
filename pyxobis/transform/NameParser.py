@@ -137,18 +137,31 @@ class NameParser:
 
     def parse_concept_name(self, field):
         """
-        Parse a X50 field containing a Concept name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects,
+        Parse a X50/X55/X80 field containing a Concept name into:
+        - a list of names as kwarg dicts,
+        - a list of qualifiers as RefElement objects, and
+        - a list of subdivisions as kwarg dicts
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
 
+        # If this is a 150/155, ^a is name (+ hypothetical ^x is Concept qualifier).
+        # If this is a X80, ^x is name.
+        # Otherwise, ^a is name, ^x is subdivision.
+
+        # note: ^m is technically a VARIANT
+
+        if field.tag in ['150','155']:
+            name_codes, qualifier_codes, subdiv_codes = 'a', 'x', ''
+        elif field.tag[1:] == '80':
+            name_codes, qualifier_codes, subdiv_codes = 'x', '', ''
+        else:
+            name_codes, qualifier_codes, subdiv_codes = 'a', '', 'x'
+
         # NAME(S)
         # ---
-        # ^y Word/phrase entry
         string_names_kwargs = []
-        for val in field.get_subfields('y'):
+        for val in field.get_subfields('a','x'):
             string_names_kwargs.append({ 'name_text': val,
                                          'lang'     : field_lang,
                                          'script'   : field_script,
@@ -156,15 +169,12 @@ class NameParser:
 
         # QUALIFIER(S)
         # ---
-        # ^q Qualifier  [StringRef??]
-        #     + ^g Grammatical type (?)  [StringRef??]
-        #     + ^l Language?? / ^3 Language of entry??  [LanguageRef]
         string_qualifiers = []
         ...
         ...
         ...
 
-        return string_names_kwargs, string_qualifiers
+        return string_names_kwargs, string_qualifiers, concept_subdivisions
 
 
 

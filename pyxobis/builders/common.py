@@ -76,7 +76,7 @@ class PrincipalElementBuilder(Builder):
         self.variants.append(variant)
     def add_note(self, content_text, content_lang=None, class_=None, link_title=None, href_URI=None, set_URI=None):
         self.note_list.append(Note(
-            Content(content_text, content_lang),
+            GenericContent(content_text, content_lang),
             class_ = class_,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
@@ -146,14 +146,14 @@ class PrincipalElementVariantBuilder(Builder):
     def set_scheme(self, new_scheme):
         # string
         self.scheme = new_scheme
-    def add_note(self, content_text, content_lang=None, class_=None, link_title=None, href_URI=None, set_URI=None):
+    def add_note(self, content_text, content_lang=None, type=None, link_title=None, href_URI=None, set_URI=None):
         if link_title:
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None)
         else:
             link_attributes = None
         self.note_list.append(Note(
-            Content(content_text, content_lang),
-            class_ = class_,  # ["transcription", "annotation", "documentation", "description", None]
+            GenericContent(content_text, content_lang),
+            type = type,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = link_attributes,
             set_ref = XSDAnyURI(set_URI) if set_URI else None
         ))
@@ -191,7 +191,7 @@ class PrincipalElementRefBuilder(Builder):
     def add_subdivision_link(self, content_text, content_lang=None, link_title=None, href_URI=None, substitute=None):
         self.subdivision_link_contents.append(
             LinkContent(
-                Content(content_text, content_lang),
+                GenericContent(content_text, content_lang),
                 link_attributes = LinkAttributes(
                                       link_title,
                                       XSDAnyURI(href_URI) if href_URI else None
@@ -219,7 +219,7 @@ class VersionsHoldingsBuilder(Builder):
     def set_holdings(self, text, lang=None):
         if self.versions:
             print("WARNING: versions list is non-empty!\nemptying to set holdings: {}".format(text))
-        self.versions = [ Holdings( Content(text, lang) ) ]
+        self.versions = [ Holdings( GenericContent(text, lang) ) ]
         self.is_holdings_only = True
     def add_version(self, version_text, holdings_text, version_lang=None, version_script=None, version_nonfiling=0, holdings_lang=None, qualifiers=[], notes=[]):
         if not all(isinstance(version, Version) for version in self.versions):
@@ -232,7 +232,7 @@ class VersionsHoldingsBuilder(Builder):
                 script=version_script,
                 nonfiling=version_nonfiling
             ),
-            Holdings( Content(holdings_text, holdings_lang) ),
+            Holdings( GenericContent(holdings_text, holdings_lang) ),
             qualifiers_opt=QualifiersOpt(qualifiers),
             # @@@@@@ NO EASY BUILDER FOR NOTE OBJS HERE RIGHT NOW, MAKE THEM YOURSELF @@@@@@
             opt_note_list=OptNoteList(notes)

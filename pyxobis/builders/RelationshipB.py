@@ -37,10 +37,10 @@ class RelationshipBuilder:
         return Relationship(
                    RelationshipContent(
                        RelationshipName(
-                           Content( self.name_text,
+                           GenericContent( self.name_text,
                                     lang = self.name_lang ),
                            modifier_nonfiling = self.modifier_nonfiling,
-                           modifier_content  = Content( self.modifier_text,
+                           modifier_content  = GenericContent( self.modifier_text,
                                                        lang = self.modifier_lang ) \
                                               if self.modifier_text else None
                        ),

@@ -68,7 +68,7 @@ class Transformer:
         # 035 8# = NLM control number
         for field in record.get_fields('035'):
             if field.indicator1 == '8':
-                for val in field.get_subfields('a'):
+                for val in field.get_subfields('a'):  # ^z ??
                     rb.add_id_alternate(self.nlm_org_ref, val.strip())
 
         # what to do with all these?? notes???:
@@ -109,8 +109,9 @@ class Transformer:
         # -------
         # TYPES
         # -------
-        # = Subsets = 655 77 fields.
-        # NB: "Record Type" (Z47381) actually refers to which PE a record is
+        # Record "Types" = Subsets = 655 77
+        # NB: Established aut "Record Type" (Z47381) actually refers
+        #     to which PE a record is
         for field in record.get_fields('655'):
             if field.indicator1 == '7':
                 title = field['a']
@@ -121,7 +122,7 @@ class Transformer:
         # -------
         # ACTIONS
         # -------
-        # Administrative metadata (get these from? 007.. oracle???)
+        # Administrative metadata (get these from: 007; oracle??)
         # Action Types
         # created; modified..
         ...
@@ -198,21 +199,19 @@ class Transformer:
 
         return None
 
+
     def init_being_builder(self, record):
         bb = BeingBuilder()
 
         # ROLE
         # ---
         # authority / instance / authority instance
-
         # all authorities (?)
         bb.set_role("authority")
-
 
         # TYPE
         # ---
         # human / nonhuman / special
-
         categories = record.get_all_categories()
         if 'Beings, Special' in categories:
             # 655 29 Beings, Special
@@ -223,7 +222,6 @@ class Transformer:
         else:
             being_type = 'human'
         bb.set_type(being_type)
-
 
         # CLASS
         # ---
@@ -257,7 +255,6 @@ class Transformer:
 
         bb.set_class(being_class)
 
-
         # SCHEME
         # ---
         # is it LC for the 100 when 010? not really, consider this n/a for now
@@ -282,62 +279,125 @@ class Transformer:
         # TYPE
         # ---
         # abstract, collective, control, specific
-        # abstract = Artificial Intelligence; Cataloging;
-        #            Statistical Hypothesis Testing; Surgery, Plastic
-        # collective = Buildings; Databases; Gorilla gorilla; Kidney;
-        #              Plastic Surgeons; Silver Nitrate
-        # control =
-        # specific = Pending Records; Suppressed Records;
-        #           Subject Heading Schemes
-
-        # categories = record.get_all_categories()
-        ...
-        ...
-        ...
-        # cb.set_type(concept_type)
-
+        # abstract/specific/collective too hard to differentiate
+        if record.get_broad_category() in ["Category", "Record Type", "Subset"]:
+            cb.set_type("control")
 
         # USAGE
         # ---
-        # subdivision or not
-        ...
-        ...
-        ...
-        cb.set_usage(concept_usage)
+        # subdivision or not?
+        if record.get_broad_category() == "Qualifiers, Topical":
+            cb.set_usage("subdivision")
 
-
-        # SUBTYPE
-        # ---
-        # = subdivision type
-        # general, form, topical, unspecified
-        ...
-        # broad category: Qualifiers, Topical
-        ...
-        ...
-        cb.set_type(concept_type)
+            # SUBTYPE
+            # ---
+            # general, form, topical, unspecified
+            # other types aren't really in our catalog, I guess
+            cb.set_subtype("topical")
 
         # SCHEME
         # ---
-        # 008:11 ?
-        ...
-        ...
-        ...
-        # cb.set_scheme(concept_scheme)
+        # 655 87 MeSH / 77 LaSH or LCSH
+        subsets = record.get_subsets()
+        for scheme in ("MeSH", "LCSH", "LaSH"):
+            if scheme in subsets:
+                cb.set_scheme(scheme)
+                break
 
         return cb
+
+
+    def init_event_builder(self, record):
+        eb = EventBuilder()
+
+        # TYPE
+        # ---
+        # natural, meeting, journey, occurrence, miscellaneous
+        ...
+        ...
+        ...
+        # eb.set_type()
+
+        """
+        categories:
+            Armed Conflicts
+            Biohazard Release
+            Censuses
+            Chemical Hazard Release
+            Civil Disorders
+            Committees and Commissions
+            Congresses
+            Cyclonic Storms
+            Disasters
+            Disease Outbreaks
+            Earthquakes
+            Events
+            Exhibitions
+            Exhibits
+            Expeditions
+            Experiments
+            Explosions
+            Fires
+            Floods
+            Government Agencies
+            Internet Resources
+            Legislative Sessions
+            Mass Casualty Incidents
+            Medical Missions, Official
+            **Preliminary
+            Radioactive Hazard Release
+            Riots
+            Societies, Medical
+            Special Events
+            Trials
+            Tsunamis
+            Websites
+            Workshops
+        """
+
+        # CLASS
+        # ---
+        # individual, collective, referential
+        # "individual" vs "collective" events?
+        ...
+        ...
+        ...
+        # if record['008'].data[9] in 'bc':
+        #     event_class = 'referential'
+        # else:
+        #     event_class = 'individual'
+        # eb.set_class(event_class)
+
+        # SCHEME
+        # ---
+        #
+        ...
+        ...
+        ...
+        # eb.set_scheme()
+
+        # PREQUALIFIER
+        # ---
+        #
+        ...
+        ...
+        ...
+        # eb.add_prequalifier()
+
+        return eb
 
 
     def init_work_instance_builder(self, record):
         return None
 
+
     def init_object_builder(self, record):
         return None
+
 
     def init_organization_builder(self, record):
         return None
 
-    def init_event_builder(self, record):
-        return None
 
     def init_work_authority_builder(self, record):
         return None
@@ -346,8 +406,10 @@ class Transformer:
     def init_language_builder(self, record):
         return None
 
+
     # def transform_time(self, record):
     #     return None
+
 
     def init_place_builder(self, record):
         return None
@@ -356,17 +418,19 @@ class Transformer:
     def init_string_builder(self, record):
         sb = StringBuilder()
 
-        # broad_category = record.get_broad_category()
         # categories = record.get_all_categories()
         # subsets = record.get_subsets()
 
         # TYPE
         # ---
         # textual / numeric / mixed
-        # why is this important?
-        # string_type = None
-        # sb.set_type(string_type)
-
+        broad_category = record.get_broad_category()
+        string_type = None
+        if "Numeric" in broad_category:
+            string_type = "numeric"
+        elif "Nominal" in broad_category:
+            string_type = "textual"
+        sb.set_type(string_type)
 
         # CLASS
         # ---
@@ -378,6 +442,7 @@ class Transformer:
         sb.set_class(string_class)
 
         return sb
+
 
     # def transform_relationship(self, record):
     #     return None

@@ -32,7 +32,7 @@
   - String: `word`, `phrase`
   - Time: `individual`, `collective`, `referential`
   - Work: `individual`, `serial`, `collective`, `referential`
-* **class** of **note**
+* **type** of **note**
   - `transcription`: Designates transcribed information and may contain supplied data in brackets; could be quoted in display
   - `annotation`: Data supplied by the cataloger for public display
   - `documentation`: Data supplied by the cataloger typically not for public display

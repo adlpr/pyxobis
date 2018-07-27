@@ -48,7 +48,7 @@ class ObjectBuilder(PrincipalElementBuilder):
                         xlink_href = XSDAnyURI(self.organization_link_href) \
                                      if self.organization_link_href else None
             ) if self.organization_link_title else None
-        organization_id_content = Content(
+        organization_id_content = GenericContent(
                 self.organization_id_content,
                 lang = self.organization_id_content_lang,
             ) if self.organization_id_content else None

@@ -47,11 +47,10 @@ class LaneMARCRecord(Record):
         return broad_categories[0]
 
     def get_subsets(self):
-        return [field['a'] for field in self.get_fields('655') if field.indicator1 == '7']
+        return [val for field in self.get_fields('655') for val in field.get_subfields('a') if field.indicator1 in '78']
 
     def get_all_categories(self):
-        # return [(field.indicator1, field.indicator2, field['a']) for field in self.get_fields('655')]
-        return [field['a'] for field in self.get_fields('655') if field.indicator1 not in '78']
+        return [val for field in self.get_fields('655') for val in field.get_subfields('a') if field.indicator1 not in '78']
 
     def get_xobis_element_type(self):
         """
@@ -129,7 +128,7 @@ class LaneMARCRecord(Record):
                               ORGANIZATION: 'abcdn',       # 110
                               EVENT:        'acden',       # 111
                               OBJECT:       'adhklnpqs',   # 149
-                              CONCEPT:      'amx',         # 150/155/180
+                              CONCEPT:      'ax',          # 150/155/180
                               TIME:         'a',           # 150
                               LANGUAGE:     'a',           # 150
                               PLACE:        'az',          # 151
