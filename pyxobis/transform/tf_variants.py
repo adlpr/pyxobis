@@ -27,11 +27,17 @@ def transform_variants(self, record):
 
     variants = []
 
-    for field in record.get_fields('246','400','410','411','430','450','451','455','480','482'):
+    for field in record.get_fields('150','246','400','410','411','430','450','451','455','480','482'):
         # Doing this as one large query then using a switch conditional
         # is a way to retain original order.
 
-        if field.tag == '246':
+        if field.tag == '150' and 'm' in field:
+            # add MeSH "as Topic" version as a variant
+            ...
+            ...
+            ...
+
+        elif field.tag == '246':
             # WORK_INST or OBJECT
             ...
             ...
@@ -81,6 +87,7 @@ def transform_variants(self, record):
             else:
                 # concept_variant = self.transform_variant_concept(field)
                 # variants.append(concept_variant)
+                # NOTE THAT ^m IS ANOTHER VARIANT
                 ...
                 ...
                 ...

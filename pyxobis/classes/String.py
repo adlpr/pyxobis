@@ -71,21 +71,50 @@ class String(PrincipalElement):
 
 class StringEntryContent(Component):
     """
-    stringEntryContent |= genericName, qualifiersOpt
+    stringEntryContent |= genericName, partOfSpeech*, qualifiersOpt
     """
-    def __init__(self, generic_name, qualifiers_opt=QualifiersOpt()):
+    def __init__(self, generic_name, parts_of_speech=[], qualifiers_opt=QualifiersOpt()):
         assert isinstance(generic_name, GenericName)
         self.generic_name = generic_name
+        assert all(isinstance(pos, PartOfSpeech) for pos in parts_of_speech)
+        self.parts_of_speech = parts_of_speech
         assert isinstance(qualifiers_opt, QualifiersOpt)
         self.qualifiers_opt = qualifiers_opt
     def serialize_xml(self):
         # Returns list of one or two Elements.
         name_e = self.generic_name.serialize_xml()
         elements = [name_e]
+        pos_elements = [pos.serialize_xml() for pos in self.parts_of_speech]
+        elements.extend(pos_elements)
         qualifiers_e = self.qualifiers_opt.serialize_xml()
         if qualifiers_e is not None:
             elements.append(qualifiers_e)
         return elements
+
+
+class PartOfSpeech(Component):
+    """
+    partOfSpeech |=
+        element xobis:pos {
+            linkAttributes?,
+            genericContent
+        }
+    """
+    def __init__(self, content, link_attributes=None):
+        assert isinstance(content, GenericContent)
+        self.content = content
+        if link_attributes is not None:
+            assert isinstance(link_attributes, LinkAttributes)
+        self.link_attributes = link_attributes
+    def serialize_xml(self):
+        # Returns an Element.
+        content_text, attrs = self.content.serialize_xml()
+        if self.link_attributes is not None:
+            link_attributes_attrs = elf.link_attributes.serialize_xml()
+            attrs.update(link_attributes_attrs)
+        pos_e = E('pos', **attrs)
+        pos_e.text = content_text
+        return pos_e
 
 
 class StringVariantEntry(VariantEntry):

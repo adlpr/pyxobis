@@ -11,18 +11,23 @@ class StringBuilder(PrincipalElementBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: set_role, set_scheme, set_usage
-    # ADDITIONAL: set_grammar
+    # ADDITIONAL: add_pos
     def __init__(self):
         super().__init__()
-        # self.grammar = None
+        self.parts_of_speech = []
     def set_role(self, *args, **kwargs):
         raise AttributeError("String element does not have property 'role'")
     def set_scheme(self, *args, **kwargs):
         raise AttributeError("String element does not have property 'scheme'")
     def set_usage(self, *args, **kwargs):
         raise AttributeError("String element does not have property 'usage'")
-    # def set_grammar(self, new_grammar):
-    #     self.grammar = new_grammar
+    def add_pos(self, pos_text, pos_lang=None, xlink_title=None, xlink_href=None):
+        self.parts_of_speech.append(
+            PartOfSpeech(
+                GenericContent(pos_text, pos_lang),
+                LinkAttributes(xlink_title, xlink_href) if xlink_title else None
+            )
+        )
     def add_variant(self, variant):
         # input should be an StringVariantEntry. use StringVariantBuilder to build.
         assert isinstance(variant, StringVariantEntry)
@@ -34,6 +39,7 @@ class StringBuilder(PrincipalElementBuilder):
         return String(
                    StringEntryContent(
                        GenericName(name_content),
+                       self.parts_of_speech,
                        QualifiersOpt(self.qualifiers)
                    ),
                    type_    = self.type,
@@ -50,11 +56,19 @@ class StringVariantBuilder(PrincipalElementVariantBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: set_scheme
-    # ADDITIONAL: -
+    # ADDITIONAL: add_pos
     def __init__(self):
         super().__init__()
+        self.parts_of_speech = []
     def set_scheme(self, *args, **kwargs):
         raise AttributeError("StringVariant element does not have property 'scheme'")
+    def add_pos(self, pos_text, pos_lang=None, xlink_title=None, xlink_href=None):
+        self.parts_of_speech.append(
+            PartOfSpeech(
+                GenericContent(pos_text, pos_lang),
+                LinkAttributes(xlink_title, xlink_href) if xlink_title else None
+            )
+        )
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \
@@ -62,6 +76,7 @@ class StringVariantBuilder(PrincipalElementVariantBuilder):
         return StringVariantEntry(
                    StringEntryContent(
                        GenericName(name_content),
+                       self.parts_of_speech,
                        QualifiersOpt(self.qualifiers)
                    ),
                    type_ = self.type,
@@ -77,11 +92,19 @@ class StringRefBuilder(PrincipalElementRefBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: add_subdivision_link
-    # ADDITIONAL: -
+    # ADDITIONAL: add_pos
     def __init__(self):
         super().__init__()
+        self.parts_of_speech = []
     def add_subdivision_link(self, *args, **kwargs):
         raise AttributeError("String element ref does not have subdivisions")
+    def add_pos(self, pos_text, pos_lang=None, xlink_title=None, xlink_href=None):
+        self.parts_of_speech.append(
+            PartOfSpeech(
+                GenericContent(pos_text, pos_lang),
+                LinkAttributes(xlink_title, xlink_href) if xlink_title else None
+            )
+        )
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \
@@ -89,6 +112,7 @@ class StringRefBuilder(PrincipalElementRefBuilder):
         return StringRef(
                    StringEntryContent(
                        GenericName(name_content),
+                       self.parts_of_speech,
                        QualifiersOpt(self.qualifiers)
                    ),
                    link_attributes = self.link_attributes

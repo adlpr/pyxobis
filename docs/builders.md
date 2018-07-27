@@ -614,6 +614,11 @@ add_name ( name_text,
            script = None,
            nonfiling = 0 )
 
+add_pos ( pos_text,
+          pos_lang = None,
+          xlink_title = None,
+          xlink_href = None )
+
 add_qualifier ( qualifier )  # RefElement
 
 add_variant ( variant )
@@ -641,6 +646,11 @@ add_name ( name_text,
            script = None,
            nonfiling = 0 )
 
+add_pos ( pos_text,
+          pos_lang = None,
+          xlink_title = None,
+          xlink_href = None )
+
 add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
@@ -660,6 +670,11 @@ add_name ( name_text,
            lang   = None,
            script = None,
            nonfiling = 0 )
+
+add_pos ( pos_text,
+          pos_lang = None,
+          xlink_title = None,
+          xlink_href = None )
 
 add_qualifier ( qualifier )  # RefElement
 ```

@@ -175,7 +175,6 @@ class Transformer:
 
                 # VARIANTS
                 # -------
-                # 400 / 410 / 411 / 430 / 450 / 451 / 455 / 482
                 for variant in self.transform_variants(record):
                     peb.add_variant(variant)
 
@@ -303,6 +302,12 @@ class Transformer:
             if scheme in subsets:
                 cb.set_scheme(scheme)
                 break
+
+        # SUBDIVISIONS
+        # ---
+        ...
+        ...
+        ...
 
         return cb
 
@@ -435,11 +440,22 @@ class Transformer:
         # CLASS
         # ---
         # word / phrase
-        if record['182'].indicator2 == '2':
+        id_field = record.get_id_field()
+        if id_field.indicator2 == '2':
             string_class = "phrase"
         else:
             string_class = "word"
         sb.set_class(string_class)
+
+        # PART(S) OF SPEECH
+        # ---
+        # ^g Grammatical type
+        field_lang, field_script = id_field['3'], id_field['4']
+        for val in id_field.get_subfields('g'):
+            sb.add_pos( pos_text    = val,
+                        pos_lang    = field_lang,
+                        xlink_title = None,  # we don't have these established yet
+                        xlink_href  = None )
 
         return sb
 

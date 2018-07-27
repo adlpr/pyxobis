@@ -138,9 +138,8 @@ class NameParser:
     def parse_concept_name(self, field):
         """
         Parse a X50/X55/X80 field containing a Concept name into:
-        - a list of names as kwarg dicts,
-        - a list of qualifiers as RefElement objects, and
-        - a list of subdivisions as kwarg dicts
+        - a list of names as kwarg dicts, and
+        - a list of qualifiers as RefElement objects
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -148,33 +147,40 @@ class NameParser:
         # If this is a 150/155, ^a is name (+ hypothetical ^x is Concept qualifier).
         # If this is a X80, ^x is name.
         # Otherwise, ^a is name, ^x is subdivision.
-
-        # note: ^m is technically a VARIANT
+        #     (don't deal with subdivisions here, delegate to
+        #      whatever method is handling the ref builder)
 
         if field.tag in ['150','155']:
-            name_codes, qualifier_codes, subdiv_codes = 'a', 'x', ''
+            name_code, qualifier_code = 'a', 'x'
         elif field.tag[1:] == '80':
-            name_codes, qualifier_codes, subdiv_codes = 'x', '', ''
+            name_code, qualifier_code = 'x', ''
         else:
-            name_codes, qualifier_codes, subdiv_codes = 'a', '', 'x'
+            name_code, qualifier_code = 'a', ''
 
         # NAME(S)
         # ---
-        string_names_kwargs = []
-        for val in field.get_subfields('a','x'):
-            string_names_kwargs.append({ 'name_text': val,
-                                         'lang'     : field_lang,
-                                         'script'   : field_script,
-                                         'nonfiling' : 0 })
+        concept_names_kwargs = []
+        for val in field.get_subfields(name_code):
+            concept_names_kwargs.append({ 'name_text': val,
+                                          'lang'     : field_lang,
+                                          'script'   : field_script,
+                                          'nonfiling' : 0 })
 
         # QUALIFIER(S)
         # ---
-        string_qualifiers = []
-        ...
-        ...
-        ...
+        concept_qualifiers = []
+        if qualifier_code:
+            for val in field.get_subfields(qualifier_code):
+                crb = ConceptRefBuilder()
+                crb.set_link(val,
+                             href_URI = self.ix.quick_lookup(val, CONCEPT))
+                crb.add_name(val,
+                             lang   = field_lang,
+                             script = field_script,
+                             nonfiling = 0)
+                concept_qualifiers.append(crb.build())
 
-        return string_names_kwargs, string_qualifiers, concept_subdivisions
+        return concept_names_kwargs, concept_qualifiers
 
 
 
@@ -199,15 +205,14 @@ class NameParser:
 
         # QUALIFIER(S)
         # ---
-        # ^q Qualifier  [StringRef??]
-        #     + ^g Grammatical type (?)  [StringRef??]
+        # ^q Qualifier  [StringRef?]
         #     + ^l Language?? / ^3 Language of entry??  [LanguageRef]
         string_qualifiers = []
         ...
         ...
         ...
 
-        return string_names_kwargs, string_qualifiers
+        return string_names_kwargs, string_pos_kwargs, string_qualifiers
 
 
     """
