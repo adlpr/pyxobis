@@ -6,11 +6,11 @@
   - Principal Elements
     - Being: `human`, `nonhuman`, `special`
       - Being entry: ***generic type*** (legal name, pseudonym, etc.)
-        - Being entry name parts: `given`, `surname`, `paternal surname`, `maternal surname`, `expansion`
+        - Being entry name parts: `given`, (`surname` | `paternal surname`, `maternal surname`), `patronym`, `matronym`, `teknonym`, `expansion`
     - Concept: `abstract`, `collective`, `control`, `specific`
       - Concept subtype: `general`, `form`, `topical`, `unspecified`
     - Event: `natural`, `meeting`, `journey`, `occurrence`, `miscellaneous`
-    - Language: _no type_
+    - Language: <del>_no type_</del> `natural`, `constructed`, `written` ??
     - Object: `natural`, `crafted`, `manufactured`
     - Organization: `business`, `government`, `nonprofit`, `other`
     - Place: `natural`, `constructed`, `jurisdictional`
@@ -23,15 +23,21 @@
   - Being: `individual`, `familial`, `collective`, `undifferentiated`, `referential`
   - Concept: _none_
   - Event: `individual`, `collective`, `referential`
+    - _"While events are typically collective, individual is offered in reference to solo performances and for single natural occurrences. The referential value serves informational records with indirect associations to actual events"_
   - Language: `individual`, `collective`, `referential`
   - Object
     - Object authority: `individual`, `collective`, `referential`
     - Object instance or authority-instance: `individual`, `collective`
+      - _"collective: Diamonds, Uncut; Minerals of Oklahoma; Collection of Teapots; Tea Service (Frost, V. : undated)"_
   - Organization: `individual`, `collective`, `referential`
+    - _""_
   - Place: `individual`, `collective`, `referential`
   - String: `word`, `phrase`
   - Time: `individual`, `collective`, `referential`
+    - _""_
   - Work: `individual`, `serial`, `collective`, `referential`
+    - _"collective: Collections; Databases; Loose-leaf Services; Websites"_
+    - _"Assembled collections are collective, as are "integrative" works."_
 * **type** of **note**
   - `transcription`: Designates transcribed information and may contain supplied data in brackets; could be quoted in display
   - `annotation`: Data supplied by the cataloger for public display
@@ -139,7 +145,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -183,7 +189,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -210,7 +216,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -239,9 +245,9 @@ add_subdivision_link ( content_text,
 
 ### EventBuilder
 ```
-set_type ( new_type )
+set_type ( new_type )  # natural, meeting, journey, occurrence, miscellaneous
 
-set_class ( new_class )
+set_class ( new_class )  # individual, collective, referential
 
 set_scheme ( new_scheme )
 
@@ -258,7 +264,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -287,7 +293,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -312,7 +318,7 @@ add_qualifier ( qualifier )  # RefElement
 
 ### LanguageBuilder
 ```
-set_class ( new_class )
+set_class ( new_class )  # individual, collective, referential
 
 set_usage ( new_usage )
 
@@ -327,7 +333,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -352,7 +358,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -381,11 +387,11 @@ add_subdivision_link ( content_text,
 
 ### ObjectBuilder
 ```
-set_role ( new_role )
+set_role ( new_role )  # authority, instance, authority instance
 
-set_class ( new_class )
+set_class ( new_class )  # individual, collective, referential [aut only]
 
-set_type ( new_type )
+set_type ( new_type )  # natural, crafted, manufactured
 
 add_name ( name_text,
            lang   = None,
@@ -403,7 +409,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -432,7 +438,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -455,9 +461,9 @@ add_qualifier ( qualifier )  # RefElement
 
 ### OrganizationBuilder
 ```
-set_type ( new_type )
+set_type ( new_type )  # business, government, nonprofit, other
 
-set_class ( new_class )
+set_class ( new_class )  # individual, collective, referential
 
 set_scheme ( new_scheme )
 
@@ -474,7 +480,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -503,7 +509,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -534,11 +540,11 @@ add_subdivision_link ( content_text,
 
 ### PlaceBuilder
 ```
-set_role ( new_role )
+set_role ( new_role )  # authority, instance, authority instance
 
-set_type ( new_type )
+set_type ( new_type )  # natural, constructed, jurisdictional
 
-set_class ( new_class )
+set_class ( new_class )  # individual, collective, referential
 
 set_usage ( new_usage )
 
@@ -555,7 +561,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -582,7 +588,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -605,9 +611,9 @@ add_qualifier ( qualifier )  # RefElement
 
 ### StringBuilder
 ```
-set_type ( new_type )  # "textual", "numeric", "mixed"
+set_type ( new_type )  # textual, numeric, mixed
 
-set_class ( new_class )  # "word", "phrase"
+set_class ( new_class )  # word, phrase
 
 add_name ( name_text,
            lang   = None,
@@ -625,7 +631,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -655,7 +661,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -689,7 +695,7 @@ set_type ( link_title,
 
 set_certainty ( certainty )  # ["exact", "implied", "estimated", "approximate", None]
 
-set_quality ( quality )  # ["before", "after", "early", "mid", "late", None] (+)
+set_quality ( quality )  # ["before", "after", "early", "mid", "late", None] (0+)
 
 add_name ( name_text,
            lang   = None,
@@ -725,7 +731,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -762,7 +768,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -866,11 +872,11 @@ set_time_entry2_link ( link_title,
 
 ### WorkBuilder
 ```
-set_type ( new_type )
+set_type ( new_type )  # intellectual, artistic
 
-set_role ( new_role )
+set_role ( new_role )  # authority, instance, or authority instance
 
-set_class ( new_class )
+set_class ( new_class )  # individual, serial, collective, referential
 
 add_name ( name_text,
            type_  = "generic",
@@ -884,7 +890,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -914,7 +920,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # ["transcription", "annotation", "documentation", "description", None]
+           class_ = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )

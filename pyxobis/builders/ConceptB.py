@@ -21,10 +21,6 @@ class ConceptBuilder(PrincipalElementBuilder):
         raise AttributeError("Concept element does not have property 'class'")
     def set_subtype(self, new_subtype):
         self.subtype = new_subtype
-    def add_variant(self, variant):
-        # input should be an ConceptVariantEntry. use ConceptVariantBuilder to build.
-        assert isinstance(variant, ConceptVariantEntry)
-        super().add_variant(variant)
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \

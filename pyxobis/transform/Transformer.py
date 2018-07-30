@@ -160,7 +160,7 @@ class Transformer:
             }.get(element_type)
 
             # @@@@@@@@@@@@@ TEMPORARY @@@@@@@@@@@@@
-            if element_type in [BEING, STRING]:
+            if element_type in [BEING, CONCEPT, STRING]:
 
                 # Initialize, perform PE-specific work on, and return Builder object.
                 peb = init_builder(record)
@@ -205,8 +205,7 @@ class Transformer:
         # ROLE
         # ---
         # authority / instance / authority instance
-        # all authorities (?)
-        bb.set_role("authority")
+        bb.set_role("authority")  # ?
 
         # TYPE
         # ---
@@ -303,14 +302,19 @@ class Transformer:
                 cb.set_scheme(scheme)
                 break
 
-        # SUBDIVISIONS
-        # ---
-        ...
-        ...
-        ...
-
         return cb
 
+    event_type_map = {
+        'natural' : ["Cyclonic Storms", "Earthquakes", "Fires", "Floods", "Tsunamis"],
+        'meeting' : ["Congresses", "Legislative Sessions"],
+        'journey' : ["Expeditions", "Medical Missions, Official"],
+        'occurrence' : ["Armed Conflicts", "Biohazard Release",
+            "Chemical Hazard Release", "Civil Disorders", "Disasters",
+            "Disease Outbreaks", "Explosions", "Mass Casualty Incidents",
+            "Radioactive Hazard Release", "Riots"],
+        'miscellaneous' : ["Censuses", "Exhibitions", "Exhibits", "Experiments",
+            "Special Events", "Trials", "Workshops"]
+    }
 
     def init_event_builder(self, record):
         eb = EventBuilder()
@@ -318,60 +322,22 @@ class Transformer:
         # TYPE
         # ---
         # natural, meeting, journey, occurrence, miscellaneous
-        ...
-        ...
-        ...
-        # eb.set_type()
-
-        """
-        categories:
-            Armed Conflicts
-            Biohazard Release
-            Censuses
-            Chemical Hazard Release
-            Civil Disorders
-            Committees and Commissions
-            Congresses
-            Cyclonic Storms
-            Disasters
-            Disease Outbreaks
-            Earthquakes
-            Events
-            Exhibitions
-            Exhibits
-            Expeditions
-            Experiments
-            Explosions
-            Fires
-            Floods
-            Government Agencies
-            Internet Resources
-            Legislative Sessions
-            Mass Casualty Incidents
-            Medical Missions, Official
-            **Preliminary
-            Radioactive Hazard Release
-            Riots
-            Societies, Medical
-            Special Events
-            Trials
-            Tsunamis
-            Websites
-            Workshops
-        """
+        # get by primary category
+        primary_cats = record.get_primary_categories()
+        for type, type_cats in self.event_type_map.items():
+            if any(cat in type_cats for cat in primary_cats):
+                eb.set_type(type)
 
         # CLASS
         # ---
         # individual, collective, referential
-        # "individual" vs "collective" events?
-        ...
-        ...
-        ...
-        # if record['008'].data[9] in 'bc':
-        #     event_class = 'referential'
-        # else:
-        #     event_class = 'individual'
-        # eb.set_class(event_class)
+        #
+        if record['008'].data[9] in 'bc':
+            eb.set_class('referential')
+        else:
+            ...
+            ...
+            ...
 
         # SCHEME
         # ---
@@ -392,31 +358,35 @@ class Transformer:
         return eb
 
 
-    def init_work_instance_builder(self, record):
+    def init_language_builder(self, record):
+        # class, usage
+        ...
+        ...
+        ...
         return None
 
 
     def init_object_builder(self, record):
+        # role, class, type, organization, holdings?
+        ...
+        ...
+        ...
         return None
 
 
     def init_organization_builder(self, record):
+        # type, class, scheme, prequalifiers
+        ...
+        ...
+        ...
         return None
-
-
-    def init_work_authority_builder(self, record):
-        return None
-
-
-    def init_language_builder(self, record):
-        return None
-
-
-    # def transform_time(self, record):
-    #     return None
 
 
     def init_place_builder(self, record):
+        # role, type, class, usage, scheme
+        ...
+        ...
+        ...
         return None
 
 
@@ -460,6 +430,26 @@ class Transformer:
         return sb
 
 
+    def init_work_instance_builder(self, record):
+        # type, role, class, holdings?
+        ...
+        ...
+        ...
+        return None
+
+
+    def init_work_authority_builder(self, record):
+        # type, role, class, holdings?
+        ...
+        ...
+        ...
+        return None
+
+
+
+    # def transform_time(self, record):
+    #     return None
+
     # def transform_relationship(self, record):
     #     return None
 
@@ -501,8 +491,8 @@ class Transformer:
         if entry_type:
             entry_type = entry_type.rstrip(':').strip()
             type_kwargs = { 'link_title' : entry_type,
-                             'set_URI'   : self.ix.quick_lookup("Variant Type", CONCEPT),
-                             'href_URI'  : self.ix.quick_lookup(entry_type, CONCEPT) }
+                            'set_URI'    : self.ix.quick_lookup("Variant Type", CONCEPT),
+                            'href_URI'   : self.ix.quick_lookup(entry_type, CONCEPT) }
 
         # Time or Duration
         start_type_datetime, end_type_datetime = field['8'], field['9']

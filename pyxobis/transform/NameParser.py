@@ -81,7 +81,7 @@ class NameParser:
             # 100 ^q : Fuller form of name  (type "expansion")
             else:
                 being_name_expansion_text = self.__strip_being_ending_punctuation(val)
-                being_name_expansion_text = self.strip_parens(being_name_expansion_text)
+                being_name_expansion_text = self.__strip_parens(being_name_expansion_text)
                 being_names_kwargs.append({ 'name_text': being_name_expansion_text,
                                             'type_'    : "expansion",
                                             'lang'     : field_lang,
@@ -142,7 +142,11 @@ class NameParser:
         - a list of qualifiers as RefElement objects
         to pass into a Builder.
         """
-        field_lang, field_script = field['3'], field['4']
+        if field.tag[1:] == "55":
+            field_lang, field_script = field['3'], field['4']
+        else:
+            # ^3/^4 are taken up in X50/X80 fields by MeSH UIs
+            field_lang, field_script = None, None
 
         # If this is a 150/155, ^a is name (+ hypothetical ^x is Concept qualifier).
         # If this is a X80, ^x is name.
@@ -183,6 +187,38 @@ class NameParser:
         return concept_names_kwargs, concept_qualifiers
 
 
+    def parse_event_name(self, field):
+        """
+        Parse a X11 field containing a Event name into:
+        - a list of names as kwarg dicts, and
+        - a list of qualifiers as RefElement objects,
+        to pass into a Builder.
+        """
+        field_lang, field_script = field['3'], field['4']
+
+        # NAME(S)
+        # ---
+        # ^a Meeting name/jurisdiction name as entry element
+        # UNLESS ^e Subordinate unit, in which case ^a is prequalifier
+        event_names_kwargs = []
+        ...
+        ...
+        ...
+
+        # QUALIFIER(S)
+        # ---
+        #
+        event_qualifiers = []
+        ...
+        ...
+        ...
+
+
+    def parse_organization_name(self, field):
+        ...
+        ...
+        ...
+
 
     def parse_string_name(self, field):
         """
@@ -208,34 +244,34 @@ class NameParser:
         # ^q Qualifier  [StringRef?]
         #     + ^l Language?? / ^3 Language of entry??  [LanguageRef]
         string_qualifiers = []
-        ...
+        """
+        182  Textword (TWA) (Lane defined) (NR)
+            0  Authority record control number (RIM) (R)
+            3  Language of entry (Lane) (except English; replaces $l) (R)
+            4  Romanization scheme (Lane, cf. language authority) (R)
+            g  Grammatical type (cf. abbrev. list) (R)
+            l  Language (obsolete 3 digit abbrev.) (R)
+            q  Qualifier (to distinguish otherwise identical words/phrases) (R)
+            y  Word/phrase entry (preferred term, favoring singular nouns) (R)
+        482  See From Reference, Textword (Lane defined) (R)
+            3  Language of entry (Lane) (except English) (R)
+            4  Romanization scheme or Script (Lane) (R)
+            7  ID for included variants, L1, L2, etc. (Lane) (R)
+            e  Relator term (Lane: 1st subfield) (R)
+            g  Grammatical type (cf. abbrev. list) (R)
+            l  Language (3 digit abbrev; obsolete, change to $4) (R)
+            y  Word/phrase see from reference (R)
+        """
+        for val in field.get_subfields('q'):
+            print(val)
+            val = self.__strip_parens(val)
         ...
         ...
 
         return string_names_kwargs, string_pos_kwargs, string_qualifiers
 
 
-    """
-    182  Textword (TWA) (Lane defined) (NR)
-        0  Authority record control number (RIM) (R)
-        3  Language of entry (Lane) (except English; replaces $l) (R)
-        4  Romanization scheme (Lane, cf. language authority) (R)
-        g  Grammatical type (cf. abbrev. list) (R)
-        l  Language (obsolete 3 digit abbrev.) (R)
-        q  Qualifier (to distinguish otherwise identical words/phrases) (R)
-        y  Word/phrase entry (preferred term, favoring singular nouns) (R)
-    482  See From Reference, Textword (Lane defined) (R)
-        3  Language of entry (Lane) (except English) (R)
-        4  Romanization scheme or Script (Lane) (R)
-        7  ID for included variants, L1, L2, etc. (Lane) (R)
-        e  Relator term (Lane: 1st subfield) (R)
-        g  Grammatical type (cf. abbrev. list) (R)
-        l  Language (3 digit abbrev; obsolete, change to $4) (R)
-        y  Word/phrase see from reference (R)
-    """
-
-
-    def strip_parens(self, namestring):
+    def __strip_parens(self, namestring):
         """
         Strip enclosing parentheses.
         """

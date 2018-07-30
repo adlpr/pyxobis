@@ -35,10 +35,6 @@ class ObjectBuilder(PrincipalElementBuilder):
         # use VersionsHoldingsBuilder to build.
         # assert isinstance(versions_holdings_opt, VersionsHoldingsOpt)
         self.holdings = versions_holdings_opt
-    def add_variant(self, variant):
-        # input should be an ObjectVariantEntry. use ObjectVariantBuilder to build.
-        assert isinstance(variant, ObjectVariantEntry)
-        super().add_variant(variant)
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \

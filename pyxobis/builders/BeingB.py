@@ -34,9 +34,6 @@ class BeingBuilder(PrincipalElementBuilder):
     def set_time_or_duration_ref(self, time_or_duration_ref):
         # assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
-    def add_variant(self, variant):
-        # assert isinstance(variant, VariantEntry)
-        super().add_variant(variant)
     def build(self):
         name_content = self.name_content[0][1]                       \
                        if len(self.name_content) == 1                \

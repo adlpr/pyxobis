@@ -28,10 +28,6 @@ class WorkBuilder(PrincipalElementBuilder):
         # use VersionsHoldingsBuilder to build.
         # assert isinstance(versions_holdings_opt, VersionsHoldingsOpt)
         self.holdings = versions_holdings_opt
-    def add_variant(self, variant):
-        # input should be a WorkVariantEntry. use WorkVariantBuilder to build.
-        assert isinstance(variant, WorkVariantEntry)
-        super().add_variant(variant)
     def build(self):
         name_content = self.name_content[0][1]                       \
                        if len(self.name_content) == 1                \

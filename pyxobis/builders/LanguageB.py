@@ -20,10 +20,6 @@ class LanguageBuilder(PrincipalElementBuilder):
         raise AttributeError("Language element does not have property 'role'")
     def set_scheme(self, *args, **kwargs):
         raise AttributeError("Language element does not have property 'scheme'")
-    def add_variant(self, variant):
-        # input should be an LanguageVariantEntry. use LanguageVariantBuilder to build.
-        assert isinstance(variant, LanguageVariantEntry)
-        super().add_variant(variant)
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \

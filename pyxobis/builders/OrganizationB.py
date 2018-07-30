@@ -22,10 +22,6 @@ class OrganizationBuilder(PrincipalElementBuilder):
     def add_prequalifier(self, prequalifier):
         # assert isinstance(qualifier, PreQualifierRefElement)
         self.prequalifiers.append(prequalifier)
-    def add_variant(self, variant):
-        # input should be an OrganizationVariantEntry. use OrganizationVariantBuilder to build.
-        assert isinstance(variant, OrganizationVariantEntry)
-        super().add_variant(variant)
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \

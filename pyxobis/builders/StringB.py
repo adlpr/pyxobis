@@ -28,10 +28,6 @@ class StringBuilder(PrincipalElementBuilder):
                 LinkAttributes(xlink_title, xlink_href) if xlink_title else None
             )
         )
-    def add_variant(self, variant):
-        # input should be an StringVariantEntry. use StringVariantBuilder to build.
-        assert isinstance(variant, StringVariantEntry)
-        super().add_variant(variant)
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \

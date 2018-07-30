@@ -94,8 +94,6 @@ class TimeBuilder(PrincipalElementBuilder):
                             ),
                             set_ref = XSDAnyURI( set_URI )
                         )
-    def add_variant(self, variant):
-        super().add_variant(variant)
     def build(self):
         return Time(
                     TimeInstanceEntry(
@@ -165,8 +163,6 @@ class DurationBuilder(PrincipalElementBuilder):
                              ),
                              set_ref = XSDAnyURI( set_URI )
                          )
-    def add_variant(self, variant):
-        super().add_variant(variant)
     def build(self):
         return Time(
                    TimeDurationEntry(

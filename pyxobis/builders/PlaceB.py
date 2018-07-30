@@ -14,10 +14,6 @@ class PlaceBuilder(PrincipalElementBuilder):
     # ADDITIONAL: -
     def __init__(self):
         super().__init__()
-    def add_variant(self, variant):
-        # input should be an PlaceVariantEntry. use PlaceVariantBuilder to build.
-        assert isinstance(variant, PlaceVariantEntry)
-        super().add_variant(variant)
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \

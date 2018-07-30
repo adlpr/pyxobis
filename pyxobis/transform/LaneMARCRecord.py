@@ -36,6 +36,9 @@ class LaneMARCRecord(Record):
         # TEMPORARY: PASS ANY RECORD THAT DOESN'T HAVE 035 9 INSERTED
         return None
 
+    def get_primary_categories(self):
+        return [val for field in self.get_fields('655') for val in field.get_subfields('a') if field.indicator1 == '1']
+
     def get_broad_category(self):
         # returns 655 47 ^a if record has exactly one, otherwise prints warning
         broad_categories = [field['a'] for field in self.get_fields('655') if field.indicator1 == '4']
