@@ -5,6 +5,7 @@ import regex as re
 from pyxobis.builders import *
 from .Indexer import Indexer
 from .DateTimeParser import DateTimeParser
+from .PlaceNormalizer import PlaceNormalizer
 from .tf_common import *
 
 
@@ -16,6 +17,7 @@ class NameParser:
         """
         self.ix = Indexer()
         self.dp = DateTimeParser()
+        self.pn = PlaceNormalizer()
 
         # Build regex for method __strip_ending_punctuation
         # Strip ending periods only when not part of a recognized abbreviation or initialism.
@@ -181,6 +183,8 @@ class NameParser:
 
         return concept_names_kwargs, concept_qualifiers
 
+    # known Org rather than Place names used in event ^c
+    subfc_org_names = ["Istituto superiore de sanit", "Ciba Foundation"]
 
     def parse_event_name(self, field):
         """
@@ -208,14 +212,24 @@ class NameParser:
         # ---
         event_qualifiers = []
         for code, val in field.get_subfields('c','d','n', with_codes=True):
-            # ^c Location of meeting  --> PlaceRef
+            # ^c Location of meeting  --> usually PlaceRef, sometimes OrgRef!!
             if code == 'c':
-                val = re.sub(r"^([^\(]+)\)$", r'\1', self.__strip_parens(self.__strip_ending_punctuation(val)))
-                print(val)
-                prb = PlaceRefBuilder()
-                ...
-                ...
-                # event_qualifiers.append(prb.build())
+                if any(val.startswith(org) for org in subfc_org_names):
+                    # OrgRef
+                    val = self.__strip_ending_punctuation(val)
+                    orb = OrganizationRefBuilder()
+                    orb.set_link( val,
+                                  href_URI = self.ix.quick_lookup(val, ORGANIZATION) )
+                    orb.add_name( val,
+                                  lang   = field_lang,
+                                  script = field_script,
+                                  nonfiling = 0 )
+                    event_qualifiers.append(orb.build())
+                else:
+                    # PlaceRef
+                    ...
+                    ...
+                    ...
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
                 event_qualifiers.append(self.dp.parse(val, EVENT))
@@ -298,12 +312,15 @@ class NameParser:
         for code, val in field.get_subfields('c','d','n', with_codes=True):
             # ^c Location of meeting  --> PlaceRef
             if code == 'c':
-                val = re.sub(r"^[^\(]+\)$", '', self.__strip_parens(self.__strip_ending_punctuation(val)))
+                val = self.pn.normalize(val)
                 prb = PlaceRefBuilder()
-                ...
-                ...
-                ...
-                # org_qualifiers.append(prb.build())
+                prb.set_link( val,
+                              href_URI = self.ix.quick_lookup(val, PLACE) )
+                prb.add_name( val,
+                              lang   = field_lang,
+                              script = field_script,
+                              nonfiling = 0 )
+                org_qualifiers.append(prb.build())
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
                 org_qualifiers.append(self.dp.parse(val, ORGANIZATION))
@@ -335,14 +352,14 @@ class NameParser:
         if 'b' in field:
             # is ^a Org or Place? ^b are always going to be orgs
             if field.indicator1 == '1':
-                subf_a_element, rb = PLACE, PlaceRefBuilder()
+                prequalifier_element, rb = PLACE, PlaceRefBuilder()
             else:
-                subf_a_element, rb = ORGANIZATION, OrganizationRefBuilder()
+                prequalifier_element, rb = ORGANIZATION, OrganizationRefBuilder()
             # ^a
             for val in field.get_subfields('a'):
                 val = self.__strip_ending_punctuation(val)
                 rb.set_link( val,
-                             href_URI = self.ix.quick_lookup(val, subf_a_element) )
+                             href_URI = self.ix.quick_lookup(val, prequalifier_element) )
                 rb.add_name( val,
                              lang   = field_lang,
                              script = field_script,
@@ -438,5 +455,7 @@ class NameParser:
         """
         Strip enclosing parentheses.
         """
-        ns = re.sub(r"(^[\s\(]+|[\s\)]+$)", "", namestring).strip()
+        ns = re.sub(r"^[\s\(]+((?:[^\(\)]|\([^\(\)]*\))+)[\s\)]+$", r"\1", namestring).strip()
+        ns = re.sub(r"^[\(]((?:[^\(\)]|\([^\(\)]*\))+)$", r'\1', ns).strip()
+        ns = re.sub(r"^((?:[^\(\)]|\([^\(\)]*\))+)[\)]$", r'\1', ns).strip()
         return ns
