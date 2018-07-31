@@ -151,16 +151,16 @@ class Transformer:
                 WORK_AUT     : (self.init_work_authority_builder, None),
                 BEING        : (self.init_being_builder, self.np.parse_being_name),
                 CONCEPT      : (self.init_concept_builder, self.np.parse_concept_name),
-                EVENT        : (self.init_event_builder, None),
+                EVENT        : (self.init_event_builder, self.np.parse_event_name),
                 LANGUAGE     : (self.init_language_builder, None),
                 OBJECT       : (self.init_object_builder, None),
-                ORGANIZATION : (self.init_organization_builder, None),
+                ORGANIZATION : (self.init_organization_builder, self.np.parse_organization_name),
                 PLACE        : (self.init_place_builder, None),
                 STRING       : (self.init_string_builder, self.np.parse_string_name),
             }.get(element_type)
 
             # @@@@@@@@@@@@@ TEMPORARY @@@@@@@@@@@@@
-            if element_type in [BEING, CONCEPT, STRING]:
+            if element_type in [ORGANIZATION, EVENT, BEING, CONCEPT, STRING]:
 
                 # Initialize, perform PE-specific work on, and return Builder object.
                 peb = init_builder(record)
@@ -304,6 +304,7 @@ class Transformer:
 
         return cb
 
+
     event_type_map = {
         'natural' : ["Cyclonic Storms", "Earthquakes", "Fires", "Floods", "Tsunamis"],
         'meeting' : ["Congresses", "Legislative Sessions"],
@@ -331,39 +332,45 @@ class Transformer:
         # CLASS
         # ---
         # individual, collective, referential
-        #
         if record['008'].data[9] in 'bc':
             eb.set_class('referential')
-        else:
-            ...
-            ...
-            ...
+        # individual/collective too hard to differentiate, n/a for now
 
         # SCHEME
         # ---
-        #
-        ...
-        ...
-        ...
-        # eb.set_scheme()
+        # n/a for now
 
-        # PREQUALIFIER
+        # PREQUALIFIER(S)
         # ---
-        #
-        ...
-        ...
-        ...
-        # eb.add_prequalifier()
+        event_prequalifiers = self.np.parse_event_prequalifiers(record.get_id_field())
+        for prequalifier in event_prequalifiers:
+            eb.add_prequalifier(prequalifier)
 
         return eb
 
 
     def init_language_builder(self, record):
-        # class, usage
+        lb = LanguageBuilder()
+
+        # TYPE
+        # ---
+        # @@@@@@ not yet in schema @@@@@@
         ...
         ...
         ...
-        return None
+
+        # CLASS
+        # ---
+        ...
+        ...
+        ...
+
+        # USAGE
+        # ---
+        # subdivision or not?
+        # n/a for now
+
+        return lb
 
 
     def init_object_builder(self, record):
@@ -374,20 +381,83 @@ class Transformer:
         return None
 
 
+    org_type_map = {
+        'business'   : [""],
+        'government' : [""],
+        'nonprofit'   : [""],
+        'other'      : [""]
+    }
+
     def init_organization_builder(self, record):
-        # type, class, scheme, prequalifiers
-        ...
-        ...
-        ...
-        return None
+        ob = OrganizationBuilder()
+
+        # TYPE
+        # ---
+        # business, government, nonprofit, other
+        # get by primary category
+        primary_cats = [cat.lower() for cat in record.get_primary_categories()]
+        if any('nonprofit' in cat for cat in primary_cats):
+            ob.set_type('nonprofit')
+        elif any('for profit' in cat for cat in primary_cats):
+            ob.set_type('business')
+        elif any('government' in cat for cat in primary_cats):
+            ob.set_type('government')
+
+        # CLASS
+        # ---
+        # individual, collective, referential
+        if record['008'].data[9] in 'bc':
+            ob.set_class('referential')
+        # individual/collective too hard to differentiate, n/a for now
+
+        # SCHEME
+        # ---
+        # n/a for now
+
+        # PREQUALIFIER(S)
+        # ---
+        org_prequalifiers = self.np.parse_org_prequalifiers(record.get_id_field())
+        for prequalifier in org_prequalifiers:
+            ob.add_prequalifier(prequalifier)
+
+        return ob
 
 
     def init_place_builder(self, record):
-        # role, type, class, usage, scheme
+        pb = PlaceBuilder()
+
+        # ROLE
+        # ---
+        # authority / instance / authority instance
+        bb.set_role("authority")  # ?
+
+        # TYPE
+        # ---
+        # natural / constructed / jurisdictional
         ...
         ...
         ...
-        return None
+
+
+        # CLASS
+        # ---
+        # individual, collective, referential
+        ...
+        ...
+        ...
+
+        # USAGE
+        # ---
+        # subdivision or not?
+        ...
+        ...
+        ...
+
+        # SCHEME
+        # ---
+        # n/a for now
+
+        return pb
 
 
     def init_string_builder(self, record):

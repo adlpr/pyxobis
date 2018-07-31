@@ -17,7 +17,7 @@ INDEX = None
 # @@@@@@ TEMPORARY, ONLY WORKS FROM DIR WITH THESE FILES,
 #        DO SOMETHING BETTER WITH INPUT FILENAMES
 BIB_INF_NAME = "bibmfhd.20180716.1009"
-AUT_INF_NAME = "aut.20180713.0828"
+AUT_INF_NAME = "aut.20180730.0924"
 
 # constants for lookups unable to be resolved,
 # either due to conflict or having no match
@@ -88,7 +88,6 @@ class Indexer:
         Useful for Builders to look up Types for set control.
         (could Type control numbers maybe live in some separate cache?)
         """
-        assert element_type in self.index, "element type {} not indexed".format(element_type)
         subf = LaneMARCRecord.IDENTITY_SUBFIELD_MAP[element_type][0]
         return self.lookup(Field('   ','  ',[subf, text]), element_type)
 
