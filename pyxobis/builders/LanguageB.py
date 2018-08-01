@@ -10,12 +10,10 @@ class LanguageBuilder(PrincipalElementBuilder):
     Interface for constructing a XOBIS Language element.
     """
     #  METHODS DEVIATION FROM SUPER
-    #    MISSING: set_type, set_role, set_scheme
+    #    MISSING: set_role, set_scheme
     # ADDITIONAL: -
     def __init__(self):
         super().__init__()
-    def set_type(self, *args, **kwargs):
-        raise AttributeError("Language element does not have property 'type'")
     def set_role(self, *args, **kwargs):
         raise AttributeError("Language element does not have property 'role'")
     def set_scheme(self, *args, **kwargs):
@@ -29,6 +27,7 @@ class LanguageBuilder(PrincipalElementBuilder):
                        GenericName(name_content),
                        QualifiersOpt(self.qualifiers)
                    ),
+                   type_     = self.type,
                    opt_class = OptClass(self.class_),
                    usage     = self.usage,
                    variants  = self.variants,
@@ -56,7 +55,7 @@ class LanguageVariantBuilder(PrincipalElementVariantBuilder):
                        GenericName(name_content),
                        QualifiersOpt(self.qualifiers)
                    ),
-                   opt_variant_attributes = self.opt_variant_attributes,
+                   opt_variant_group_attributes = self.opt_variant_group_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
                    opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),

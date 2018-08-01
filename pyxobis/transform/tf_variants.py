@@ -128,6 +128,12 @@ def transform_variant_being(self, field):
     """
     bvb = BeingVariantBuilder()
 
+    # Variant Group Attributes
+    # ---
+    bvb.set_variant_group(id        = field['7'],
+                          group     = field['6'],
+                          preferred = bool(field['5']))
+
     # Type / Time/Duration Ref
     # ---
     type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
@@ -139,16 +145,10 @@ def transform_variant_being(self, field):
     # Substitute
     # ---
     # n/a for now
-    # ...
-    # ...
-    # ...
 
     # Scheme
     # ---
     # n/a for now
-    # ...
-    # ...
-    # ...
 
     # Name(s) & Qualifier(s)
     # ---
@@ -172,27 +172,6 @@ def transform_variant_being(self, field):
 
     return bvb.build()
 
-"""
-400  See From Reference, Personal Name (R)
-    1  Filler (--) for subsumed name xref (Lane: for indention) (R)
-    2  Scope note for subsumed name "Includes:" etc. (Lane) (R)
-    3  Language of entry (Lane) (except English) (R)
-    4  Romanization scheme or Script (Lane, cf. language authority) (R)
-    5  Preferred form by language (P1 only value; equivalent to 1XX; sorts first) (Lane) (R)
-    6  Romanized cluster ID (value R1 must match 1XX; files first; R2 ... sort alpha by first in cluster) (Lane) (R)
-    7  ID for included names, L1, L2, etc. (R)
-    8  Beginning/earliest date of relationship (Lane) (R)
-    9  Single or ending/latest date of relationship (Lane) (R)
-    a  Personal name (R)
-    b  Numeration (R)
-    c  Titles and other words associated with a name (R)
-    d  Dates associated with a name (R)
-    e  Relator term (Lane: 1st subfield) (R)
-    j  Note/qualification (Lane) (R)
-    q  Fuller form of name (R)
-    [[w  Relationship (1st subfield: d=initials) (R)]]
-"""
-
 
 def transform_variant_organization(self, field):
     """
@@ -200,6 +179,13 @@ def transform_variant_organization(self, field):
     Output: OrgVariantEntry object
     """
     ovb = OrganizationVariantBuilder()
+
+    ...
+    ...
+    ...
+    ...
+    ...
+    ...
 
     return ovb.build()
 
@@ -229,6 +215,13 @@ def transform_variant_concept(self, field):
     Output: ConceptVariantEntry object
     """
 
+    ...
+    ...
+    ...
+    ...
+    ...
+    ...
+
     return None
 
 
@@ -238,6 +231,12 @@ def transform_variant_string(self, field):
     Output: StringVariantEntry object
     """
     svb = StringVariantBuilder()
+
+    # Variant Group Attributes
+    # ---
+    svb.set_variant_group(id        = field['7'],
+                          group     = field['6'],
+                          preferred = bool(field['5']))
 
     # Type / Time/Duration Ref
     # ---
@@ -264,14 +263,3 @@ def transform_variant_string(self, field):
     # n/a?
 
     return svb.build()
-
-"""
-482  See From Reference, Textword (Lane defined) (R)
-    3  Language of entry (Lane) (except English) (R)
-    4  Romanization scheme or Script (Lane) (R)
-    7  ID for included variants, L1, L2, etc. (Lane) (R)
-    e  Relator term (Lane: 1st subfield) (R)
-    g  Grammatical type (cf. abbrev. list) (R)
-    l  Language (3 digit abbrev; obsolete, change to $4) (R)
-    y  Word/phrase see from reference (R)
-"""

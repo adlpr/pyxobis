@@ -412,7 +412,7 @@ class QualifiersOpt(Component):
 
 
 
-class OptVariantAttributes(Component):
+class OptVariantGroupAttributes(Component):
     """
     optVariantAttributes |=
         attribute id { text }?,
@@ -423,7 +423,7 @@ class OptVariantAttributes(Component):
     def __init__(self, id=None, group=None, preferred=None):
         self.id = id
         self.group = group
-        assert preferred in OptVariantAttributes.PREFERRED
+        assert preferred in OptVariantGroupAttributes.PREFERRED
         self.preferred = preferred
     def serialize_xml(self):
         # Returns a dict of parent attributes.

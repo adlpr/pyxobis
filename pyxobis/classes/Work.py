@@ -171,13 +171,13 @@ class WorkVariantEntry(VariantEntry):
         }
     """
     def __init__(self, work_entry_content, \
-                       opt_variant_attributes=OptVariantAttributes(), \
+                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
                        type_=None, time_or_duration_ref=None, \
                        opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_scheme=OptScheme(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_attributes, OptVariantAttributes)
-        self.opt_variant_attributes = opt_variant_attributes
+        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
+        self.opt_variant_group_attributes = opt_variant_group_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -195,8 +195,8 @@ class WorkVariantEntry(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
-        variant_e = E('work', **opt_variant_attributes_attrs)
+        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
+        variant_e = E('work', **opt_variant_group_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()

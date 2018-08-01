@@ -293,10 +293,10 @@ class TimeVariant(VariantEntry):
         element xobis:time { optVariantAttributes, genericType?, timeInstanceEntry }
     """
     def __init__(self, time_instance_entry, \
-                       opt_variant_attributes=OptVariantAttributes(), \
+                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
                        type_=None):
-        assert isinstance(opt_variant_attributes, OptVariantAttributes)
-        self.opt_variant_attributes = opt_variant_attributes
+        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
+        self.opt_variant_group_attributes = opt_variant_group_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -305,8 +305,8 @@ class TimeVariant(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
-        variant_e = E('time', **opt_variant_attributes_attrs)
+        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
+        variant_e = E('time', **opt_variant_group_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -408,10 +408,10 @@ class DurationVariant(VariantEntry):
         element xobis:duration { optVariantAttributes, genericType?, durationEntry }
     """
     def __init__(self, duration_entry, \
-                       opt_variant_attributes=OptVariantAttributes(), \
+                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
                        type_=None):
-        assert isinstance(opt_variant_attributes, OptVariantAttributes)
-        self.opt_variant_attributes = opt_variant_attributes
+        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
+        self.opt_variant_group_attributes = opt_variant_group_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -420,8 +420,8 @@ class DurationVariant(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
-        variant_e = E('duration', **opt_variant_attributes_attrs)
+        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
+        variant_e = E('duration', **opt_variant_group_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()

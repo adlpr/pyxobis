@@ -14,6 +14,11 @@ class Language(PrincipalElement):
     """
     languagePE |=
         element xobis:language {
+            attribute type {
+                string "natural"
+                | string "constructed"
+                | string "script"
+            }?,
             optClass,
             attribute usage { "subdivision" }?,
             element xobis:entry { langEntryContent },
@@ -21,11 +26,14 @@ class Language(PrincipalElement):
             optNoteList
         }
     """
+    TYPES = ["natural", "constructed", "script", None]
     USAGES = ["subdivision", None]
     def __init__(self, language_entry_content, \
-                       opt_class=OptClass(), usage=None, \
+                       type_=None, opt_class=OptClass(), usage=None, \
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
+        assert type_ in Language.TYPES
+        self.type = type_
         assert isinstance(opt_class, OptClass)
         self.opt_class = opt_class
         assert usage in Language.USAGES
@@ -43,6 +51,8 @@ class Language(PrincipalElement):
         # Returns an Element.
         # attributes
         language_attrs = {}
+        if self.type:
+            language_attrs['type'] = self.type
         opt_class_attrs = self.opt_class.serialize_xml()
         language_attrs.update(opt_class_attrs)
         if self.usage:
@@ -101,12 +111,12 @@ class LanguageVariantEntry(VariantEntry):
         }
     """
     def __init__(self, language_entry_content, \
-                       opt_variant_attributes=OptVariantAttributes(), \
+                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
                        type_=None, time_or_duration_ref=None, \
                        opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_attributes, OptVariantAttributes)
-        self.opt_variant_attributes = opt_variant_attributes
+        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
+        self.opt_variant_group_attributes = opt_variant_group_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -122,8 +132,8 @@ class LanguageVariantEntry(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
-        variant_e = E('language', **opt_variant_attributes_attrs)
+        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
+        variant_e = E('language', **opt_variant_group_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
