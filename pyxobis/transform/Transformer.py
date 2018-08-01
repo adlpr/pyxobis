@@ -152,10 +152,10 @@ class Transformer:
                 BEING        : (self.init_being_builder, self.np.parse_being_name),
                 CONCEPT      : (self.init_concept_builder, self.np.parse_concept_name),
                 EVENT        : (self.init_event_builder, self.np.parse_event_name),
-                LANGUAGE     : (self.init_language_builder, None),
+                LANGUAGE     : (self.init_language_builder, self.np.parse_language_name),
                 OBJECT       : (self.init_object_builder, None),
                 ORGANIZATION : (self.init_organization_builder, self.np.parse_organization_name),
-                PLACE        : (self.init_place_builder, None),
+                PLACE        : (self.init_place_builder, self.np.parse_place_name),
                 STRING       : (self.init_string_builder, self.np.parse_string_name),
             }.get(element_type)
 
@@ -361,14 +361,15 @@ class Transformer:
 
         # CLASS
         # ---
-        ...
-        ...
-        ...
+        # individual, collective, referential
+        if record['008'].data[9] in 'bc':
+            lb.set_class('referential')
+        # language families not marked
 
         # USAGE
         # ---
         # subdivision or not?
-        # n/a for now
+        # n/a for now?
 
         return lb
 
@@ -380,13 +381,6 @@ class Transformer:
         ...
         return None
 
-
-    org_type_map = {
-        'business'   : [""],
-        'government' : [""],
-        'nonprofit'   : [""],
-        'other'      : [""]
-    }
 
     def init_organization_builder(self, record):
         ob = OrganizationBuilder()

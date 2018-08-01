@@ -183,8 +183,9 @@ class NameParser:
 
         return concept_names_kwargs, concept_qualifiers
 
-    # known Org rather than Place names used in event ^c
-    subfc_org_names = ["Istituto superiore de sanit", "Ciba Foundation"]
+
+    # known Org rather than Place names used in Event ^c
+    event_subfc_orgs = ["Istituto superiore de sanit", "Ciba Foundation"]
 
     def parse_event_name(self, field):
         """
@@ -212,24 +213,20 @@ class NameParser:
         # ---
         event_qualifiers = []
         for code, val in field.get_subfields('c','d','n', with_codes=True):
-            # ^c Location of meeting  --> usually PlaceRef, sometimes OrgRef!!
+            # ^c Location of meeting  --> usually PlaceRef, sometimes OrgRef!
             if code == 'c':
-                if any(val.startswith(org) for org in subfc_org_names):
-                    # OrgRef
-                    val = self.__strip_ending_punctuation(val)
-                    orb = OrganizationRefBuilder()
-                    orb.set_link( val,
-                                  href_URI = self.ix.quick_lookup(val, ORGANIZATION) )
-                    orb.add_name( val,
-                                  lang   = field_lang,
-                                  script = field_script,
-                                  nonfiling = 0 )
-                    event_qualifiers.append(orb.build())
+                if any(val.startswith(org) for org in self.event_subfc_orgs):
+                    qualifier_element, rb = ORGANIZATION, OrganizationRefBuilder()
                 else:
-                    # PlaceRef
-                    ...
-                    ...
-                    ...
+                    qualifier_element, rb = PLACE, PlaceRefBuilder()
+                val = self.__strip_ending_punctuation(val)
+                rb.set_link( val,
+                             href_URI = self.ix.quick_lookup(val, qualifier_element) )
+                rb.add_name( val,
+                             lang   = field_lang,
+                             script = field_script,
+                             nonfiling = 0 )
+                event_qualifiers.append(rb.build())
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
                 event_qualifiers.append(self.dp.parse(val, EVENT))
@@ -278,9 +275,23 @@ class NameParser:
         - a list of qualifiers as RefElement objects,
         to pass into a Builder.
         """
-        ...
-        ...
-        ...
+        field_lang, field_script = field['3'], field['4']
+
+        # NAME(S)
+        # ---
+        language_names_kwargs = []
+        for val in field.get_subfields('a'):
+            language_names_kwargs.append({ 'name_text': val,
+                                           'lang'     : field_lang,
+                                           'script'   : field_script,
+                                           'nonfiling' : 0 })
+
+        # QUALIFIER(S)
+        # ---
+        # Language X50 fields have no qualifiers.
+        language_qualifiers = []
+
+        return language_names_kwargs, language_qualifiers
 
 
     def parse_organization_name(self, field):
@@ -366,7 +377,7 @@ class NameParser:
                              nonfiling = 0 )
                 org_prequalifiers.append(rb.build())
             # ^b
-            for val in field.get_subfields('b'):
+            for val in field.get_subfields('b')[:-1]:
                 val = self.__strip_ending_punctuation(val)
                 orb = OrganizationRefBuilder()
                 orb.set_link( val,

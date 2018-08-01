@@ -412,6 +412,31 @@ class QualifiersOpt(Component):
 
 
 
+class OptVariantAttributes(Component):
+    """
+    optVariantAttributes |=
+        attribute id { text }?,
+        attribute group { text }?,
+        attribute preferred { xsd:boolean }?
+    """
+    PREFERRED = [True, False, None]
+    def __init__(self, id=None, group=None, preferred=None):
+        self.id = id
+        self.group = group
+        assert preferred in OptVariantAttributes.PREFERRED
+        self.preferred = preferred
+    def serialize_xml(self):
+        # Returns a dict of parent attributes.
+        attrs = {}
+        if self.id is not None:
+            attrs['id'] = str(id)
+        if self.group is not None:
+            attrs['group'] = str(group)
+        if self.preferred is not None:
+            attrs['preferred'] = str(preferred).lower()
+        return attrs
+
+
 
 class VersionsHoldingsOpt(Component):
     """

@@ -177,6 +177,7 @@ class BeingVariantEntry(VariantEntry):
     """
     beingVariant |=
         element xobis:being {
+            optVariantAttributes,
             genericType?,
             (timeRef | durationRef)?,
             element xobis:entry { optSubstituteAttribute, optScheme, beingEntryContent },
@@ -184,10 +185,13 @@ class BeingVariantEntry(VariantEntry):
         }
     """
     def __init__(self, being_entry_content, \
+                       opt_variant_attributes=OptVariantAttributes(), \
                        type_=None, time_or_duration_ref=None, \
                        opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_scheme=OptScheme(), \
                        opt_note_list=OptNoteList()):
+        assert isinstance(opt_variant_attributes, OptVariantAttributes)
+        self.opt_variant_attributes = opt_variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -204,7 +208,9 @@ class BeingVariantEntry(VariantEntry):
         self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('being')
+        # variant attributes
+        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
+        variant_e = E('being', **opt_variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()

@@ -105,10 +105,12 @@ self.time_or_duration_ref
 self.substitute_attribute
 self.scheme
 self.note_list
+self.opt_variant_attributes
 
 COMMON METHODS
 * add_name  [+ add_name_tuple]
 * add_qualifier
+set_variant_attributes
 set_type
 set_time_or_duration_ref
 set_substitute_attribute
@@ -122,11 +124,14 @@ class PrincipalElementVariantBuilder(Builder):
     """
     def __init__(self):
         super().__init__()
+        self.opt_variant_attributes = OptVariantAttributes()
         self.type = None
         self.time_or_duration_ref = None
         self.substitute_attribute = None
         self.scheme = None
         self.note_list = []     # Note objs
+    def set_variant_attributes(self, id=None, group=None, preferred=None):
+        self.opt_variant_attributes = OptVariantAttributes(id, group, preferred)
     def set_type(self, link_title, set_URI, href_URI=None):
         self.type = GenericType(
                         LinkAttributes(

@@ -225,6 +225,7 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
                        opt_scheme = OptScheme(self.scheme),
                        calendar = self.calendar
                    ),
+                   opt_variant_attributes = self.opt_variant_attributes,
                    type_ = self.type
                )
 
@@ -322,6 +323,7 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
                            calendar = self.calendar2
                        )
                    ),
+                   opt_variant_attributes = self.opt_variant_attributes,
                    type_ = self.type
                )
 

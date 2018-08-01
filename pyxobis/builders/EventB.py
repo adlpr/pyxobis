@@ -63,6 +63,7 @@ class EventVariantBuilder(PrincipalElementVariantBuilder):
                        PreQualifiersOpt(self.prequalifiers),
                        QualifiersOpt(self.qualifiers)
                    ),
+                   opt_variant_attributes = self.opt_variant_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
                    opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),

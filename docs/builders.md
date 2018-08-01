@@ -125,6 +125,10 @@ add_note ( content_text,        # str
 
 ### BeingVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )  # variant type (pseudonym/birth name/etc)
@@ -197,6 +201,10 @@ add_note ( content_text,
 
 ### ConceptVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )
@@ -272,6 +280,10 @@ add_note ( content_text,
 
 ### EventVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )
@@ -341,6 +353,10 @@ add_note ( content_text,
 
 ### LanguageVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )
@@ -419,6 +435,10 @@ set_holdings ( versions_holdings_opt )
 
 ### ObjectVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )
@@ -488,6 +508,10 @@ add_note ( content_text,
 
 ### OrganizationVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )
@@ -569,6 +593,10 @@ add_note ( content_text,
 
 ### PlaceVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )
@@ -639,6 +667,10 @@ add_note ( content_text,
 
 ### StringVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )
@@ -776,6 +808,10 @@ add_note ( content_text,
 
 ### TimeVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )
@@ -792,6 +828,10 @@ set_time_content ( time_content )
 
 ### DurationVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )
@@ -900,6 +940,10 @@ set_holdings ( versions_holdings_opt )
 
 ### WorkVariantBuilder
 ```
+set_variant_attributes ( id = None,
+                         group = None,
+                         preferred = None )  # bool
+
 set_type ( link_title,
            set_URI,
            href_URI = None )

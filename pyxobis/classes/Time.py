@@ -290,9 +290,13 @@ class TimeContent(Component):
 class TimeVariant(VariantEntry):
     """
     timeVariant |=
-        element xobis:time { genericType?, timeInstanceEntry }
+        element xobis:time { optVariantAttributes, genericType?, timeInstanceEntry }
     """
-    def __init__(self, time_instance_entry, type_=None):
+    def __init__(self, time_instance_entry, \
+                       opt_variant_attributes=OptVariantAttributes(), \
+                       type_=None):
+        assert isinstance(opt_variant_attributes, OptVariantAttributes)
+        self.opt_variant_attributes = opt_variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -300,7 +304,9 @@ class TimeVariant(VariantEntry):
         self.time_instance_entry = time_instance_entry
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('time')
+        # variant attributes
+        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
+        variant_e = E('time', **opt_variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -399,9 +405,13 @@ class DurationEntryPart(Component):
 class DurationVariant(VariantEntry):
     """
     durationVariant |=
-        element xobis:duration { genericType?, durationEntry }
+        element xobis:duration { optVariantAttributes, genericType?, durationEntry }
     """
-    def __init__(self, duration_entry, type_=None):
+    def __init__(self, duration_entry, \
+                       opt_variant_attributes=OptVariantAttributes(), \
+                       type_=None):
+        assert isinstance(opt_variant_attributes, OptVariantAttributes)
+        self.opt_variant_attributes = opt_variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -409,7 +419,9 @@ class DurationVariant(VariantEntry):
         self.duration_entry = duration_entry
     def serialize_xml(self):
         # Returns an Element.
-        variant_e = E('duration')
+        # variant attributes
+        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
+        variant_e = E('duration', **opt_variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
