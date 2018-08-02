@@ -10,7 +10,7 @@
     - Concept: `abstract`, `collective`, `control`, `specific`
       - Concept subtype: `general`, `form`, `topical`, `unspecified`
     - Event: `natural`, `meeting`, `journey`, `occurrence`, `miscellaneous`
-    - Language: <del>_no type_</del> `natural`, `constructed`, `written` ??
+    - Language: `natural`, `constructed`, `script`
     - Object: `natural`, `crafted`, `manufactured`
     - Organization: `business`, `government`, `nonprofit`, `other`
     - Place: `natural`, `constructed`, `jurisdictional`
@@ -126,8 +126,8 @@ add_note ( content_text,        # str
 ### BeingVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -202,8 +202,8 @@ add_note ( content_text,
 ### ConceptVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -281,8 +281,8 @@ add_note ( content_text,
 ### EventVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -354,8 +354,8 @@ add_note ( content_text,
 ### LanguageVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -436,8 +436,8 @@ set_holdings ( versions_holdings_opt )
 ### ObjectVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -509,8 +509,8 @@ add_note ( content_text,
 ### OrganizationVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -594,8 +594,8 @@ add_note ( content_text,
 ### PlaceVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -668,8 +668,8 @@ add_note ( content_text,
 ### StringVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -719,7 +719,7 @@ add_qualifier ( qualifier )  # RefElement
 
 ## Time
 
-### TimeContentBuilder
+### TimeContentSingleBuilder
 ```
 set_type ( link_title,
            set_URI,    # Time Type
@@ -809,8 +809,8 @@ add_note ( content_text,
 ### TimeVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -829,8 +829,8 @@ set_time_content ( time_content )
 ### DurationVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -941,8 +941,8 @@ set_holdings ( versions_holdings_opt )
 ### WorkVariantBuilder
 ```
 set_variant_group ( id = None,
-                         group = None,
-                         preferred = None )  # bool
+                    group = None,
+                    preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,

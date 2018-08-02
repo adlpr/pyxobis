@@ -132,7 +132,7 @@ def transform_variant_being(self, field):
     # ---
     bvb.set_variant_group(id        = field['7'],
                           group     = field['6'],
-                          preferred = bool(field['5']))
+                          preferred = bool(field['5']) if field['6'] else None)
 
     # Type / Time/Duration Ref
     # ---
@@ -236,7 +236,7 @@ def transform_variant_string(self, field):
     # ---
     svb.set_variant_group(id        = field['7'],
                           group     = field['6'],
-                          preferred = bool(field['5']))
+                          preferred = bool(field['5']) if field['6'] else None)
 
     # Type / Time/Duration Ref
     # ---

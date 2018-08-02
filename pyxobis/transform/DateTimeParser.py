@@ -21,7 +21,32 @@ class DateTimeParser:
 
     ix = Indexer()
 
-    def parse(self, datestring, element_type=None, default_start_type=None, default_end_type=None):
+    def parse_simple(self, datestring, type_kwargs=None):
+        """
+        Parse out a date value taken from an X50 field into a TimeContentSingle object.
+        """
+        tecb = TimeContentSingleBuilder()
+
+        # TYPE: none
+
+        # CERTAINTY:
+        certainty = "exact"
+        # no others on headings?
+        tecb.set_certainty(certainty)
+
+        # QUALITY:
+        # none on headings?
+
+        # contents or name?
+        time_kwargs = self.__parse_as_iso_datetime(datestring)
+        if time_kwargs:
+            tecb.set_time_contents(**time_kwargs)
+        else:
+            tecb.add_name(datestring)
+
+        return tecb.build()
+
+    def parse_as_ref(self, datestring, element_type=None, default_start_type=None, default_end_type=None):
         """
         Parse out a time or duration string into a Time or Duration ref element.
         """
@@ -231,7 +256,7 @@ class DateTimeParser:
     def __parse_single(self, datestring, type_kwargs):
         """
         Parses a single date string (preprocessed by parse_date > __parse_for_double)
-        into a TimeEntryContent object.
+        into a TimeContentSingle object.
         """
         tecb = TimeContentSingleBuilder()
 
@@ -239,7 +264,7 @@ class DateTimeParser:
         if type_kwargs:
             tecb.set_type(**type_kwargs)
 
-        # CERTAINTY:
+        # CERTAINTY
         dts = datestring
         # `exact`
         certainty = "exact"
@@ -258,8 +283,21 @@ class DateTimeParser:
         if re.match(r"c(irca|\.)", dts, flags=re.I):
             dts = re.sub(r"^c(irca|\.) +", "", dts, flags=re.I).strip()
             certainty = "approximate"
+        if dts.endswith('~'):
+            dts = dts.rstrip('~').strip()
+            certainty = "approximate"
         tecb.set_certainty(certainty)
 
+        # QUALITY
+        quality = ""
+        for quality_candidate in ["before", "after", "early", "mid", "late"]:
+            if re.match(r"^{}\s*".format(quality_candidate), dts, flags=re.I):
+                dts = re.sub(r"^{}\s*".format(quality_candidate), "", dts, flags=re.I)
+                quality += " {}".format(quality_candidate)
+        if quality:
+            tecb.set_quality(quality.strip())
+
+        # Other string normalization:
         # "AD" should only be dates that span from BC to AD, so not needed.
         dts = re.sub(r"(^A\.?D\.?\s+|\s+A\.?D\.?$)", "", dts).strip()
         # BC(E)
@@ -289,7 +327,7 @@ class DateTimeParser:
         # make sure DOTM is zero padded
         dts = re.sub(r"(\-\d\d\-)(\d(?:[^\d]|$))", r"\g<1>0\g<2>", dts, flags=re.I)
 
-        # finally try to parse dts as ISO 8601, otherwise treat as a name
+        # FINALLY: try to parse dts as ISO 8601, otherwise treat as a name
         time_kwargs = self.__parse_as_iso_datetime(dts)
         if time_kwargs:
             tecb.set_time_contents(**time_kwargs)
@@ -324,7 +362,7 @@ class DateTimeParser:
 
     def __type_string_to_kwargs(self, type_string):
         return { 'link_title' : type_string,
-                 'set_URI' : self.ix.quick_lookup("Time Type", CONCEPT),
+                 'set_URI'  : self.ix.quick_lookup("Time Type", CONCEPT),
                  'href_URI' : self.ix.quick_lookup(type_string, RELATIONSHIP) }  \
                if type_string else {}
 

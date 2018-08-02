@@ -429,11 +429,11 @@ class OptVariantGroupAttributes(Component):
         # Returns a dict of parent attributes.
         attrs = {}
         if self.id is not None:
-            attrs['id'] = str(id)
+            attrs['id'] = str(self.id)
         if self.group is not None:
-            attrs['group'] = str(group)
+            attrs['group'] = str(self.group)
         if self.preferred is not None:
-            attrs['preferred'] = str(preferred).lower()
+            attrs['preferred'] = str(self.preferred).lower()
         return attrs
 
 

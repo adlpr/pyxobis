@@ -108,7 +108,7 @@ class NameParser:
             being_qualifiers.append(srb.build())
         # ^d : Qualifying dates  --> Time/DurationRef
         for val in field.get_subfields('d'):
-            being_qualifiers.append(self.dp.parse(val, BEING))
+            being_qualifiers.append(self.dp.parse_as_ref(val, BEING))
 
         return being_names_kwargs, being_qualifiers
 
@@ -185,7 +185,7 @@ class NameParser:
 
 
     # known Org rather than Place names used in Event ^c
-    event_subfc_orgs = ["Istituto superiore de sanit", "Ciba Foundation"]
+    event_subfc_orgs = ["Istituto superiore", "Ciba Foundation"]
 
     def parse_event_name(self, field):
         """
@@ -229,7 +229,7 @@ class NameParser:
                 event_qualifiers.append(rb.build())
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
-                event_qualifiers.append(self.dp.parse(val, EVENT))
+                event_qualifiers.append(self.dp.parse_as_ref(val, EVENT))
             # ^n Number of part/section/meeting  --> StringRef?
             elif code == 'n':
                 val = self.__strip_ending_punctuation(val).lstrip('( ')
@@ -334,7 +334,7 @@ class NameParser:
                 org_qualifiers.append(prb.build())
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
-                org_qualifiers.append(self.dp.parse(val, ORGANIZATION))
+                org_qualifiers.append(self.dp.parse_as_ref(val, ORGANIZATION))
             # ^n Number of part/section/meeting  --> StringRef?
             elif code == 'n':
                 val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
@@ -391,7 +391,6 @@ class NameParser:
         return org_prequalifiers
 
 
-
     def parse_place_name(self, field):
         """
         Parse a X51 field containing a Place name into:
@@ -399,9 +398,24 @@ class NameParser:
         - a list of qualifiers as RefElement objects,
         to pass into a Builder.
         """
-        ...
-        ...
-        ...
+        field_lang, field_script = field['3'], field['4']
+
+        # NAME(S)
+        # ---
+        # ^a Geographic descriptor
+        place_names_kwargs = []
+        for val in field.get_subfields('a'):
+            place_names_kwargs.append({ 'name_text': val,
+                                        'lang'     : field_lang,
+                                        'script'   : field_script,
+                                        'nonfiling' : 0 })
+
+        # QUALIFIER(S)
+        # ---
+        # none
+        place_qualifiers = []
+
+        return place_names_kwargs, place_qualifiers
 
 
     def parse_string_name(self, field):
@@ -439,20 +453,78 @@ class NameParser:
             string_qualifiers.append(srb.build())
         # ^l Language?? / ^3 Language of entry??  [LanguageRef]
         for val in field.get_subfields('l','3'):
-            ...
-            ...
-            ...
+            val = self.__strip_ending_punctuation(val)
+            lrb = LanguageRefBuilder()
+            lrb.set_link( val,
+                          href_URI = self.ix.quick_lookup(val, LANGUAGE) )
+            lrb.add_name( val,
+                          lang   = field_lang,
+                          script = field_script,
+                          nonfiling = 0 )
+            string_qualifiers.append(lrb.build())
 
         return string_names_kwargs, string_qualifiers
 
 
-    # work instance
+    def parse_work_authority_name(self, field):
+        """
+        Parse a X30 field containing a Work aut name into:
+        - a list of names as kwarg dicts, and
+        - a list of qualifiers as RefElement objects,
+        to pass into a Builder.
+        """
+        field_lang, field_script = field['3'], field['4']
+
+        # NAME(S)
+        # ---
+        # ^a
+        org_names_kwargs = []
+        subordinates = field.get_subfields('b')
+        val = subordinates[-1] if subordinates else field['a']
+        val = self.__strip_ending_punctuation(val)
+        org_names_kwargs.append({ 'name_text': val,
+                                  'lang'     : field_lang,
+                                  'script'   : field_script,
+                                  'nonfiling' : 0 })
+
+        # QUALIFIER(S)
+        # ---
+        #
+        org_qualifiers = []
+        for code, val in field.get_subfields('c','d','n', with_codes=True):
+            # ^c Location of meeting  --> PlaceRef
+            if code == 'c':
+                val = self.pn.normalize(val)
+                prb = PlaceRefBuilder()
+                prb.set_link( val,
+                              href_URI = self.ix.quick_lookup(val, PLACE) )
+                prb.add_name( val,
+                              lang   = field_lang,
+                              script = field_script,
+                              nonfiling = 0 )
+                org_qualifiers.append(prb.build())
+            # ^d Date of meeting  --> Time/DurationRef
+            elif code == 'd':
+                org_qualifiers.append(self.dp.parse_as_ref(val, ORGANIZATION))
+            # ^n Number of part/section/meeting  --> StringRef?
+            elif code == 'n':
+                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                srb = StringRefBuilder()
+                srb.set_link( val,
+                              href_URI = self.ix.quick_lookup(val, STRING) )
+                srb.add_name( val,
+                              lang   = field_lang,
+                              script = field_script,
+                              nonfiling = 0 )
+                org_qualifiers.append(srb.build())
+
+        return org_names_kwargs, org_qualifiers
 
 
-    # object
+    # work instance [149? 245/6?]
 
 
-    # work authority
+    # object [149? 245/6?]
 
 
     def __strip_ending_punctuation(self, namestring):

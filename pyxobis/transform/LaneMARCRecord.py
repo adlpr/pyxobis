@@ -138,6 +138,11 @@ class LaneMARCRecord(Record):
                               RELATIONSHIP: 'a',           # 155
                               STRING:       'yqg3' }       # 182
 
+    def is_referential(self):
+        if '008' not in self:
+            return None
+        return self['008'].data[9] in 'bce' or 'Unestablished' in self.get_subsets()
+
     @classmethod
     def get_field_identity(cls, field, element_type):
         """

@@ -57,10 +57,14 @@ class Transformer:
         rb.set_id_value(record_control_no)
 
         # Additional identifiers
-        # 010 = LCCN
+        # 010 ^a/z = LCCN
         # (how to treat ^z???)
         for val in record.get_subfields('010','a'):
             rb.add_id_alternate(self.lc_org_ref, val.strip())
+        # 010 ^b = ...
+        ...
+        ...
+        ...
         # 015   National Bibliography Number (NR)
         ...
         ...
@@ -138,63 +142,62 @@ class Transformer:
         # Determine which function to delegate PE building based on record type
 
         element_type = record.get_xobis_element_type()
+        assert element_type, "could not determine type of record {}".format(record['001'].data)
         # @@@@@ TEMPORARY @@@@@
         if not element_type:
             # don't transform
             return None
-        assert element_type, "could not determine type of record {}".format(record['001'].data)
 
-        if element_type not in [TIME, RELATIONSHIP, HOLDINGS]:
+        if element_type != HOLDINGS:
 
             init_builder, parse_name = {
                 WORK_INST    : (self.init_work_instance_builder, None),
                 WORK_AUT     : (self.init_work_authority_builder, None),
                 BEING        : (self.init_being_builder, self.np.parse_being_name),
                 CONCEPT      : (self.init_concept_builder, self.np.parse_concept_name),
+                RELATIONSHIP : (self.init_concept_builder, self.np.parse_concept_name),
                 EVENT        : (self.init_event_builder, self.np.parse_event_name),
                 LANGUAGE     : (self.init_language_builder, self.np.parse_language_name),
                 OBJECT       : (self.init_object_builder, None),
                 ORGANIZATION : (self.init_organization_builder, self.np.parse_organization_name),
                 PLACE        : (self.init_place_builder, self.np.parse_place_name),
                 STRING       : (self.init_string_builder, self.np.parse_string_name),
+                TIME         : (self.init_time_builder, lambda x: ([],[])),  # first method does the name parsing
             }.get(element_type)
 
-            # @@@@@@@@@@@@@ TEMPORARY @@@@@@@@@@@@@
-            if element_type in [ORGANIZATION, EVENT, BEING, CONCEPT, STRING]:
+            # Initialize, perform PE-specific work on, and return Builder object.
+            peb = init_builder(record)
 
-                # Initialize, perform PE-specific work on, and return Builder object.
-                peb = init_builder(record)
+            # ENTRY NAME(S) AND QUALIFIERS
+            # -------
+            entry_names, entry_qualifiers = parse_name(record.get_id_field())
+            for entry_name in entry_names:
+                peb.add_name(**entry_name)
+            for entry_qualifier in entry_qualifiers:
+                peb.add_qualifier(entry_qualifier)
 
-                # ENTRY NAME(S) AND QUALIFIERS
-                # -------
-                entry_names, entry_qualifiers = parse_name(record.get_id_field())
-                for entry_name in entry_names:
-                    peb.add_name(**entry_name)
-                for entry_qualifier in entry_qualifiers:
-                    peb.add_qualifier(entry_qualifier)
+            # VARIANTS
+            # -------
+            for variant in self.transform_variants(record):
+                peb.add_variant(variant)
 
-                # VARIANTS
-                # -------
-                for variant in self.transform_variants(record):
-                    peb.add_variant(variant)
+            # NOTES
+            # -------
+            for note in self.transform_notes(record):
+                peb.add_note(note)
 
-                # NOTES
-                # -------
-                for note in self.transform_notes(record):
-                    peb.add_note(note)
+            rb.set_principal_element(peb.build())
 
-                rb.set_principal_element(peb.build())
+            # -------------
+            # RELATIONSHIPS
+            # -------------
+            relationships = self.transform_relationships_bib(record)  \
+                                if element_type in (WORK_INST, OBJECT)  \
+                                else self.transform_relationships_aut(record)
+            for relationship in relationships:
+                rb.add_relationship(relationship)
 
-                # -------------
-                # RELATIONSHIPS
-                # -------------
-                relationships = self.transform_relationships_bib(record)  \
-                                    if element_type in (WORK_INST, OBJECT)  \
-                                    else self.transform_relationships_aut(record)
-                for relationship in relationships:
-                    rb.add_relationship(relationship)
-
-                return rb.build()
+            return rb.build()
 
         return None
 
@@ -229,26 +232,26 @@ class Transformer:
         # familial:   ind1 = 3 ; 655 47 ^a Persons, Families or Groups
         # collective: ind1 = 9 ; 655 47 ^a Peoples
         # undifferentiated: 655 77 ^a Persons, Undifferentiated
-        # referential: things like Mc/Mac, St.: 008/09 = 'b' or 'c'
+        # referential: things like Mc/Mac, St.: 008/09 = b/c/e and/or 655 77 ^a Unestablished
 
         broad_category = record.get_broad_category()
         being_class = None
         if 'Persons, Undifferentiated' in record.get_subsets():
             being_class = 'undifferentiated'
-        elif record['008'].data[9] in 'bc':
+        elif record.is_referential():
             being_class = 'referential'
         elif broad_category == 'Peoples':
             if record['100'].indicator1 != '9':
-                print("PROBLEM: Peoples without ind 9#: {}".format(record['001'].data))
+                print("WARNING: Peoples without ind 9#: {}".format(record['001'].data))
             else:
                 being_class = 'collective'
         elif broad_category == 'Persons, Families or Groups':
             if record['100'].indicator1 != '3':
-                print("PROBLEM: Family/Group without ind 3#: {}".format(record['001'].data))
+                print("WARNING: Family/Group without ind 3#: {}".format(record['001'].data))
             being_class = 'familial'
         else:
             if record['100'].indicator1 not in '01':
-                print("PROBLEM: Individual without ind [01]#: {}".format(record['001'].data))
+                print("WARNING: Individual without ind [01]#: {}".format(record['001'].data))
             being_class = 'individual'
 
         bb.set_class(being_class)
@@ -256,9 +259,6 @@ class Transformer:
         # SCHEME
         # ---
         # is it LC for the 100 when 010? not really, consider this n/a for now
-        ...
-        ...
-        ...
 
         # ENTRY TYPE
         # ---
@@ -305,16 +305,17 @@ class Transformer:
         return cb
 
 
+    # Defined in order of increasing priority.
     event_type_map = {
+        'miscellaneous' : ["Censuses", "Exhibitions", "Exhibits", "Experiments",
+            "Special Events", "Trials", "Workshops"],
         'natural' : ["Cyclonic Storms", "Earthquakes", "Fires", "Floods", "Tsunamis"],
         'meeting' : ["Congresses", "Legislative Sessions"],
         'journey' : ["Expeditions", "Medical Missions, Official"],
         'occurrence' : ["Armed Conflicts", "Biohazard Release",
             "Chemical Hazard Release", "Civil Disorders", "Disasters",
             "Disease Outbreaks", "Explosions", "Mass Casualty Incidents",
-            "Radioactive Hazard Release", "Riots"],
-        'miscellaneous' : ["Censuses", "Exhibitions", "Exhibits", "Experiments",
-            "Special Events", "Trials", "Workshops"]
+            "Radioactive Hazard Release", "Riots"]
     }
 
     def init_event_builder(self, record):
@@ -328,11 +329,12 @@ class Transformer:
         for type, type_cats in self.event_type_map.items():
             if any(cat in type_cats for cat in primary_cats):
                 eb.set_type(type)
+                break
 
         # CLASS
         # ---
         # individual, collective, referential
-        if record['008'].data[9] in 'bc':
+        if record.is_referential():
             eb.set_class('referential')
         # individual/collective too hard to differentiate, n/a for now
 
@@ -354,32 +356,25 @@ class Transformer:
 
         # TYPE
         # ---
-        # @@@@@@ not yet in schema @@@@@@
-        ...
-        ...
-        ...
+        # natural, constructed, script
+        broad_cat = record.get_broad_category()
+        if broad_cat == "Scripts":
+            lb.set_type('script')
+        # natural/constructed not yet differentiable
 
         # CLASS
         # ---
         # individual, collective, referential
-        if record['008'].data[9] in 'bc':
+        if record.is_referential():
             lb.set_class('referential')
         # language families not marked
 
         # USAGE
         # ---
         # subdivision or not?
-        # n/a for now?
+        # n/a for now
 
         return lb
-
-
-    def init_object_builder(self, record):
-        # role, class, type, organization, holdings?
-        ...
-        ...
-        ...
-        return None
 
 
     def init_organization_builder(self, record):
@@ -400,7 +395,7 @@ class Transformer:
         # CLASS
         # ---
         # individual, collective, referential
-        if record['008'].data[9] in 'bc':
+        if record.is_referential():
             ob.set_class('referential')
         # individual/collective too hard to differentiate, n/a for now
 
@@ -416,6 +411,23 @@ class Transformer:
 
         return ob
 
+    # Defined in order of increasing priority.
+    place_type_map = {
+        'natural' : ["Bays", "Canals", "Caves", "Coasts", "Continents",
+            "Deserts", "Forests", "Islands", "Lakes", "Minor Planets",
+            "Natural Springs", "Mountains", "Oceans", "Peninsulas", "Planets",
+            "Rivers", "Seas", "Stars, Celestial", "Straits", "Valleys",
+            "Volcanoes"],
+        'constructed' : ["Airports", "Building Complexes", "Buildings",
+            "Health Resorts", "Hot Springs", "Laboratories", "Leper Colonies",
+            "Military Facilities", "Monuments", "Open Space",
+            "Parking Facilities", "Parks", "Roadways",
+            "Collection, Shelving", "Location, Shelving"],  # <-- ?
+        'jurisdictional' : ["Cities", "Cities, Extinct", "Cities, Independent",
+            "Colonies", "Counties", "Countries", "County Seats",
+            "Indian Reservations", "Locales", "Provinces", "Regions", "States",
+            "Territories", "Villages"]
+    }
 
     def init_place_builder(self, record):
         pb = PlaceBuilder()
@@ -423,29 +435,28 @@ class Transformer:
         # ROLE
         # ---
         # authority / instance / authority instance
-        bb.set_role("authority")  # ?
+        pb.set_role("authority")  # ?
 
         # TYPE
         # ---
         # natural / constructed / jurisdictional
-        ...
-        ...
-        ...
-
+        primary_cats = record.get_primary_categories()
+        for type, type_cats in self.place_type_map.items():
+            if any(cat in type_cats for cat in primary_cats):
+                pb.set_type(type)
+                break
 
         # CLASS
         # ---
         # individual, collective, referential
-        ...
-        ...
-        ...
+        if record.is_referential():
+            pb.set_class('referential')
+        # others?
 
         # USAGE
         # ---
         # subdivision or not?
-        ...
-        ...
-        ...
+        # n/a for now
 
         # SCHEME
         # ---
@@ -494,28 +505,144 @@ class Transformer:
         return sb
 
 
-    def init_work_instance_builder(self, record):
-        # type, role, class, holdings?
-        ...
-        ...
-        ...
-        return None
+    def init_time_builder(self, record):
+        tb = TimeBuilder()
 
+        # CLASS
+        # ---
+        # individual, collective, referential
+        if record.is_referential():
+            pb.set_class('referential')
+        # others?
+
+        # USAGE
+        # ---
+        # subdivision or not? n/a for now
+
+        # SCHEME
+        # ---
+        # n/a for now?
+
+        # CALENDAR
+        # ---
+        # n/a for now? are they all Gregorian?
+
+        # ENTRY CONTENT
+        # ---
+        # This is necessary for Time in place of a NameParser method
+        entry_field = record.get_id_field()
+        time_content_single = self.dp.parse_simple(entry_field['a'])
+        tb.set_time_content(time_content_single)
+
+        return tb
+
+    # Possible primary categories of "artistic" type Works.
+    work_cats_artistic = [
+        "Art Reproductions", "Drama", "Graphics", "Paintings", "Portraits",
+        "Sculpture", "Visual Materials", "Video Games"
+    ]
 
     def init_work_authority_builder(self, record):
-        # type, role, class, holdings?
+        wb = WorkBuilder()
+
+        # TYPE
+        # ---
+        # intellectual, artistic
+        primary_cats = record.get_primary_categories()
+        if any(cat in work_cats_artistic for cat in primary_cats):
+            wb.set_type('artistic')
+        else:
+            wb.set_type('intellectual')
+
+        # ROLE
+        # ---
+        # (authority)
+        wb.set_role('authority')
+
+        # CLASS
+        # ---
+        # individual, serial, collective, referential
+        if record.is_referential():
+            wb.set_class('referential')
+        else:
+            broad_cat = record.get_broad_category()
+            if broad_cat == "Series":
+                wb.set_class('serial')
+            # otherwise is Title, Formal
+            wb.set_class('collective')  # ??
+
+        return wb
+
+
+    def init_work_instance_builder(self, record):
+        wb = WorkBuilder()
+
+        # TYPE
+        # ---
+        # intellectual, artistic
+        primary_cats = record.get_primary_categories()
+        if any(cat in work_cats_artistic for cat in primary_cats):
+            wb.set_type('artistic')
+        else:
+            wb.set_type('intellectual')
+
+        # ROLE
+        # ---
+        # (instance)
+        wb.set_role('instance')
+
+        # CLASS
+        # ---
+        # individual, serial, collective, referential
+        if record.is_referential():
+            wb.set_class('referential')
+        else:
+            ...
+            ...
+            ...
+
+        # HOLDINGS
+        # ---
         ...
         ...
         ...
+
         return None
 
 
+    def init_object_builder(self, record):
+        # ROLE
+        # ---
+        # (instance)
+        wb.set_role('instance')
 
-    # def transform_time(self, record):
-    #     return None
+        # CLASS
+        # ---
+        # individual, collective, [referential: aut only]
+        wb.set_role('individual')
 
-    # def transform_relationship(self, record):
-    #     return None
+        # TYPE
+        # ---
+        # natural, crafted, manufactured
+        # too difficult to determine this for sure based on category alone.
+        # n/a for now
+
+        # ORGANIZATION
+        # ---
+        # ???
+        ...
+        ...
+        ...
+
+        # HOLDINGS
+        # ---
+        ...
+        ...
+        ...
+
+        return None
+
+
 
     # def transform_holdings(self, record):
     #     return None
@@ -534,6 +661,7 @@ class Transformer:
 
     transform_relationships_aut = transform_relationships_aut
     transform_relationships_bib = transform_relationships_bib
+
 
     def __build_simple_org_ref(self, name):
         orb = OrganizationRefBuilder()
@@ -564,6 +692,6 @@ class Transformer:
                         if start_type_datetime and end_type_datetime  \
                         else end_type_datetime or start_type_datetime
         if type_datetime:
-            type_time_or_duration_ref = self.dp.parse(type_datetime, None)
+            type_time_or_duration_ref = self.dp.parse_as_ref(type_datetime, element_type=None)
 
         return type_kwargs, type_time_or_duration_ref
