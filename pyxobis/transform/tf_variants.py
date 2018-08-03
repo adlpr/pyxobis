@@ -12,6 +12,7 @@ def transform_variants(self, record):
     For each field describing a variant in record, build a Variant.
     Returns a list of zero or more VariantEntry objects.
 
+    150 ^m : CONCEPT (MeSH "as Topic")
     246 : WORK_INST or OBJECT
     400 : BEING
     410 : ORGANIZATION
@@ -20,7 +21,7 @@ def transform_variants(self, record):
     450 : CONCEPT or TIME or LANGUAGE
     451 : PLACE
     455 : CONCEPT or RELATIONSHIP
-    [480 : CONCEPT]
+    480 : CONCEPT (subdivision)
     482 : STRING
     """
     record_element_type = record.get_xobis_element_type()
@@ -29,19 +30,26 @@ def transform_variants(self, record):
 
     for field in record.get_fields('150','246','400','410','411','430','450','451','455','480','482'):
         # Doing this as one large query then using a switch conditional
-        # is a way to retain original order.
+        # retains original order.
 
         if field.tag == '150' and 'm' in field:
             # add MeSH "as Topic" version as a variant
-            ...
-            ...
-            ...
+            field['a'] = field['m']
+            field.delete_all_subfields('m')
+            concept_variant = self.transform_variant_concept(field)
+            variants.append(concept_variant)
 
         elif field.tag == '246':
             # WORK_INST or OBJECT
-            ...
-            ...
-            ...
+            if record_element_type == WORK_INST:
+                ...
+                ...
+                ...
+            else:
+                # Object
+                ...
+                ...
+                ...
 
         elif field.tag == '400':
             # BEING
@@ -71,7 +79,7 @@ def transform_variants(self, record):
         elif field.tag == '450':
             # CONCEPT or TIME or LANGUAGE
             # Assume variant is the same type as the heading;
-            # if it doesn't match it's almost certainly a CONCEPT
+            # if it doesn't match it's most likely a CONCEPT
             if record_element_type == TIME:
                 # time_variant = self.transform_variant_time(field)
                 # variants.append(time_variant)
@@ -85,12 +93,8 @@ def transform_variants(self, record):
                 ...
                 ...
             else:
-                # concept_variant = self.transform_variant_concept(field)
-                # variants.append(concept_variant)
-                # NOTE THAT ^m IS ANOTHER VARIANT
-                ...
-                ...
-                ...
+                concept_variant = self.transform_variant_concept(field)
+                variants.append(concept_variant)
 
         elif field.tag == '451':
             # PLACE
@@ -100,15 +104,13 @@ def transform_variants(self, record):
 
         elif field.tag == '455':
             # CONCEPT or RELATIONSHIP
-            ...
-            ...
-            ...
+            concept_variant = self.transform_variant_concept(field)
+            variants.append(concept_variant)
 
         elif field.tag == '480':
             # CONCEPT
-            ...
-            ...
-            ...
+            concept_variant = self.transform_variant_concept(field)
+            variants.append(concept_variant)
 
         elif field.tag == '482':
             # STRING
@@ -187,7 +189,8 @@ def transform_variant_organization(self, field):
     ...
     ...
 
-    return ovb.build()
+    # return ovb.build()
+    return None
 
 
 """
@@ -211,18 +214,66 @@ def transform_variant_organization(self, field):
 
 def transform_variant_concept(self, field):
     """
-    Input:  PyMARC 450/455/480 field
+    Input:  PyMARC 150[m]/450/455/480 field
     Output: ConceptVariantEntry object
     """
+    cvb = ConceptVariantBuilder()
 
-    ...
-    ...
-    ...
-    ...
-    ...
-    ...
+    # Variant Group Attributes
+    # ---
+    if field.tag.endswith('55'):  # X55s use ^3/^4 for language/script
+        indiv_id = None
+        group_id = field['7']
+    else:
+        indiv_id = field['4']
+        group_id = field['3'] or field['7']
+    cvb.set_variant_group(id        = indiv_id,
+                          group     = group_id,
+                          preferred = None)  # no field for this for Concepts
 
-    return None
+    # subsumed concepts?
+    ...
+    ...
+    ...
+    # delete ^e to get proper Type
+
+    # Type / Time/Duration Ref
+    # ---
+    type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
+    if type_kwargs:
+        cvb.set_type(**type_kwargs)
+    if type_time_or_duration_ref is not None:
+        cvb.set_time_or_duration_ref(type_time_or_duration_ref)
+
+    # Substitute
+    # ---
+    # n/a for now
+
+    # Scheme
+    # ---
+    # n/a for now
+
+    # Name(s) & Qualifier(s)
+    # ---
+    variant_names, variant_qualifiers = self.np.parse_concept_name(field)
+    for variant_name in variant_names:
+        cvb.add_name(**variant_name)
+    for variant_qualifier in variant_qualifiers:
+        cvb.add_qualifier(variant_qualifier)
+
+    # Note(s)
+    # ---
+    # ^2 = scope note
+    field_lang, field_script = field['3'], field['4']
+    for note_text in field.get_subfields('2'):
+        cvb.add_note( content_text = note_text,
+                      content_lang = field_lang,
+                      type = "annotation",
+                      link_title = None,
+                      href_URI = None,
+                      set_URI  = None )
+
+    return cvb.build()
 
 
 def transform_variant_string(self, field):

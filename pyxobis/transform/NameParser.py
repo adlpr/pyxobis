@@ -254,7 +254,7 @@ class NameParser:
         # if ^e, then ^a is a prequalifier.
         if 'e' in field:
             # may be an event, org, or place.
-            # there aren't many if any of these... so just assume Event
+            # there aren't many if any of these. so just assume Event
             for val in field.get_subfields('a'):
                 val = self.np.strip_ending_punctuation(val)
                 erb = EventRefBuilder()

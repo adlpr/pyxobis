@@ -29,12 +29,11 @@ class DateTimeParser:
 
         # TYPE: none
 
-        # CERTAINTY:
-        certainty = "exact"
-        # no others on headings?
-        tecb.set_certainty(certainty)
+        # CERTAINTY
+        # none on headings?
+        # tecb.set_certainty("exact")
 
-        # QUALITY:
+        # QUALITY
         # none on headings?
 
         # contents or name?

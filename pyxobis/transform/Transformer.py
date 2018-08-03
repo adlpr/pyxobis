@@ -538,7 +538,11 @@ class Transformer:
 
     # Possible primary categories of "artistic" type Works.
     work_cats_artistic = [
-        "Art Reproductions", "Drama", "Graphics", "Paintings", "Portraits",
+        "Animation", "Architectural Drawings", "Art Originals",
+        "Art Reproductions", "Cartoons", "Drama", "Drawings",
+        "Graphic Reproductions", "Graphics", "Herbal Illustrations",
+        "Illustrations", "Music", "Paintings", "Phonodiscs", "Plates",
+        "Portraits", "Postcards", "Posters",
         "Sculpture", "Visual Materials", "Video Games"
     ]
 
@@ -594,12 +598,15 @@ class Transformer:
         # CLASS
         # ---
         # individual, serial, collective, referential
+        # auts are collective? so instances are only ref/ind/ser?
         if record.is_referential():
             wb.set_class('referential')
         else:
-            ...
-            ...
-            ...
+            broad_cat = record.get_broad_category()
+            if broad_cat == "Serials":
+                wb.set_class('serial')
+            else:
+                wb.set_class('individual')
 
         # HOLDINGS
         # ---
@@ -680,18 +687,19 @@ class Transformer:
 
         # Type "relator"
         entry_type = field['e']
-        if entry_type:
+        if entry_type and not entry_type.startswith('Includes'):
             entry_type = entry_type.rstrip(':').strip()
             type_kwargs = { 'link_title' : entry_type,
                             'set_URI'    : self.ix.quick_lookup("Variant Type", CONCEPT),
                             'href_URI'   : self.ix.quick_lookup(entry_type, CONCEPT) }
 
         # Time or Duration
-        start_type_datetime, end_type_datetime = field['8'], field['9']
-        type_datetime = start_type_datetime + end_type_datetime  \
-                        if start_type_datetime and end_type_datetime  \
-                        else end_type_datetime or start_type_datetime
-        if type_datetime:
-            type_time_or_duration_ref = self.dp.parse_as_ref(type_datetime, element_type=None)
+        if field.tag not in ['150','180','450','480']:  # exceptions for MeSH style fields
+            start_type_datetime, end_type_datetime = field['8'], field['9']
+            type_datetime = start_type_datetime + end_type_datetime  \
+                            if start_type_datetime and end_type_datetime  \
+                            else end_type_datetime or start_type_datetime
+            if type_datetime:
+                type_time_or_duration_ref = self.dp.parse_as_ref(type_datetime, element_type=None)
 
         return type_kwargs, type_time_or_duration_ref
