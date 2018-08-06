@@ -290,11 +290,11 @@ class TimeContent(Component):
 class TimeVariant(VariantEntry):
     """
     timeVariant |=
-        element xobis:time { optVariantAttributes, genericType?, timeInstanceEntry }
+        element xobis:time { optVariantAttributes, genericType?, timeInstanceEntry, optNoteList }
     """
     def __init__(self, time_instance_entry, \
                        opt_variant_group_attributes=OptVariantGroupAttributes(), \
-                       type_=None):
+                       type_=None, opt_note_list=OptNoteList()):
         assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
         self.opt_variant_group_attributes = opt_variant_group_attributes
         if type_ is not None:
@@ -302,6 +302,8 @@ class TimeVariant(VariantEntry):
         self.type = type_
         assert isinstance(time_instance_entry, TimeInstanceEntry)
         self.time_instance_entry = time_instance_entry
+        assert isinstance(opt_note_list, OptNoteList)
+        self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
@@ -314,6 +316,10 @@ class TimeVariant(VariantEntry):
         # entry element
         time_instance_entry_e = self.time_instance_entry.serialize_xml()
         variant_e.append(time_instance_entry_e)
+        # note list
+        opt_note_list_e = self.opt_note_list.serialize_xml()
+        if opt_note_list_e is not None:
+            variant_e.append(opt_note_list_e)
         return variant_e
 
 
@@ -405,11 +411,11 @@ class DurationEntryPart(Component):
 class DurationVariant(VariantEntry):
     """
     durationVariant |=
-        element xobis:duration { optVariantAttributes, genericType?, durationEntry }
+        element xobis:duration { optVariantAttributes, genericType?, durationEntry, optNoteList }
     """
     def __init__(self, duration_entry, \
                        opt_variant_group_attributes=OptVariantGroupAttributes(), \
-                       type_=None):
+                       type_=None, opt_note_list=OptNoteList()):
         assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
         self.opt_variant_group_attributes = opt_variant_group_attributes
         if type_ is not None:
@@ -417,6 +423,8 @@ class DurationVariant(VariantEntry):
         self.type = type_
         assert isinstance(duration_entry, DurationEntry)
         self.duration_entry = duration_entry
+        assert isinstance(opt_note_list, OptNoteList)
+        self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
@@ -429,6 +437,10 @@ class DurationVariant(VariantEntry):
         # entry element
         duration_entry_e = self.duration_entry.serialize_xml()
         variant_e.extend(duration_entry_e)
+        # note list
+        opt_note_list_e = self.opt_note_list.serialize_xml()
+        if opt_note_list_e is not None:
+            variant_e.append(opt_note_list_e)
         return variant_e
 
 

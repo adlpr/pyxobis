@@ -191,7 +191,7 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: add_name, add_qualifier, set_time_or_duration_ref,
-    #             set_substitute_attribute, add_note
+    #             set_substitute_attribute
     # ADDITIONAL: set_time_content, set_calendar
     def __init__(self):
         super().__init__()
@@ -205,8 +205,6 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
         raise AttributeError("TimeVariant element does not time/duration ref")
     def set_substitute_attribute(self, *args, **kwargs):
         raise AttributeError("TimeVariant element does not have substitute attributes")
-    def add_note(self, *args, **kwargs):
-        raise AttributeError("TimeVariant element does not have notes")
     def set_time_content_single(self, time_content_single):
         self.time_content_single = time_content_single
     def set_calendar(self, link_title, set_URI, href_URI=None):
@@ -226,7 +224,8 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
                        calendar = self.calendar
                    ),
                    opt_variant_group_attributes = self.opt_variant_group_attributes,
-                   type_ = self.type
+                   type_ = self.type,
+                   opt_note_list = OptNoteList(self.note_list)
                )
 
 
@@ -254,15 +253,13 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
         self.scheme2 = None
         self.calendar2 = None
     def add_name(self, *args, **kwargs):
-        raise AttributeError("TimeVariant element does not have names")
+        raise AttributeError("DurationVariant element does not have names")
     def add_qualifier(self, *args, **kwargs):
-        raise AttributeError("TimeVariant element does not have qualifiers")
+        raise AttributeError("DurationVariant element does not have qualifiers")
     def set_time_or_duration_ref(self, *args, **kwargs):
-        raise AttributeError("TimeVariant element does not time/duration ref")
+        raise AttributeError("DurationVariant element does not time/duration ref")
     def set_substitute_attribute(self, *args, **kwargs):
-        raise AttributeError("TimeVariant element does not have substitute attributes")
-    def add_note(self, *args, **kwargs):
-        raise AttributeError("TimeVariant element does not have notes")
+        raise AttributeError("DurationVariant element does not have substitute attributes")
     def set_time_content1(self, time_content_single1, time_content_single2=None):
         self.time_content1_single1 = time_content_single1
         self.time_content1_single2 = time_content_single2
@@ -324,7 +321,8 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
                        )
                    ),
                    opt_variant_group_attributes = self.opt_variant_group_attributes,
-                   type_ = self.type
+                   type_ = self.type,
+                   opt_note_list = OptNoteList(self.note_list)
                )
 
 
