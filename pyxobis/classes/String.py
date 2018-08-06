@@ -16,7 +16,7 @@ class String(PrincipalElement):
         element xobis:string {
             attribute type { string "textual" | string "numeric" | string "mixed" }?,
             attribute class { string "word" | string "phrase" }?,
-            element xobis:entry { stringEntryContent },
+            element xobis:entry { optEntryGroupAttributes, stringEntryContent },
             element xobis:variants { anyVariant+ }?,
             optNoteList
         }
@@ -25,6 +25,7 @@ class String(PrincipalElement):
     CLASSES = ["word", "phrase", None]
     def __init__(self, string_entry_content, \
                        type_=None, class_=None, \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
         assert type_ in String.TYPES
@@ -32,6 +33,8 @@ class String(PrincipalElement):
         assert class_ in String.CLASSES
         self.class_ = class_
         # for entry element
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(string_entry_content, StringEntryContent)
         self.string_entry_content = string_entry_content
         # for variant elements
@@ -50,7 +53,8 @@ class String(PrincipalElement):
             string_attrs['class'] = self.class_
         string_e = E('string', **string_attrs)
         # entry element
-        entry_e = E('entry')
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_e = E('entry', **opt_entry_group_attributes_attrs)
         string_entry_content_elements = self.string_entry_content.serialize_xml()
         entry_e.extend(string_entry_content_elements)
         string_e.append(entry_e)
@@ -65,8 +69,6 @@ class String(PrincipalElement):
         if opt_note_list_e is not None:
             string_e.append(opt_note_list_e)
         return string_e
-
-
 
 
 class StringEntryContent(Component):
@@ -124,17 +126,18 @@ class StringVariantEntry(VariantEntry):
             optVariantAttributes,
             genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { optSubstituteAttribute, stringEntryContent },
+            element xobis:entry { optSubstituteAttribute, optEntryGroupAttributes, stringEntryContent },
             optNoteList
         }
     """
     def __init__(self, string_entry_content, \
-                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
+                       opt_variant_attributes=OptVariantAttributes(), \
                        type_=None, time_or_duration_ref=None, \
                        opt_substitute_attribute=OptSubstituteAttribute(), \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
-        self.opt_variant_group_attributes = opt_variant_group_attributes
+        assert isinstance(opt_variant_attributes, OptVariantAttributes)
+        self.opt_variant_attributes = opt_variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -143,6 +146,8 @@ class StringVariantEntry(VariantEntry):
         self.time_or_duration_ref = time_or_duration_ref
         assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
         self.opt_substitute_attribute = opt_substitute_attribute
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(string_entry_content, StringEntryContent)
         self.string_entry_content = string_entry_content
         assert isinstance(opt_note_list, OptNoteList)
@@ -150,8 +155,8 @@ class StringVariantEntry(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
-        variant_e = E('string', **opt_variant_group_attributes_attrs)
+        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
+        variant_e = E('string', **opt_variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -165,6 +170,8 @@ class StringVariantEntry(VariantEntry):
         entry_attrs = {}
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         entry_attrs.update(opt_substitute_attribute_attrs)
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_attrs.update(opt_entry_group_attributes_attrs)
         entry_e = E('entry', **entry_attrs)
         # --> content
         string_entry_content_elements = self.string_entry_content.serialize_xml()

@@ -41,6 +41,7 @@ self.role
 self.scheme
 self.class_
 self.usage
+self.opt_entry_group_attributes
 self.versions_holdings_opt
 
 COMMON METHODS
@@ -53,6 +54,7 @@ set_role
 set_scheme
 set_class
 set_usage
+set_entry_group_attributes
 set_holdings
 """
 
@@ -69,6 +71,9 @@ class PrincipalElementBuilder(Builder):
         self.scheme = None
         self.class_ = None
         self.usage  = None
+        # should PE main entry be preferred=true unless otherwise noted?
+        # self.opt_entry_group_attributes = OptEntryGroupAttributes(id=None, group=None, preferred=True)
+        self.opt_entry_group_attributes = OptEntryGroupAttributes()
     # def add_qualifier(self, *args, **kwargs):
     #     # assert isinstance(qualifier, RefElement)
     #     super().add_qualifier(*args, **kwargs)
@@ -92,6 +97,8 @@ class PrincipalElementBuilder(Builder):
         self.class_ = new_class
     def set_usage(self, new_usage):
         self.usage = new_usage
+    def set_entry_group_attributes(self, id=None, group=None, preferred=None):
+        self.opt_entry_group_attributes = OptEntryGroupAttributes(id, group, preferred)
 
 
 """
@@ -105,12 +112,14 @@ self.time_or_duration_ref
 self.substitute_attribute
 self.scheme
 self.note_list
-self.opt_variant_group_attributes
+self.opt_variant_attributes
+self.opt_entry_group_attributes
 
 COMMON METHODS
 * add_name  [+ add_name_tuple]
 * add_qualifier
-set_variant_group
+set_included
+set_entry_group_attributes
 set_type
 set_time_or_duration_ref
 set_substitute_attribute
@@ -124,14 +133,17 @@ class PrincipalElementVariantBuilder(Builder):
     """
     def __init__(self):
         super().__init__()
-        self.opt_variant_group_attributes = OptVariantGroupAttributes()
+        self.opt_variant_attributes = OptVariantAttributes()
+        self.opt_entry_group_attributes = OptEntryGroupAttributes()
         self.type = None
         self.time_or_duration_ref = None
         self.substitute_attribute = None
         self.scheme = None
         self.note_list = []     # Note objs
-    def set_variant_group(self, id=None, group=None, preferred=None):
-        self.opt_variant_group_attributes = OptVariantGroupAttributes(id, group, preferred)
+    def set_included(self, included):
+        self.opt_variant_attributes = OptVariantAttributes(included)
+    def set_entry_group_attributes(self, id=None, group=None, preferred=None):
+        self.opt_entry_group_attributes = OptEntryGroupAttributes(id, group, preferred)
     def set_type(self, link_title, set_URI, href_URI=None):
         self.type = GenericType(
                         LinkAttributes(

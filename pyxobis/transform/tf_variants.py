@@ -125,7 +125,7 @@ def transform_variant_being(self, field):
 
     # Variant Group Attributes
     # ---
-    bvb.set_variant_group(id        = field['7'],
+    bvb.set_entry_group_attributes(id        = field['7'],
                           group     = field['6'],
                           preferred = bool(field['5']) if field['6'] else None)
 
@@ -187,7 +187,7 @@ def transform_variant_concept(self, field):
         group_id = field['3'] or field['7']
         field_lang = None
         field_script = None
-    cvb.set_variant_group(id        = indiv_id,
+    cvb.set_entry_group_attributes(id        = indiv_id,
                           group     = group_id,
                           preferred = None)  # no field for this for Concepts
 
@@ -244,7 +244,7 @@ def transform_variant_event(self, field):
 
     # Variant Group Attributes
     # ---
-    evb.set_variant_group(id        = field['7'],
+    evb.set_entry_group_attributes(id        = field['7'],
                           group     = field['6'],
                           preferred = bool(field['5']) if field['6'] else None)
 
@@ -308,7 +308,7 @@ def transform_variant_language(self, field):
 
     # Variant Group Attributes
     # ---
-    lvb.set_variant_group(id        = field['4'],
+    lvb.set_entry_group_attributes(id        = field['4'],
                           group     = field['3'] or field['7'],
                           preferred = None)  # no field for this for X50/X80s
 
@@ -361,7 +361,7 @@ def transform_variant_organization(self, field):
 
     # Variant Group Attributes
     # ---
-    ovb.set_variant_group(id        = field['7'],
+    ovb.set_entry_group_attributes(id        = field['7'],
                           group     = field['6'],
                           preferred = bool(field['5']) if field['6'] else None)
 
@@ -425,7 +425,7 @@ def transform_variant_place(self, field):
 
     # Variant Group Attributes
     # ---
-    pvb.set_variant_group(id        = field['7'],
+    pvb.set_entry_group_attributes(id        = field['7'],
                           group     = field['6'],
                           preferred = bool(field['5']) if field['6'] else None)
 
@@ -482,7 +482,7 @@ def transform_variant_string(self, field):
 
     # Variant Group Attributes
     # ---
-    svb.set_variant_group(id        = field['7'],
+    svb.set_entry_group_attributes(id        = field['7'],
                           group     = field['6'],
                           preferred = bool(field['5']) if field['6'] else None)
 
@@ -525,7 +525,7 @@ def transform_variant_time(self, field):
 
     # Variant Group Attributes
     # ---
-    tvb.set_variant_group(id        = field['4'],
+    tvb.set_entry_group_attributes(id        = field['4'],
                           group     = field['3'] or field['7'],
                           preferred = None)  # no field for this for X50/X80s
 
@@ -574,14 +574,13 @@ def transform_variant_time(self, field):
     # Note(s)
     # ---
     # ^2 = scope note
-    # TIMEVARIANTS DON'T HAVE NOTES FOR SOME REASON? MAYBE FIX THIS
-    # for note_text in field.get_subfields('2'):
-    #     tvb.add_note( content_text = note_text,
-    #                   content_lang = None,
-    #                   type = "annotation",
-    #                   link_title = None,
-    #                   href_URI = None,
-    #                   set_URI  = None )
+    for note_text in field.get_subfields('2'):
+        tvb.add_note( content_text = note_text,
+                      content_lang = None,
+                      type = "annotation",
+                      link_title = None,
+                      href_URI = None,
+                      set_URI  = None )
 
     return tvb.build()
 

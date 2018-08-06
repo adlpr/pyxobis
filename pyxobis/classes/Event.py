@@ -22,7 +22,7 @@ class Event(PrincipalElement):
                 | string "miscellaneous"
             }?,
             optClass,
-            element xobis:entry { optScheme, eventEntryContent },
+            element xobis:entry { optScheme, optEntryGroupAttributes, eventEntryContent },
             element xobis:variants { anyVariant+ }?,
             optNoteList
         }
@@ -31,6 +31,7 @@ class Event(PrincipalElement):
     def __init__(self, event_entry_content, \
                        type_=None, opt_class=OptClass(), \
                        opt_scheme=OptScheme(), \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
         assert type_ in Event.TYPES
@@ -40,6 +41,8 @@ class Event(PrincipalElement):
         # for entry element
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(event_entry_content, EventEntryContent)
         self.event_entry_content = event_entry_content
         # for variant elements
@@ -58,8 +61,12 @@ class Event(PrincipalElement):
         event_attrs.update(opt_class_attrs)
         event_e = E('event', **event_attrs)
         # entry element
+        entry_attrs = {}
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
-        entry_e = E('entry', **opt_scheme_attrs)
+        entry_attrs.update(opt_scheme_attrs)
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_attrs.update(opt_entry_group_attributes_attrs)
+        entry_e = E('entry', **entry_attrs)
         event_entry_content_elements = self.event_entry_content.serialize_xml()
         entry_e.extend(event_entry_content_elements)
         event_e.append(entry_e)
@@ -110,18 +117,19 @@ class EventVariantEntry(VariantEntry):
             optVariantAttributes,
             genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { optSubstituteAttribute, optScheme, eventEntryContent },
+            element xobis:entry { optSubstituteAttribute, optScheme, optEntryGroupAttributes, eventEntryContent },
             optNoteList
         }
     """
     def __init__(self, event_entry_content, \
-                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
+                       opt_variant_attributes=OptVariantAttributes(), \
                        type_=None, time_or_duration_ref=None, \
                        opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_scheme=OptScheme(), \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
-        self.opt_variant_group_attributes = opt_variant_group_attributes
+        assert isinstance(opt_variant_attributes, OptVariantAttributes)
+        self.opt_variant_attributes = opt_variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -132,6 +140,8 @@ class EventVariantEntry(VariantEntry):
         self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(event_entry_content, EventEntryContent)
         self.event_entry_content = event_entry_content
         assert isinstance(opt_note_list, OptNoteList)
@@ -139,8 +149,8 @@ class EventVariantEntry(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
-        variant_e = E('event', **opt_variant_group_attributes_attrs)
+        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
+        variant_e = E('event', **opt_variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -156,6 +166,8 @@ class EventVariantEntry(VariantEntry):
         entry_attrs.update(opt_substitute_attribute_attrs)
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
         entry_attrs.update(opt_scheme_attrs)
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_attrs.update(opt_entry_group_attributes_attrs)
         entry_e = E('entry', **entry_attrs)
         # --> content
         event_entry_content_elements = self.event_entry_content.serialize_xml()

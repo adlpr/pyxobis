@@ -148,11 +148,15 @@ class Transformer:
             # don't transform
             return None
 
+        # # Preprocessing for entry groups/sumptions
+        # if element_type == BEING:
+        #     record = self.preprocess_sumptions(record)
+
         if element_type != HOLDINGS:
 
             init_builder, parse_name = {
                 WORK_INST    : (self.init_work_instance_builder, None),
-                WORK_AUT     : (self.init_work_authority_builder, None),
+                WORK_AUT     : (self.init_work_authority_builder, self.np.parse_work_authority_name),
                 BEING        : (self.init_being_builder, self.np.parse_being_name),
                 CONCEPT      : (self.init_concept_builder, self.np.parse_concept_name),
                 RELATIONSHIP : (self.init_concept_builder, self.np.parse_concept_name),
@@ -260,6 +264,12 @@ class Transformer:
         # ---
         # is it LC for the 100 when 010? not really, consider this n/a for now
 
+        # ENTRY GROUP
+        # ---
+        bb.set_entry_group_attributes(id = None,
+                                      group = record['100']['6'],
+                                      preferred = None )
+
         # ENTRY TYPE
         # ---
         # Generic "entry type" is specific to Beings: birth name, pseudonym, etc.
@@ -302,6 +312,14 @@ class Transformer:
                 cb.set_scheme(scheme)
                 break
 
+        # ENTRY GROUP
+        # ---
+        entry_field = record.get_id_field()
+        if entry_field.tag != '155':
+            cb.set_entry_group_attributes(id    = entry_field['4'],
+                                          group = entry_field['3'],
+                                          preferred = None )
+
         return cb
 
 
@@ -342,6 +360,12 @@ class Transformer:
         # ---
         # n/a for now
 
+        # ENTRY GROUP
+        # ---
+        eb.set_entry_group_attributes(id    = None,
+                                      group = entry_field['6'],
+                                      preferred = None )
+
         # PREQUALIFIER(S)
         # ---
         event_prequalifiers = self.np.parse_event_prequalifiers(record.get_id_field())
@@ -374,6 +398,12 @@ class Transformer:
         # subdivision or not?
         # n/a for now
 
+        # ENTRY GROUP
+        # ---
+        lb.set_entry_group_attributes(id    = record['150']['4'],
+                                      group = record['150']['3'],
+                                      preferred = None )
+
         return lb
 
 
@@ -402,6 +432,12 @@ class Transformer:
         # SCHEME
         # ---
         # n/a for now
+
+        # ENTRY GROUP
+        # ---
+        ob.set_entry_group_attributes(id    = None,
+                                      group = record['110']['6'],
+                                      preferred = None )
 
         # PREQUALIFIER(S)
         # ---
@@ -462,6 +498,10 @@ class Transformer:
         # ---
         # n/a for now
 
+        # ENTRY GROUP
+        # ---
+        # n/a
+
         return pb
 
 
@@ -502,6 +542,10 @@ class Transformer:
                         xlink_title = None,  # we don't have these established yet
                         xlink_href  = None )
 
+        # ENTRY GROUP
+        # ---
+        # n/a
+
         return sb
 
 
@@ -522,6 +566,12 @@ class Transformer:
         # SCHEME
         # ---
         # n/a for now?
+
+        # ENTRY GROUP
+        # ---
+        tb.set_entry_group_attributes(id    = record['150']['4'],
+                                      group = record['150']['3'],
+                                      preferred = None )
 
         # CALENDAR
         # ---
@@ -579,6 +629,10 @@ class Transformer:
             # otherwise is Title, Formal
             wb.set_class('collective')  # ??
 
+        # ENTRY GROUP
+        # ---
+        # n/a
+
         return wb
 
 
@@ -612,6 +666,12 @@ class Transformer:
             else:
                 wb.set_class('individual')
 
+        # ENTRY GROUP
+        # ---
+        ...
+        ...
+        ...
+
         # HOLDINGS
         # ---
         ...
@@ -637,6 +697,12 @@ class Transformer:
         # natural, crafted, manufactured
         # too difficult to determine this for sure based on category alone.
         # n/a for now
+
+        # ENTRY GROUP
+        # ---
+        ...
+        ...
+        ...
 
         # ORGANIZATION
         # ---

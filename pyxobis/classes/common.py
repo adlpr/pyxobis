@@ -347,7 +347,7 @@ class Note(Component):
         # Returns an Element.
         attrs = {}
         if self.type:
-            attrs['type'] = self.class_
+            attrs['type'] = self.type
         if self.link_attributes is not None:
             link_attributes_attrs = self.link_attributes.serialize_xml()
             attrs.update(link_attributes_attrs)
@@ -412,9 +412,26 @@ class QualifiersOpt(Component):
 
 
 
-class OptVariantGroupAttributes(Component):
+class OptVariantAttributes(Component):
     """
     optVariantAttributes |=
+        attribute includes { string "broader" | string "narrower" | string "related" }?
+    """
+    INCLUDES = ["broader", "narrower", "related", None]
+    def __init__(self, includes=None):
+        assert includes in OptVariantAttributes.INCLUDES
+        self.includes = includes
+    def serialize_xml(self):
+        # Returns a dict of parent attributes.
+        attrs = {}
+        if self.includes is not None:
+            attrs['includes'] = self.includes
+        return attrs
+
+
+class OptEntryGroupAttributes(Component):
+    """
+    optEntryAttributes |=
         attribute id { text }?,
         attribute group { text }?,
         attribute preferred { xsd:boolean }?
@@ -423,7 +440,7 @@ class OptVariantGroupAttributes(Component):
     def __init__(self, id=None, group=None, preferred=None):
         self.id = id
         self.group = group
-        assert preferred in OptVariantGroupAttributes.PREFERRED
+        assert preferred in OptEntryGroupAttributes.PREFERRED
         self.preferred = preferred
     def serialize_xml(self):
         # Returns a dict of parent attributes.
@@ -435,7 +452,6 @@ class OptVariantGroupAttributes(Component):
         if self.preferred is not None:
             attrs['preferred'] = str(self.preferred).lower()
         return attrs
-
 
 
 class VersionsHoldingsOpt(Component):

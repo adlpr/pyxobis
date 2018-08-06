@@ -28,6 +28,7 @@ class PlaceBuilder(PrincipalElementBuilder):
                    opt_class = OptClass(self.class_),
                    usage = self.usage,
                    opt_scheme = OptScheme(self.scheme),
+                   opt_entry_group_attributes = self.opt_entry_group_attributes,
                    variants = self.variants,
                    opt_note_list = OptNoteList(self.note_list)
                )
@@ -51,11 +52,12 @@ class PlaceVariantBuilder(PrincipalElementVariantBuilder):
                        GenericName(name_content),
                        QualifiersOpt(self.qualifiers)
                    ),
-                   opt_variant_group_attributes = self.opt_variant_group_attributes,
+                   opt_variant_attributes = self.opt_variant_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
                    opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
                    opt_scheme = OptScheme(self.scheme),
+                   opt_entry_group_attributes = self.opt_entry_group_attributes,
                    opt_note_list = OptNoteList(self.note_list)
                )
 

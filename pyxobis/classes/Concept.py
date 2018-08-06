@@ -21,7 +21,7 @@ class Concept(PrincipalElement):
              attribute subtype {
                  string "general" | string "form" | string "topical" | string "unspecified"
              })?,
-            element xobis:entry { optScheme, conceptEntryContent },
+            element xobis:entry { optScheme, optEntryGroupAttributes, conceptEntryContent },
             element xobis:variants { anyVariant+ }?,
             optNoteList
         }
@@ -32,6 +32,7 @@ class Concept(PrincipalElement):
     def __init__(self, concept_entry_content, \
                        type_=None, usage=None, subtype=None, \
                        opt_scheme=OptScheme(), \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
         assert type_ in Concept.TYPES
@@ -44,6 +45,8 @@ class Concept(PrincipalElement):
         # for entry element
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(concept_entry_content, ConceptEntryContent)
         self.concept_entry_content = concept_entry_content
         # for variant elements
@@ -62,8 +65,12 @@ class Concept(PrincipalElement):
             concept_e.attrib['usage'] = self.usage
             concept_e.attrib['subtype'] = self.subtype
         # entry element
+        entry_attrs = {}
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
-        entry_e = E('entry', **opt_scheme_attrs)
+        entry_attrs.update(opt_scheme_attrs)
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_attrs.update(opt_entry_group_attributes_attrs)
+        entry_e = E('entry', **entry_attrs)
         concept_entry_content_elements = self.concept_entry_content.serialize_xml()
         entry_e.extend(concept_entry_content_elements)
         concept_e.append(entry_e)
@@ -84,7 +91,7 @@ class Concept(PrincipalElement):
 
 class ConceptEntryContent(Component):
     """
-    _conceptEntryContent |= genericName, qualifiersOpt
+    conceptEntryContent |= genericName, qualifiersOpt
     """
     def __init__(self, generic_name, qualifiers_opt=QualifiersOpt()):
         assert isinstance(generic_name, GenericName)
@@ -108,18 +115,19 @@ class ConceptVariantEntry(VariantEntry):
             optVariantAttributes,
             genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { optSubstituteAttribute, optScheme, conceptEntryContent },
+            element xobis:entry { optSubstituteAttribute, optScheme, optEntryGroupAttributes, conceptEntryContent },
             optNoteList
         }
     """
     def __init__(self, concept_entry_content, \
-                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
+                       opt_variant_attributes=OptVariantAttributes(), \
                        type_=None, time_or_duration_ref=None, \
                        opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_scheme=OptScheme(), \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
-        self.opt_variant_group_attributes = opt_variant_group_attributes
+        assert isinstance(opt_variant_attributes, OptVariantAttributes)
+        self.opt_variant_attributes = opt_variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -130,6 +138,8 @@ class ConceptVariantEntry(VariantEntry):
         self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(concept_entry_content, ConceptEntryContent)
         self.concept_entry_content = concept_entry_content
         assert isinstance(opt_note_list, OptNoteList)
@@ -137,8 +147,8 @@ class ConceptVariantEntry(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
-        variant_e = E('concept', **opt_variant_group_attributes_attrs)
+        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
+        variant_e = E('concept', **opt_variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -154,6 +164,8 @@ class ConceptVariantEntry(VariantEntry):
         entry_attrs.update(opt_substitute_attribute_attrs)
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
         entry_attrs.update(opt_scheme_attrs)
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_attrs.update(opt_entry_group_attributes_attrs)
         entry_e = E('entry', **entry_attrs)
         # --> content
         concept_entry_content_elements = self.concept_entry_content.serialize_xml()

@@ -74,6 +74,7 @@ class ObjectContent(Component):
     objectContent |=
         ((attribute type { string "natural" | string "crafted" }?,
           element xobis:entry {
+              optEntryGroupAttributes,
               objectEntryContent,
               element xobis:organization {
                   linkAttributes,
@@ -81,7 +82,7 @@ class ObjectContent(Component):
               }
           })
          | (attribute type { string "manufactured" }?,
-            element xobis:entry { objectEntryContent })),
+            element xobis:entry { optEntryGroupAttributes, objectEntryContent })),
         element xobis:variants { anyVariant+ }?,
         optNoteList
     """
@@ -90,6 +91,7 @@ class ObjectContent(Component):
     def __init__(self, object_entry_content,
                        type_=None, organization_link_attributes=None, \
                        organization_id_content=None, \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
         self.is_manufactured = not organization_link_attributes
@@ -104,6 +106,8 @@ class ObjectContent(Component):
                 assert isinstance(organization_id_content, GenericContent)
         self.type = type_
         # for entry element
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(object_entry_content, ObjectEntryContent)
         self.object_entry_content = object_entry_content
         self.organization_link_attributes = organization_link_attributes
@@ -122,7 +126,8 @@ class ObjectContent(Component):
             content_attrs['type'] = self.type
         # entry element
         elements = []
-        entry_e = E('entry')
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_e = E('entry', **opt_entry_group_attributes_attrs)
         object_entry_content_elements = self.object_entry_content.serialize_xml()
         entry_e.extend(object_entry_content_elements)
         if not self.is_manufactured:
@@ -175,18 +180,19 @@ class ObjectVariantEntry(VariantEntry):
             optVariantAttributes,
             genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { optSubstituteAttribute, optScheme, objectEntryContent },
+            element xobis:entry { optSubstituteAttribute, optScheme, optEntryGroupAttributes, objectEntryContent },
             optNoteList
         }
     """
     def __init__(self, object_entry_content, \
-                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
+                       opt_variant_attributes=OptVariantAttributes(), \
                        type_=None, time_or_duration_ref=None, \
                        opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_scheme=OptScheme(), \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
-        self.opt_variant_group_attributes = opt_variant_group_attributes
+        assert isinstance(opt_variant_attributes, OptVariantAttributes)
+        self.opt_variant_attributes = opt_variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -197,6 +203,8 @@ class ObjectVariantEntry(VariantEntry):
         self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(object_entry_content, ObjectEntryContent)
         self.object_entry_content = object_entry_content
         assert isinstance(opt_note_list, OptNoteList)
@@ -204,8 +212,8 @@ class ObjectVariantEntry(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
-        variant_e = E('object', **opt_variant_group_attributes_attrs)
+        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
+        variant_e = E('object', **opt_variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -221,6 +229,8 @@ class ObjectVariantEntry(VariantEntry):
         entry_attrs.update(opt_substitute_attribute_attrs)
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
         entry_attrs.update(opt_scheme_attrs)
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_attrs.update(opt_entry_group_attributes_attrs)
         entry_e = E('entry', **entry_attrs)
         # --> content
         object_entry_content_elements = self.object_entry_content.serialize_xml()

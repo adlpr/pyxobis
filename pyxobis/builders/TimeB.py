@@ -99,6 +99,7 @@ class TimeBuilder(PrincipalElementBuilder):
                     TimeInstanceEntry(
                         self.time_content_single,
                         opt_scheme = OptScheme(self.scheme),
+                        opt_entry_group_attributes = self.opt_entry_group_attributes,
                         calendar = self.calendar
                     ),
                     opt_class = OptClass(self.class_),
@@ -175,7 +176,8 @@ class DurationBuilder(PrincipalElementBuilder):
                            self.time_content2,
                            opt_scheme = OptScheme(self.scheme2),
                            calendar = self.calendar2
-                       )
+                       ),
+                       opt_entry_group_attributes = self.opt_entry_group_attributes
                    ),
                    opt_class = OptClass(self.class_),
                    usage     = self.usage,
@@ -221,9 +223,10 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
                    TimeInstanceEntry(
                        self.time_content_single,
                        opt_scheme = OptScheme(self.scheme),
+                       opt_entry_group_attributes = self.opt_entry_group_attributes,
                        calendar = self.calendar
                    ),
-                   opt_variant_group_attributes = self.opt_variant_group_attributes,
+                   opt_variant_attributes = self.opt_variant_attributes,
                    type_ = self.type,
                    opt_note_list = OptNoteList(self.note_list)
                )
@@ -318,9 +321,10 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
                                        self.time_content2_link_attributes),
                            opt_scheme = OptScheme(self.scheme2),
                            calendar = self.calendar2
-                       )
+                       ),
+                       opt_entry_group_attributes = self.opt_entry_group_attributes
                    ),
-                   opt_variant_group_attributes = self.opt_variant_group_attributes,
+                   opt_variant_attributes = self.opt_variant_attributes,
                    type_ = self.type,
                    opt_note_list = OptNoteList(self.note_list)
                )

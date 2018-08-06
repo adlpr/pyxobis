@@ -57,6 +57,7 @@ class ObjectBuilder(PrincipalElementBuilder):
                        type_ = self.type,
                        organization_link_attributes = organization_link_attributes,
                        organization_id_content = organization_id_content,
+                       opt_entry_group_attributes = self.opt_entry_group_attributes,
                        variants = self.variants,
                        opt_note_list = OptNoteList(self.note_list)
                    ),
@@ -85,11 +86,12 @@ class ObjectVariantBuilder(PrincipalElementVariantBuilder):
                        GenericName(name_content),
                        QualifiersOpt(self.qualifiers)
                    ),
-                   opt_variant_group_attributes = self.opt_variant_group_attributes,
+                   opt_variant_attributes = self.opt_variant_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
                    opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
                    opt_scheme = OptScheme(self.scheme),
+                   opt_entry_group_attributes = self.opt_entry_group_attributes,
                    opt_note_list = OptNoteList(self.note_list)
                )
 

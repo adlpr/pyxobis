@@ -40,7 +40,7 @@ class StringBuilder(PrincipalElementBuilder):
                    ),
                    type_    = self.type,
                    class_   = self.class_,
-                   # grammar  = self.grammar,
+                   opt_entry_group_attributes = self.opt_entry_group_attributes,
                    variants = self.variants,
                    opt_note_list = OptNoteList(self.note_list)
                )
@@ -75,10 +75,11 @@ class StringVariantBuilder(PrincipalElementVariantBuilder):
                        self.parts_of_speech,
                        QualifiersOpt(self.qualifiers)
                    ),
-                   opt_variant_group_attributes = self.opt_variant_group_attributes,
+                   opt_variant_attributes = self.opt_variant_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
                    opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
+                   opt_entry_group_attributes = self.opt_entry_group_attributes,
                    opt_note_list = OptNoteList(self.note_list)
                )
 

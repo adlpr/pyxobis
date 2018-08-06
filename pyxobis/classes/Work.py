@@ -67,6 +67,7 @@ class WorkContent(Component):
             attribute class {
                 string "individual" | string "serial" | string "collective" | string "referential"
             }?,
+            optEntryGroupAttributes,
             workEntryContent
         },
         element xobis:variants { anyVariant+ }?,
@@ -74,12 +75,16 @@ class WorkContent(Component):
     """
     CLASSES = ["individual", "serial", "collective", "referential", None]
     def __init__(self, work_entry_content, \
-                       class_=None, variants=[], opt_note_list=OptNoteList()):
+                       class_=None, \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
+                       variants=[], opt_note_list=OptNoteList()):
         # attributes
         assert class_ in WorkContent.CLASSES, \
             "Work entry class ({}) must be in: {}".format(class_, str(WorkContent.CLASSES))
         self.class_ = class_
         # for entry element
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(work_entry_content, WorkEntryContent)
         self.work_entry_content = work_entry_content
         # for variant elements
@@ -93,6 +98,8 @@ class WorkContent(Component):
         entry_attrs = {}
         if self.class_:
             entry_attrs['class'] = self.class_
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_attrs.update(opt_entry_group_attributes_attrs)
         entry_e = E('entry', **entry_attrs)
         elements = []
         work_entry_content_elements = self.work_entry_content.serialize_xml()
@@ -166,18 +173,19 @@ class WorkVariantEntry(VariantEntry):
             optVariantAttributes,
             genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { optSubstituteAttribute, optScheme, workEntryContent },
+            element xobis:entry { optSubstituteAttribute, optScheme, optEntryGroupAttributes, workEntryContent },
             optNoteList
         }
     """
     def __init__(self, work_entry_content, \
-                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
+                       opt_variant_attributes=OptVariantAttributes(), \
                        type_=None, time_or_duration_ref=None, \
                        opt_substitute_attribute=OptSubstituteAttribute(), \
                        opt_scheme=OptScheme(), \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
-        self.opt_variant_group_attributes = opt_variant_group_attributes
+        assert isinstance(opt_variant_attributes, OptVariantAttributes)
+        self.opt_variant_attributes = opt_variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -188,6 +196,8 @@ class WorkVariantEntry(VariantEntry):
         self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(work_entry_content, WorkEntryContent)
         self.work_entry_content = work_entry_content
         assert isinstance(opt_note_list, OptNoteList)
@@ -195,8 +205,8 @@ class WorkVariantEntry(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
-        variant_e = E('work', **opt_variant_group_attributes_attrs)
+        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
+        variant_e = E('work', **opt_variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -212,6 +222,8 @@ class WorkVariantEntry(VariantEntry):
         entry_attrs.update(opt_substitute_attribute_attrs)
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
         entry_attrs.update(opt_scheme_attrs)
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_attrs.update(opt_entry_group_attributes_attrs)
         entry_e = E('entry', **entry_attrs)
         # --> content
         work_entry_content_elements = self.work_entry_content.serialize_xml()

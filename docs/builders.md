@@ -86,48 +86,52 @@ add_relationship ( relationship )   # Relationship
 
 ### BeingBuilder
 ```
-# Required: ROLE and at least one NAME
+set_role ( new_role )
 
-set_role ( new_role )      # str
+set_type ( new_type )
 
-set_type ( new_type )      # str
+set_class ( new_class )
 
-set_class ( new_class )    # str
+set_scheme ( new_scheme )
 
-set_scheme ( new_scheme )  # str
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )
 
 # Most main entries don't have a generic type, but Being records may
 # be for real names or pseudonyms (unlike other principal elements).
-set_entry_type ( link_title,       # str
-                 set_URI,         # str (URI)
-                 href_URI = None ) # str (URI)
+set_entry_type ( link_title,
+                 set_URI,
+                 href_URI = None )
 
 # Since Being entries have a generic type, this is separated out because it is referencing the time/duration of the entry TYPE.
 set_time_or_duration_ref ( time_or_duration_ref )
 
-add_name ( name_text,         # str
-           type_  = "generic", # str ("generic" -or- <part>s with "given", "surname", "patronym", etc.)
-           lang   = None,      # str (ISO 639-2/B?)
-           script = None,   # str (ISO 15924?)
-           nonfiling = 0 )     # int (>=0)
+add_name ( name_text,
+           type_  = "generic", # "generic" -or- <part>s with "given", "surname", "patronym", etc.
+           lang   = None,
+           script = None,
+           nonfiling = 0 )
 
-add_qualifier ( qualifier )  # RefElement
+add_qualifier ( qualifier )
 
-add_variant ( variant )    # BeingVariantEntry
+add_variant ( variant )
 
-add_note ( content_text,        # str
-           content_lang = None, # str (ISO 639-2/B?)
-           class_ = None,       # str
-           link_title = None,   # str
-           href_URI = None,     # str (URI)
-           set_URI = None )    # str (URI)
+add_note ( content_text,
+           content_lang = None,
+           class_ = None,
+           link_title = None,
+           href_URI = None,
+           set_URI = None )
 ```
 
 ### BeingVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -182,6 +186,10 @@ set_subtype ( new_subtype )  # general, form, topical, unspecified
 
 set_scheme ( new_scheme )
 
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
+
 add_name ( name_text,
            lang   = None,
            script = None,
@@ -201,9 +209,11 @@ add_note ( content_text,
 
 ### ConceptVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -259,6 +269,10 @@ set_class ( new_class )  # individual, collective, referential
 
 set_scheme ( new_scheme )
 
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
+
 add_prequalifier ( prequalifier )
 
 add_name ( name_text,
@@ -280,9 +294,11 @@ add_note ( content_text,
 
 ### EventVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -334,6 +350,10 @@ set_class ( new_class )  # individual, collective, referential
 
 set_usage ( new_usage )
 
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
+
 add_name ( name_text,
            lang   = None,
            script = None,
@@ -353,9 +373,11 @@ add_note ( content_text,
 
 ### LanguageVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -409,6 +431,10 @@ set_class ( new_class )  # individual, collective, referential [aut only]
 
 set_type ( new_type )  # natural, crafted, manufactured
 
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
+
 add_name ( name_text,
            lang   = None,
            script = None,
@@ -435,9 +461,11 @@ set_holdings ( versions_holdings_opt )
 
 ### ObjectVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -487,6 +515,10 @@ set_class ( new_class )  # individual, collective, referential
 
 set_scheme ( new_scheme )
 
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
+
 add_prequalifier ( prequalifier )
 
 add_name ( name_text,
@@ -508,9 +540,11 @@ add_note ( content_text,
 
 ### OrganizationVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -574,6 +608,10 @@ set_usage ( new_usage )
 
 set_scheme ( new_scheme )
 
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
+
 add_name ( name_text,
            lang   = None,
            script = None,
@@ -593,9 +631,11 @@ add_note ( content_text,
 
 ### PlaceVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -643,6 +683,10 @@ set_type ( new_type )  # textual, numeric, mixed
 
 set_class ( new_class )  # word, phrase
 
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
+
 add_name ( name_text,
            lang   = None,
            script = None,
@@ -667,9 +711,11 @@ add_note ( content_text,
 
 ### StringVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -753,6 +799,10 @@ set_usage ( new_usage )
 
 set_scheme ( new_scheme )
 
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
+
 set_calendar ( link_title,
                set_URI,
                href_URI = None )
@@ -777,6 +827,10 @@ set_usage ( new_usage )
 
 set_scheme ( scheme1,
              scheme2 = "" )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_calendar ( link_title,
                set_URI,
@@ -808,9 +862,11 @@ add_note ( content_text,
 
 ### TimeVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -828,9 +884,11 @@ set_time_content_single ( time_content_single )
 
 ### DurationVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,
@@ -918,6 +976,10 @@ set_role ( new_role )  # authority, instance, or authority instance
 
 set_class ( new_class )  # individual, serial, collective, referential
 
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
+
 add_name ( name_text,
            type_  = "generic",
            lang   = None,
@@ -940,9 +1002,11 @@ set_holdings ( versions_holdings_opt )
 
 ### WorkVariantBuilder
 ```
-set_variant_group ( id = None,
-                    group = None,
-                    preferred = None )  # bool
+set_included ( included )
+
+set_entry_group_attributes ( id = None,
+                             group = None,
+                             preferred = None )  # bool
 
 set_type ( link_title,
            set_URI,

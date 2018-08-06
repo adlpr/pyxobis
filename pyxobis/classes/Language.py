@@ -21,7 +21,7 @@ class Language(PrincipalElement):
             }?,
             optClass,
             attribute usage { "subdivision" }?,
-            element xobis:entry { langEntryContent },
+            element xobis:entry { optEntryGroupAttributes, langEntryContent },
             element xobis:variants { anyVariant+ }?,
             optNoteList
         }
@@ -30,6 +30,7 @@ class Language(PrincipalElement):
     USAGES = ["subdivision", None]
     def __init__(self, language_entry_content, \
                        type_=None, opt_class=OptClass(), usage=None, \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
         assert type_ in Language.TYPES
@@ -39,6 +40,8 @@ class Language(PrincipalElement):
         assert usage in Language.USAGES
         self.usage = usage
         # for entry element
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(language_entry_content, LanguageEntryContent)
         self.language_entry_content = language_entry_content
         # for variant elements
@@ -59,7 +62,8 @@ class Language(PrincipalElement):
             language_attrs['usage'] = self.usage
         language_e = E('language', **language_attrs)
         # entry element
-        entry_e = E('entry')
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_e = E('entry', **opt_entry_group_attributes_attrs)
         language_entry_content_elements = self.language_entry_content.serialize_xml()
         entry_e.extend(language_entry_content_elements)
         language_e.append(entry_e)
@@ -74,8 +78,6 @@ class Language(PrincipalElement):
         if opt_note_list_e is not None:
             language_e.append(opt_note_list_e)
         return language_e
-
-
 
 
 class LanguageEntryContent(Component):
@@ -106,17 +108,18 @@ class LanguageVariantEntry(VariantEntry):
             optVariantAttributes,
             genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { optSubstituteAttribute, langEntryContent },
+            element xobis:entry { optSubstituteAttribute, optEntryGroupAttributes, langEntryContent },
             optNoteList
         }
     """
     def __init__(self, language_entry_content, \
-                       opt_variant_group_attributes=OptVariantGroupAttributes(), \
+                       opt_variant_attributes=OptVariantAttributes(), \
                        type_=None, time_or_duration_ref=None, \
                        opt_substitute_attribute=OptSubstituteAttribute(), \
+                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_group_attributes, OptVariantGroupAttributes)
-        self.opt_variant_group_attributes = opt_variant_group_attributes
+        assert isinstance(opt_variant_attributes, OptVariantAttributes)
+        self.opt_variant_attributes = opt_variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
@@ -125,6 +128,8 @@ class LanguageVariantEntry(VariantEntry):
         self.time_or_duration_ref = time_or_duration_ref
         assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
         self.opt_substitute_attribute = opt_substitute_attribute
+        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
+        self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(language_entry_content, LanguageEntryContent)
         self.language_entry_content = language_entry_content
         assert isinstance(opt_note_list, OptNoteList)
@@ -132,8 +137,8 @@ class LanguageVariantEntry(VariantEntry):
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_group_attributes_attrs = self.opt_variant_group_attributes.serialize_xml()
-        variant_e = E('language', **opt_variant_group_attributes_attrs)
+        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
+        variant_e = E('language', **opt_variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -147,6 +152,8 @@ class LanguageVariantEntry(VariantEntry):
         entry_attrs = {}
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         entry_attrs.update(opt_substitute_attribute_attrs)
+        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
+        entry_attrs.update(opt_entry_group_attributes_attrs)
         entry_e = E('entry', **entry_attrs)
         # --> content
         language_entry_content_elements = self.language_entry_content.serialize_xml()
