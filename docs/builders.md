@@ -757,7 +757,7 @@ set_calendar ( link_title,
                set_URI,
                href_URI = None )
 
-set_time_content ( time_content )
+set_time_content_single ( time_content_single )
 
 add_variant ( variant )
 
@@ -790,11 +790,11 @@ set_calendar2 ( link_title,
                 set_URI,
                 href_URI = None )
 
-set_time_entry1 ( time_content1,
-                  time_content2 = None)
+set_time_content1 ( time_content_single1,
+                    time_content_single2 = None)
 
-set_time_entry2 ( time_content1,
-                  time_content2 = None)
+set_time_content2 ( time_content_single1,
+                    time_content_single2 = None)
 
 add_variant ( variant )
 
@@ -822,7 +822,7 @@ set_calendar ( link_title,
                set_URI,
                href_URI = None )
 
-set_time_content ( time_content )
+set_time_content_single ( time_content_single )
 ```
 
 
@@ -852,17 +852,17 @@ set_calendar2 ( link_title,
                 set_URI,
                 href_URI = None )
 
-set_time_entry1 ( time_content1,
-                  time_content2 = None )
+set_time_content1 ( time_content_single1,
+                  time_content_single2 = None )
 
-set_time_entry1_link ( link_title,
-                       href_URI = None )
+set_time_content1_link ( link_title,
+                         href_URI = None )
 
-set_time_entry2 ( time_content1,
-                  time_content2 = None )
+set_time_content2 ( time_content_single1,
+                  time_content_single2 = None )
 
-set_time_entry2_link ( link_title,
-                       href_URI = None )
+set_time_content2_link ( link_title,
+                         href_URI = None )
 ```
 
 ### TimeRefBuilder
@@ -874,8 +874,8 @@ set_calendar ( link_title,
 set_link ( link_title,
            href_URI = None )
 
-set_time_entry ( time_content1,
-                 time_content2 = None )
+set_time_content ( time_content_single1,
+                   time_content_single2 = None )
 ```
 
 ### DurationRefBuilder
@@ -895,16 +895,16 @@ set_calendar2 ( link_title,
 set_link ( link_title,
            href_URI = None )
 
-set_time_entry1 ( time_content1,
-                  time_content2 = None )
+set_time_content1 ( time_content_single1,
+                    time_content_single2 = None )
 
-set_time_entry1_link ( link_title,
+set_time_content1_link ( link_title,
                        href_URI = None )
 
-set_time_entry2 ( time_content1,
-                  time_content2 = None )
+set_time_content2 ( time_content_single1,
+                    time_content_single2 = None )
 
-set_time_entry2_link ( link_title,
+set_time_content2_link ( link_title,
                        href_URI = None )
 ```
 

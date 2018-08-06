@@ -151,9 +151,9 @@ class NameParser:
         #     (don't deal with subdivisions here, delegate to
         #      whatever method is handling the ref builder)
 
-        if field.tag in ['150','155']:
+        if field.tag in ['150','155','450','455']:
             name_code, qualifier_code = 'a', 'x'
-        elif field.tag[1:] == '80':
+        elif field.tag.endswith('80'):
             name_code, qualifier_code = 'x', ''
         else:
             name_code, qualifier_code = 'a', ''
@@ -349,7 +349,7 @@ class NameParser:
 
         return org_names_kwargs, org_qualifiers
 
-    def parse_org_prequalifiers(self, field):
+    def parse_organization_prequalifiers(self, field):
         """
         Parse a X10 field for
         - a list of prequalifiers as RefElement objects,
@@ -522,14 +522,20 @@ class NameParser:
 
 
     # work instance [149? 245/6?]
+    ...
+    ...
+    ...
 
 
     # object [149? 245/6?]
+    ...
+    ...
+    ...
 
 
     def __strip_ending_punctuation(self, namestring):
         """
-        Strip punctuation, based on the particular consideration of personal names.
+        Strip punctuation, based on the particular considerations of personal names.
         """
         ns = self.name_abbr_pattern.sub("", namestring.rstrip("،,:;/ \t").strip()).strip()
         return ns

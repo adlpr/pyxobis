@@ -53,14 +53,14 @@ class TimeContentSingleBuilder:
             name_content = self.name_content if len(self.name_content) > 1  \
                                              else self.name_content[0]
             return TimeContentSingle(GenericName(name_content),
-                                    type_     = self.type,
-                                    certainty = self.certainty,
-                                    quality   = self.quality)
+                                     type_     = self.type,
+                                     certainty = self.certainty,
+                                     quality   = self.quality)
         else:
             return TimeContentSingle(self.time_content,
-                                    type_     = self.type,
-                                    certainty = self.certainty,
-                                    quality   = self.quality)
+                                     type_     = self.type,
+                                     certainty = self.certainty,
+                                     quality   = self.quality)
 
 
 
@@ -83,8 +83,8 @@ class TimeBuilder(PrincipalElementBuilder):
         raise AttributeError("Time element does not have property 'type'")
     def set_role(self, *args, **kwargs):
         raise AttributeError("Time element does not have property 'role'")
-    def set_time_content(self, time_content):
-        self.time_content = time_content
+    def set_time_content_single(self, time_content_single):
+        self.time_content_single = time_content_single
     def set_calendar(self, link_title, set_URI, href_URI=None):
         self.calendar = Calendar(
                             LinkAttributes(
@@ -97,7 +97,7 @@ class TimeBuilder(PrincipalElementBuilder):
     def build(self):
         return Time(
                     TimeInstanceEntry(
-                        self.time_content,
+                        self.time_content_single,
                         opt_scheme = OptScheme(self.scheme),
                         calendar = self.calendar
                     ),
@@ -133,10 +133,10 @@ class DurationBuilder(PrincipalElementBuilder):
         raise AttributeError("Time element does not have property 'type'")
     def set_role(self, *args, **kwargs):
         raise AttributeError("Time element does not have property 'role'")
-    def set_time_content1(self, time_content1, time_content2=None):
-        self.time_content1 = TimeContent(time_content1, time_content2)
-    def set_time_content2(self, time_content1, time_content2=None):
-        self.time_content2 = TimeContent(time_content1, time_content2)
+    def set_time_content1(self, time_content_single1, time_content_single2=None):
+        self.time_content1 = TimeContent(time_content_single1, time_content_single2)
+    def set_time_content2(self, time_content_single1, time_content_single2=None):
+        self.time_content2 = TimeContent(time_content_single1, time_content_single2)
     def set_scheme(self, scheme1, scheme2=""):
         if scheme2 == "":  # use None for no scheme on entry part 2
             scheme2 = scheme1
@@ -165,13 +165,13 @@ class DurationBuilder(PrincipalElementBuilder):
                          )
     def build(self):
         return Time(
-                   TimeDurationEntry(
-                       TimeDurationEntryPart(
+                   DurationEntry(
+                       DurationEntryPart(
                            self.time_content1,
                            opt_scheme = OptScheme(self.scheme1),
                            calendar = self.calendar1
                        ),
-                       TimeDurationEntryPart(
+                       DurationEntryPart(
                            self.time_content2,
                            opt_scheme = OptScheme(self.scheme2),
                            calendar = self.calendar2
@@ -195,7 +195,7 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
     # ADDITIONAL: set_time_content, set_calendar
     def __init__(self):
         super().__init__()
-        self.time_content = None
+        self.time_content_single = None
         self.calendar = None
     def add_name(self, *args, **kwargs):
         raise AttributeError("TimeVariant element does not have names")
@@ -207,8 +207,8 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
         raise AttributeError("TimeVariant element does not have substitute attributes")
     def add_note(self, *args, **kwargs):
         raise AttributeError("TimeVariant element does not have notes")
-    def set_time_content(self, time_content):
-        self.time_content = time_content
+    def set_time_content_single(self, time_content_single):
+        self.time_content_single = time_content_single
     def set_calendar(self, link_title, set_URI, href_URI=None):
         self.calendar = Calendar(
                             LinkAttributes(
@@ -221,7 +221,7 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
     def build(self):
         return TimeVariant(
                    TimeInstanceEntry(
-                       self.time_content,
+                       self.time_content_single,
                        opt_scheme = OptScheme(self.scheme),
                        calendar = self.calendar
                    ),
@@ -243,13 +243,13 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
     #             set_calendar, set_calendar1, set_calendar2
     def __init__(self):
         super().__init__()
-        self.time_content1_part1 = None
-        self.time_content1_part2 = None
+        self.time_content1_single1 = None
+        self.time_content1_single2 = None
         self.time_content1_link_attributes = None
         self.scheme1 = None
         self.calendar1 = None
-        self.time_content2_part1 = None
-        self.time_content2_part2 = None
+        self.time_content2_single1 = None
+        self.time_content2_single2 = None
         self.time_content2_link_attributes = None
         self.scheme2 = None
         self.calendar2 = None
@@ -263,17 +263,17 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
         raise AttributeError("TimeVariant element does not have substitute attributes")
     def add_note(self, *args, **kwargs):
         raise AttributeError("TimeVariant element does not have notes")
-    def set_time_content1(self, time_content1, time_content2=None):
-        self.time_content1_part1 = time_content1
-        self.time_content1_part2 = time_content2
+    def set_time_content1(self, time_content_single1, time_content_single2=None):
+        self.time_content1_single1 = time_content_single1
+        self.time_content1_single2 = time_content_single2
     def set_time_content1_link(self, link_title, href_URI=None):
         self.time_content1_link_attributes = LinkAttributes(
                                    link_title,
                                    XSDAnyURI(href_URI) if href_URI else None
                                )
-    def set_time_content2(self, time_content1, time_content2=None):
-        self.time_content2_part1 = time_content1
-        self.time_content2_part2 = time_content2
+    def set_time_content2(self, time_content_single1, time_content_single2=None):
+        self.time_content2_single1 = time_content_single1
+        self.time_content2_single2 = time_content_single2
     def set_time_content2_link(self, link_title, href_URI=None):
         self.time_content2_link_attributes = LinkAttributes(
                                    link_title,
@@ -307,18 +307,18 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
                          )
     def build(self):
         return DurationVariant(
-                   TimeDurationEntry(
-                       TimeDurationEntryPart(
-                           TimeContent(self.time_content1_part1,
-                                     self.time_content1_part2,
-                                     self.time_content1_link_attributes),
+                   DurationEntry(
+                       DurationEntryPart(
+                           TimeContent(self.time_content1_single1,
+                                       self.time_content1_single2,
+                                       self.time_content1_link_attributes),
                            opt_scheme = OptScheme(self.scheme1),
                            calendar = self.calendar1
                        ),
-                       TimeDurationEntryPart(
-                           TimeContent(self.time_content2_part1,
-                                     self.time_content2_part2,
-                                     self.time_content2_link_attributes),
+                       DurationEntryPart(
+                           TimeContent(self.time_content2_single1,
+                                       self.time_content2_single2,
+                                       self.time_content2_link_attributes),
                            opt_scheme = OptScheme(self.scheme2),
                            calendar = self.calendar2
                        )
@@ -338,8 +338,8 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
     # ADDITIONAL: set_time_content, set_calendar
     def __init__(self):
         super().__init__()
-        self.time_content1 = None
-        self.time_content2 = None
+        self.time_content_single1 = None
+        self.time_content_single2 = None
         self.calendar = None
     def add_name(self, *args, **kwargs):
         raise AttributeError("TimeRef element does not have names")
@@ -347,9 +347,9 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
         raise AttributeError("TimeRef element does not have qualifiers")
     def add_subdivision_link(self, *args, **kwargs):
         raise AttributeError("TimeRef element does not have subdivison")
-    def set_time_content(self, time_content1, time_content2=None):
-        self.time_content1 = time_content1
-        self.time_content2 = time_content2
+    def set_time_content(self, time_content_single1, time_content_single2=None):
+        self.time_content_single1 = time_content_single1
+        self.time_content_single2 = time_content_single2
     def set_calendar(self, link_title, set_URI, href_URI=None):
         self.calendar = Calendar(
                             LinkAttributes(
@@ -361,9 +361,9 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
                         )
     def build(self):
         return TimeRef(
-                   TimeContent(self.time_content1,
-                             self.time_content2,
-                             self.link_attributes),
+                   TimeContent(self.time_content_single1,
+                               self.time_content_single2,
+                               self.link_attributes),
                    calendar = self.calendar
                )
 
@@ -378,12 +378,12 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
     #             set_time_content2, set_time_content2_link, set_calendar
     def __init__(self):
         super().__init__()
-        self.time_content1_part1 = None
-        self.time_content1_part2 = None
+        self.time_content1_single1 = None
+        self.time_content1_single2 = None
         self.time_content1_link_attributes = None
         self.calendar1 = None
-        self.time_content2_part1 = None
-        self.time_content2_part2 = None
+        self.time_content2_single1 = None
+        self.time_content2_single2 = None
         self.time_content2_link_attributes = None
         self.calendar2 = None
     def add_name(self, *args, **kwargs):
@@ -392,17 +392,17 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
         raise AttributeError("DurationRef element does not have qualifiers")
     def add_subdivision_link(self, *args, **kwargs):
         raise AttributeError("DurationRef element does not have subdivision")
-    def set_time_content1(self, time_content1, time_content2=None):
-        self.time_content1_part1 = time_content1
-        self.time_content1_part2 = time_content2
+    def set_time_content1(self, time_content_single1, time_content_single2=None):
+        self.time_content1_single1 = time_content_single1
+        self.time_content1_single2 = time_content_single2
     def set_time_content1_link(self, link_title, href_URI=None):
         self.time_content1_link_attributes = LinkAttributes(
                                    link_title,
                                    XSDAnyURI(href_URI) if href_URI else None
                                )
-    def set_time_content2(self, time_content1, time_content2=None):
-        self.time_content2_part1 = time_content1
-        self.time_content2_part2 = time_content2
+    def set_time_content2(self, time_content_single1, time_content_single2=None):
+        self.time_content2_single1 = time_content_single1
+        self.time_content2_single2 = time_content_single2
     def set_time_content2_link(self, link_title, href_URI=None):
         self.time_content2_link_attributes = LinkAttributes(
                                    link_title,
@@ -432,13 +432,13 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
                          )
     def build(self):
         return DurationRef(
-                   time_content1 = TimeContent(self.time_content1_part1,
-                                           self.time_content1_part2,
-                                           self.time_content1_link_attributes),
+                   time_content1 = TimeContent(self.time_content1_single1,
+                                               self.time_content1_single2,
+                                               self.time_content1_link_attributes),
                    calendar1   = self.calendar1,
-                   time_content2 = TimeContent(self.time_content2_part1,
-                                           self.time_content2_part2,
-                                           self.time_content2_link_attributes),
+                   time_content2 = TimeContent(self.time_content2_single1,
+                                               self.time_content2_single2,
+                                               self.time_content2_link_attributes),
                    calendar2   = self.calendar2,
                    link_attributes = self.link_attributes
                )

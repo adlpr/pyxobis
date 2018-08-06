@@ -42,9 +42,8 @@ def transform_variants(self, record):
         elif field.tag == '246':
             # WORK_INST or OBJECT
             if record_element_type == WORK_INST:
-                ...
-                ...
-                ...
+                work_inst_variant = self.transform_variant_work_inst(field)
+                variants.append(work_inst_variant)
             else:
                 # Object
                 ...
@@ -58,17 +57,13 @@ def transform_variants(self, record):
 
         elif field.tag == '410':
             # ORGANIZATION
-            # organization_variant = self.transform_variant_organization(field)
-            # variants.append(organization_variant)
-            ...
-            ...
-            ...
+            organization_variant = self.transform_variant_organization(field)
+            variants.append(organization_variant)
 
         elif field.tag == '411':
             # EVENT
-            ...
-            ...
-            ...
+            event_variant = self.transform_variant_event(field)
+            variants.append(event_variant)
 
         elif field.tag == '430':
             # WORK_AUT
@@ -81,11 +76,8 @@ def transform_variants(self, record):
             # Assume variant is the same type as the heading;
             # if it doesn't match it's most likely a CONCEPT
             if record_element_type == TIME:
-                # time_variant = self.transform_variant_time(field)
-                # variants.append(time_variant)
-                ...
-                ...
-                ...
+                time_variant = self.transform_variant_time(field)
+                variants.append(time_variant)
             elif record_element_type == LANGUAGE:
                 # language_variant = self.transform_variant_language(field)
                 # variants.append(language_variant)
@@ -121,6 +113,7 @@ def transform_variants(self, record):
             ...
 
     return variants
+
 
 
 def transform_variant_being(self, field):
@@ -175,43 +168,6 @@ def transform_variant_being(self, field):
     return bvb.build()
 
 
-def transform_variant_organization(self, field):
-    """
-    Input:  PyMARC 410 field
-    Output: OrgVariantEntry object
-    """
-    ovb = OrganizationVariantBuilder()
-
-    ...
-    ...
-    ...
-    ...
-    ...
-    ...
-
-    # return ovb.build()
-    return None
-
-
-"""
-410  See From Reference, Organization Name (R)
-    1  Filler (--) for subsumed name xref (Lane: for indention) (R)
-    3  Language of entry (Lane) (except English) (R)
-    4  Romanization scheme or Script (Lane, cf. language authority) (R)
-    5  Preferred form by language (P1 only value; equivalent to 1XX; sorts first) (Lane) (R)
-    6  Romanized cluster ID (value R1 must match 1XX; files first; R2 ... sort alpha by first in cluster) (Lane) (R)
-    7  ID for included names, L1, L2, etc. (R)
-    8  Beginning/earliest date of relationship (Lane) (R)
-    9  Single or ending/latest date of relationship (Lane) (R)
-    a  Corporate name or jurisdiction name as entry element (R)
-    b  Subordinate unit (R)
-    d  Date of meeting (R)
-    e  Relator term (Lane: 1st subfield) (R)
-    j  Note/qualification (Lane) (R)
-    n  Number of part/section/meeting (R)
-"""
-
-
 def transform_variant_concept(self, field):
     """
     Input:  PyMARC 150[m]/450/455/480 field
@@ -224,14 +180,18 @@ def transform_variant_concept(self, field):
     if field.tag.endswith('55'):  # X55s use ^3/^4 for language/script
         indiv_id = None
         group_id = field['7']
+        field_lang = field['3']
+        field_script = field['4']
     else:
         indiv_id = field['4']
         group_id = field['3'] or field['7']
+        field_lang = None
+        field_script = None
     cvb.set_variant_group(id        = indiv_id,
                           group     = group_id,
                           preferred = None)  # no field for this for Concepts
 
-    # subsumed concepts?
+    # subsumptions?
     ...
     ...
     ...
@@ -264,7 +224,6 @@ def transform_variant_concept(self, field):
     # Note(s)
     # ---
     # ^2 = scope note
-    field_lang, field_script = field['3'], field['4']
     for note_text in field.get_subfields('2'):
         cvb.add_note( content_text = note_text,
                       content_lang = field_lang,
@@ -274,6 +233,244 @@ def transform_variant_concept(self, field):
                       set_URI  = None )
 
     return cvb.build()
+
+
+def transform_variant_event(self, field):
+    """
+    Input:  PyMARC 411 field
+    Output: EventVariantEntry object
+    """
+    evb = EventVariantBuilder()
+
+    # Variant Group Attributes
+    # ---
+    evb.set_variant_group(id        = field['7'],
+                          group     = field['6'],
+                          preferred = bool(field['5']) if field['6'] else None)
+
+    # subsumptions?
+    ...
+    ...
+    ...
+    # delete ^e to get proper Type
+
+    # Type / Time/Duration Ref
+    # ---
+    type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
+    if type_kwargs:
+        evb.set_type(**type_kwargs)
+    if type_time_or_duration_ref is not None:
+        evb.set_time_or_duration_ref(type_time_or_duration_ref)
+
+    # Substitute
+    # ---
+    # n/a for now
+
+    # Scheme
+    # ---
+    # n/a for now
+
+    # Prequalifier(s)
+    # ---
+    variant_prequalifiers = self.np.parse_event_prequalifiers(field)
+    for prequalifier in variant_prequalifiers:
+        evb.add_prequalifier(prequalifier)
+
+    # Name(s) & Qualifier(s)
+    # ---
+    variant_names, variant_qualifiers = self.np.parse_event_name(field)
+    for variant_name in variant_names:
+        evb.add_name(**variant_name)
+    for variant_qualifier in variant_qualifiers:
+        evb.add_qualifier(variant_qualifier)
+
+    # Note(s)
+    # ---
+    # ^j = Note/qualification
+    field_lang, field_script = field['3'], field['4']
+    for note_text in field.get_subfields('j'):
+        evb.add_note( content_text = note_text,
+                      content_lang = field_lang,
+                      type = "annotation",
+                      link_title = None,
+                      href_URI = None,
+                      set_URI  = None )
+
+    return evb.build()
+
+
+def transform_variant_language(self, field):
+    """
+    Input:  PyMARC 450/480 field
+    Output: LanguageVariantEntry object
+    """
+    lvb = LanguageVariantBuilder()
+
+    # Variant Group Attributes
+    # ---
+    lvb.set_variant_group(id        = field['4'],
+                          group     = field['3'] or field['7'],
+                          preferred = None)  # no field for this for X50/X80s
+
+    # subsumptions?
+    ...
+    ...
+    ...
+    # delete ^e to get proper Type
+
+    # Type / Time/Duration Ref
+    # ---
+    type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
+    if type_kwargs:
+        lvb.set_type(**type_kwargs)
+    if type_time_or_duration_ref is not None:
+        lvb.set_time_or_duration_ref(type_time_or_duration_ref)
+
+    # Substitute
+    # ---
+    # n/a for now
+
+    # Name(s) & Qualifier(s)
+    # ---
+    variant_names, variant_qualifiers = self.np.parse_language_name(field)
+    for variant_name in variant_names:
+        lvb.add_name(**variant_name)
+    for variant_qualifier in variant_qualifiers:
+        lvb.add_qualifier(variant_qualifier)
+
+    # Note(s)
+    # ---
+    # ^2 = scope note
+    for note_text in field.get_subfields('2'):
+        lvb.add_note( content_text = note_text,
+                      content_lang = None,
+                      type = "annotation",
+                      link_title = None,
+                      href_URI = None,
+                      set_URI  = None )
+
+    return lvb.build()
+
+
+def transform_variant_organization(self, field):
+    """
+    Input:  PyMARC 410 field
+    Output: OrgVariantEntry object
+    """
+    ovb = OrganizationVariantBuilder()
+
+    # Variant Group Attributes
+    # ---
+    ovb.set_variant_group(id        = field['7'],
+                          group     = field['6'],
+                          preferred = bool(field['5']) if field['6'] else None)
+
+    # subsumptions?
+    ...
+    ...
+    ...
+    # delete ^e to get proper Type
+
+    # Type / Time/Duration Ref
+    # ---
+    type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
+    if type_kwargs:
+        ovb.set_type(**type_kwargs)
+    if type_time_or_duration_ref is not None:
+        ovb.set_time_or_duration_ref(type_time_or_duration_ref)
+
+    # Substitute
+    # ---
+    # n/a for now
+
+    # Scheme
+    # ---
+    # n/a for now
+
+    # Prequalifier(s)
+    # ---
+    variant_prequalifiers = self.np.parse_organization_prequalifiers(field)
+    for prequalifier in variant_prequalifiers:
+        ovb.add_prequalifier(prequalifier)
+
+    # Name(s) & Qualifier(s)
+    # ---
+    variant_names, variant_qualifiers = self.np.parse_organization_name(field)
+    for variant_name in variant_names:
+        ovb.add_name(**variant_name)
+    for variant_qualifier in variant_qualifiers:
+        ovb.add_qualifier(variant_qualifier)
+
+    # Note(s)
+    # ---
+    # ^j = Note/qualification
+    field_lang, field_script = field['3'], field['4']
+    for note_text in field.get_subfields('j'):
+        ovb.add_note( content_text = note_text,
+                      content_lang = field_lang,
+                      type = "annotation",
+                      link_title = None,
+                      href_URI = None,
+                      set_URI  = None )
+
+    return ovb.build()
+
+
+def transform_variant_place(self, field):
+    """
+    Input:  PyMARC 451 field
+    Output: PlaceVariantEntry object
+    """
+    pvb = PlaceVariantBuilder()
+
+    # Variant Group Attributes
+    # ---
+    pvb.set_variant_group(id        = field['7'],
+                          group     = field['6'],
+                          preferred = bool(field['5']) if field['6'] else None)
+
+    # subsumptions?
+    ...
+    ...
+    ...
+    # delete ^e to get proper Type
+
+    # Type / Time/Duration Ref
+    # ---
+    type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
+    if type_kwargs:
+        pvb.set_type(**type_kwargs)
+    if type_time_or_duration_ref is not None:
+        pvb.set_time_or_duration_ref(type_time_or_duration_ref)
+
+    # Substitute
+    # ---
+    # n/a for now
+
+    # Scheme
+    # ---
+    # n/a for now
+
+    # Name(s) & Qualifier(s)
+    # ---
+    variant_names, variant_qualifiers = self.np.parse_place_name(field)
+    for variant_name in variant_names:
+        pvb.add_name(**variant_name)
+    for variant_qualifier in variant_qualifiers:
+        pvb.add_qualifier(variant_qualifier)
+
+    # Note(s)
+    # ---
+    # ^2 = scope note
+    for note_text in field.get_subfields('2'):
+        pvb.add_note( content_text = note_text,
+                      content_lang = None,
+                      type = "annotation",
+                      link_title = None,
+                      href_URI = None,
+                      set_URI  = None )
+
+    return pvb.build()
 
 
 def transform_variant_string(self, field):
@@ -299,18 +496,110 @@ def transform_variant_string(self, field):
 
     # Substitute
     # ---
-    ...
-    ...
-    ...
+    # n/a for now
 
     # Name(s) & Qualifier(s)
     # ---
-    ...
-    ...
-    ...
+    variant_names, variant_qualifiers = self.np.parse_string_name(field)
+    for variant_name in variant_names:
+        svb.add_name(**variant_name)
+    for variant_qualifier in variant_qualifiers:
+        svb.add_qualifier(variant_qualifier)
 
     # Note(s)
     # ---
     # n/a?
 
     return svb.build()
+
+
+def transform_variant_time(self, field):
+    """
+    Input:  PyMARC 450[/480?] field
+    Output: TimeVariantEntry object
+    """
+    # If ^x, this is a Duration variant
+    variant_is_duration = 'x' in field
+
+    tvb = DurationVariantBuilder() if variant_is_duration else TimeVariantBuilder()
+
+    # Variant Group Attributes
+    # ---
+    tvb.set_variant_group(id        = field['4'],
+                          group     = field['3'] or field['7'],
+                          preferred = None)  # no field for this for X50/X80s
+
+    # subsumptions?
+    ...
+    ...
+    ...
+    # delete ^e to get proper Type
+
+    # Scheme
+    # ---
+    # n/a for now
+
+    if variant_is_duration:
+        # Calendar (Duration)
+        # ---
+        # this isn't used but do it anyway
+        start_datestring, end_datestring = field['a'], field['x']
+        calendar1_kwargs, start_datestring = self.dp.extract_calendar(start_datestring)
+        if calendar1_kwargs:
+            tvb.set_calendar1(**calendar1_kwargs)
+        calendar2_kwargs, end_datestring = self.dp.extract_calendar(end_datestring)
+        if calendar2_kwargs:
+            tvb.set_calendar2(**calendar2_kwargs)
+
+        # Content (Duration)
+        # ---
+        # @@@@ this assumes no dual/slash-dates!
+        start_time_content_single = self.dp.parse_simple(start_datestring)
+        tvb.set_time_content1(start_time_content_single)
+        end_time_content_single = self.dp.parse_simple(end_datestring)
+        tvb.set_time_content2(end_time_content_single)
+    else:
+        # Calendar (Time)
+        # ---
+        datestring = field['a']
+        calendar_kwargs, datestring = self.dp.extract_calendar(datestring)
+        if calendar_kwargs:
+            tvb.set_calendar(**calendar_kwargs)
+
+        # Content (Time)
+        # ---
+        time_content_single = self.dp.parse_simple(datestring)
+        tvb.set_time_content_single(time_content_single)
+
+    # Note(s)
+    # ---
+    # ^2 = scope note
+    # TIMEVARIANTS DON'T HAVE NOTES FOR SOME REASON? MAYBE FIX THIS
+    # for note_text in field.get_subfields('2'):
+    #     tvb.add_note( content_text = note_text,
+    #                   content_lang = None,
+    #                   type = "annotation",
+    #                   link_title = None,
+    #                   href_URI = None,
+    #                   set_URI  = None )
+
+    return tvb.build()
+
+
+def transform_variant_work_aut(self, field):
+    ...
+    ...
+    ...
+
+# .......................
+
+def transform_variant_work_inst(self, field):
+    ...
+    ...
+    ...
+
+
+def transform_variant_object(self, field):
+    ...
+    ...
+    ...

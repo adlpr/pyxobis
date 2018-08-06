@@ -405,7 +405,7 @@ class Transformer:
 
         # PREQUALIFIER(S)
         # ---
-        org_prequalifiers = self.np.parse_org_prequalifiers(record.get_id_field())
+        org_prequalifiers = self.np.parse_organization_prequalifiers(record.get_id_field())
         for prequalifier in org_prequalifiers:
             ob.add_prequalifier(prequalifier)
 
@@ -512,7 +512,7 @@ class Transformer:
         # ---
         # individual, collective, referential
         if record.is_referential():
-            pb.set_class('referential')
+            tb.set_class('referential')
         # others?
 
         # USAGE
@@ -525,16 +525,20 @@ class Transformer:
 
         # CALENDAR
         # ---
-        # n/a for now? are they all Gregorian?
+        entry_field = record.get_id_field()
+        datestring = entry_field['a']
+        calendar_kwargs, datestring = self.dp.extract_calendar(datestring)
+        if calendar_kwargs:
+            tb.set_calendar(**calendar_kwargs)
 
         # ENTRY CONTENT
         # ---
         # This is necessary for Time in place of a NameParser method
-        entry_field = record.get_id_field()
-        time_content_single = self.dp.parse_simple(entry_field['a'])
-        tb.set_time_content(time_content_single)
+        time_content_single = self.dp.parse_simple(datestring)
+        tb.set_time_content_single(time_content_single)
 
         return tb
+
 
     # Possible primary categories of "artistic" type Works.
     work_cats_artistic = [
@@ -660,9 +664,16 @@ class Transformer:
 
     transform_variants = transform_variants
     transform_variant_being = transform_variant_being
-    transform_variant_organization = transform_variant_organization
     transform_variant_concept = transform_variant_concept
+    transform_variant_event = transform_variant_event
+    transform_variant_language = transform_variant_language
+    transform_variant_organization = transform_variant_organization
+    transform_variant_place = transform_variant_place
     transform_variant_string = transform_variant_string
+    transform_variant_time = transform_variant_time
+    transform_variant_work_inst = transform_variant_work_inst
+    transform_variant_work_aut = transform_variant_work_aut
+    transform_variant_object = transform_variant_object
 
     transform_notes = transform_notes
 

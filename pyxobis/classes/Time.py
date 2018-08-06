@@ -87,9 +87,9 @@ class TimeInstanceEntry(Component):
             timeContentSingle
         }
     """
-    def __init__(self, time_content, opt_scheme=OptScheme(), calendar=None):
-        assert isinstance(time_content, TimeContentSingle)
-        self.time_content = time_content
+    def __init__(self, time_content_single, opt_scheme=OptScheme(), calendar=None):
+        assert isinstance(time_content_single, TimeContentSingle)
+        self.time_content_single = time_content_single
         assert isinstance(opt_scheme, OptScheme)
         self.opt_scheme = opt_scheme
         if calendar is not None:
@@ -102,13 +102,13 @@ class TimeInstanceEntry(Component):
         opt_scheme_attrs = self.opt_scheme.serialize_xml()
         entry_attrs.update(opt_scheme_attrs)
         # contents
-        time_content_elements, time_content_attrs = self.time_content.serialize_xml()
-        entry_attrs.update(time_content_attrs)
+        time_content_single_elements, time_content_single_attrs = self.time_content_single.serialize_xml()
+        entry_attrs.update(time_content_single_attrs)
         entry_e = E('entry', **entry_attrs)
         if self.calendar is not None:
             calendar_e = self.calendar.serialize_xml()
             entry_e.append(calendar_e)
-        entry_e.extend(time_content_elements)
+        entry_e.extend(time_content_single_elements)
         return entry_e
 
 
@@ -252,19 +252,19 @@ class TimeContent(Component):
           | ( element xobis:part { timeContentSingle },
               element xobis:part { timeContentSingle } ) )
     """
-    def __init__(self, time_content1, time_content2=None, link_attributes=None, opt_substitute_attribute=OptSubstituteAttribute()):
+    def __init__(self, time_content_single1, time_content_single2=None, link_attributes=None, opt_substitute_attribute=OptSubstituteAttribute()):
         if link_attributes is not None:
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
         assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
         self.opt_substitute_attribute = opt_substitute_attribute
-        self.is_parts = time_content2 is not None
+        self.is_parts = time_content_single2 is not None
         if self.is_parts:
-            self.time_contents = [time_content1, time_content2]
+            self.time_contents = [time_content_single1, time_content_single2]
             assert all(isinstance(content, TimeContentSingle) for content in self.time_contents)
         else:
-            assert isinstance(time_content1, TimeContentSingle)
-            self.time_contents = time_content1
+            assert isinstance(time_content_single1, TimeContentSingle)
+            self.time_contents = time_content_single1
     def serialize_xml(self):
         # Returns a list of one to eleven Elements, and a dict of parent attributes.
         attrs = {}

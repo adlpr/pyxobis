@@ -122,11 +122,9 @@ class DateTimeParser:
             date = split_dates[0]
 
             # CALENDAR
-            calendar, date = self.__extract_calendar(date)
-            if calendar:
-                trb.set_calendar(calendar,
-                                 self.ix.quick_lookup("Calendars", CONCEPT),
-                                 self.ix.quick_lookup(calendar, CONCEPT))
+            calendar_kwargs, date = self.extract_calendar(date)
+            if calendar_kwargs:
+                trb.set_calendar(**calendar_kwargs)
 
             # TIME ENTRIES
             time_content1, time_content2 = self.__parse_for_double(date, type_kwargs)
@@ -147,16 +145,12 @@ class DateTimeParser:
             date1, date2 = split_dates
 
             # CALENDAR(S)
-            calendar1, date1 = self.__extract_calendar(date1)
-            if calendar1:
-                trb.set_calendar1(calendar1,
-                                  self.ix.quick_lookup("Calendars", CONCEPT),
-                                  self.ix.quick_lookup(calendar1, CONCEPT))
-            calendar2, date2 = self.__extract_calendar(date2)
-            if calendar2:
-                drb.set_calendar2(calendar2,
-                                  self.ix.quick_lookup("Calendars", CONCEPT),
-                                  self.ix.quick_lookup(calendar2, CONCEPT))
+            calendar_kwargs1, date1 = self.extract_calendar(date1)
+            if calendar_kwargs1:
+                trb.set_calendar1(**calendar_kwargs1)
+            calendar_kwargs2, date2 = self.extract_calendar(date2)
+            if calendar_kwargs2:
+                drb.set_calendar2(**calendar_kwargs2)
 
             # TIME ENTRIES
             # Blank dates
@@ -240,16 +234,28 @@ class DateTimeParser:
         return date1, date2
 
 
-    def __extract_calendar(self, datestring):
+    def extract_calendar(self, datestring):
         """
-        Returns calendar, if applicable, and datestring stripped of calendar indicator.
+        Input: Datetime string
+        Output: 1) Calendar as kwargs if applicable; None otherwise
+                2) Datetime string stripped of calendar indicator
         """
         # calendar = "Calendar, Gregorian"
         calendar = ""
         if re.search(r" A\.?H\.?$", datestring):
             datestring = re.sub(r" A\.?H\.?$", "", datestring).strip()
             calendar = "Calendar, Islamic"
-        return calendar, datestring
+        elif re.search(r"^F\.?R\.?\s+", datestring):
+            datestring = re.sub(r"^F\.?R\.?\s+", "", datestring).strip()
+            calendar = "Calendar, French Revolutionary"
+
+        calendar_kwargs = {
+            'link_title' : calendar,
+            'set_URI'    : self.ix.quick_lookup("Calendars", CONCEPT),
+            'href_URI'   : self.ix.quick_lookup(calendar, CONCEPT)
+            } if calendar else None
+
+        return calendar_kwargs, datestring
 
 
     def __parse_single(self, datestring, type_kwargs):
