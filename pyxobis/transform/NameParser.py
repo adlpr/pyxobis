@@ -514,7 +514,7 @@ class NameParser:
                               script = field_script,
                               nonfiling = 0 )
                 work_aut_qualifiers.append(lrb.build())
-            # ^q  Qualifier (Lane)  --> variety of refs...
+            # ^q  Qualifier (Lane)  --> variety of refs
             elif code == 'q':
                 # naive attempt to separate these out
                 # print(val)
@@ -537,19 +537,18 @@ class NameParser:
                             orb = OrganizationRefBuilder()
                             orb.set_link( val_part,
                                           href_URI = lookup_as_org )
-                            ...
-                            ...
-                            ...
-                            # orb.add_prequalifier ( prequalifier )
-                            # orb.add_name( val,
-                            #               lang   = field_lang,
-                            #               script = field_script,
-                            #               nonfiling = 0 )
-                            # work_aut_qualifiers.append(orb.build())
+                            for prequalifier in self.parse_organization_prequalifiers(bespoke_field):
+                                orb.add_prequalifier ( prequalifier )
+                            orb.add_name( bespoke_subfields[-1],
+                                          lang   = field_lang,
+                                          script = field_script,
+                                          nonfiling = 0 )
+                            work_aut_qualifiers.append(orb.build())
                             continue
                     # 5. otherwise attempt to look up element type with indexer
                     element_type = self.ix.simple_element_type_from_value(val_part)
                     # 6. finally, if all else fails, treat as string
+                    if element_type == TIME: element_type = STRING
                     element_type = element_type or STRING
                     # build the ref
                     rb_class = { BEING    : BeingRefBuilder,
@@ -592,26 +591,6 @@ class NameParser:
 
         return work_aut_names_kwargs, work_aut_qualifiers
 
-
-    """
-    X30  Uniform Title
-
-        a  Uniform title (R)                    -- `generic` title
-        n  Number of part/section of a work (R) -- `section` title
-        p  Name of part/section of a work (R)   -- `section` title
-
-        q  Qualifier (Lane) (R)                  -- Refs
-
-        Work title parts: subtitle, section, generic
-
-        d  Date of treaty signing (R)     -- TimeRef
-        f  Date of a work (R)             -- TimeRef
-        l  Language of a work (R)         -- LanguageRef
-        g  Miscellaneous information (R)  -- StringRef?  [unused]
-        h  Medium (R)                     -- StringRef?
-        k  Form subheading (R)            -- StringRef?
-        s  Version (R)                    -- StringRef?  [unused]
-    """
 
     # work instance [149? 245/6?]
     ...

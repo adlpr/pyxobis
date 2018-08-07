@@ -72,25 +72,20 @@ class Object(PrincipalElement):
 class ObjectContent(Component):
     """
     objectContent |=
-        ((attribute type { string "natural" | string "crafted" }?,
-          element xobis:entry {
-              optEntryGroupAttributes,
-              objectEntryContent,
-              element xobis:organization {
-                  linkAttributes,
-                  element xobis:identifier { genericContent }?
-              }
-          })
-         | (attribute type { string "manufactured" }?,
-            element xobis:entry { optEntryGroupAttributes, objectEntryContent })),
+        (
+          ( attribute type { string "natural" | string "crafted" }?,
+            element xobis:entry { optEntryGroupAttributes, objectEntryContent, orgRef } )
+          |
+          ( attribute type { string "manufactured" }?,
+            element xobis:entry { optEntryGroupAttributes, objectEntryContent } )
+        ),
         element xobis:variants { anyVariant+ }?,
         optNoteList
     """
     TYPES_1 = ["natural", "crafted", None]
     TYPES_2 = ["manufactured", None]
     def __init__(self, object_entry_content,
-                       type_=None, organization_link_attributes=None, \
-                       organization_id_content=None, \
+                       type_=None, org_ref=None, \
                        opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
@@ -101,17 +96,14 @@ class ObjectContent(Component):
         else:
             assert type_ in ObjectContent.TYPES_1, \
                 "non-manufactured Object type ({}) must be in: {}".format(type_, str(ObjectContent.TYPES_1))
-            assert isinstance(organization_link_attributes, LinkAttributes)
-            if organization_id_content:
-                assert isinstance(organization_id_content, GenericContent)
+            assert isinstance(org_ref, OrganizationRef)
         self.type = type_
         # for entry element
         assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
         self.opt_entry_group_attributes = opt_entry_group_attributes
         assert isinstance(object_entry_content, ObjectEntryContent)
         self.object_entry_content = object_entry_content
-        self.organization_link_attributes = organization_link_attributes
-        self.organization_id_content = organization_id_content
+        self.org_ref = org_ref
         # for variant elements
         assert all(isinstance(variant, VariantEntry) for variant in variants)
         self.variants = variants
@@ -131,14 +123,8 @@ class ObjectContent(Component):
         object_entry_content_elements = self.object_entry_content.serialize_xml()
         entry_e.extend(object_entry_content_elements)
         if not self.is_manufactured:
-            organization_link_attributes = self.organization_link_attributes.serialize_xml()
-            organization_e = E('organization', **organization_link_attributes)
-            if self.organization_id_content:
-                organization_id_content_text, organization_id_content_attrs = self.organization_id_content.serialize_xml()
-                organization_identifier_e = E('identifier', **organization_id_content_attrs)
-                organization_identifier_e.text = organization_id_content_text
-                organization_e.append(organization_identifier_e)
-            entry_e.append(organization_e)
+            org_ref_e = self.org_ref.serialize_xml()
+            entry_e.append(org_ref_e)
         elements.append(entry_e)
         # variant elements
         if self.variants:

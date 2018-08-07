@@ -667,9 +667,7 @@ class Transformer:
 
         # ENTRY GROUP
         # ---
-        ...
-        ...
-        ...
+        # n/a
 
         # HOLDINGS
         # ---
@@ -681,15 +679,17 @@ class Transformer:
 
 
     def init_object_builder(self, record):
+        ob = ObjectBuilder()
+
         # ROLE
         # ---
         # (instance)
-        wb.set_role('instance')
+        ob.set_role('instance')
 
         # CLASS
         # ---
         # individual, collective, [referential: aut only]
-        wb.set_role('individual')
+        ob.set_role('individual')
 
         # TYPE
         # ---
@@ -699,13 +699,15 @@ class Transformer:
 
         # ENTRY GROUP
         # ---
-        ...
-        ...
-        ...
+        # n/a
 
         # ORGANIZATION
         # ---
-        # ???
+        # = Lane for all our items
+        ...
+        ...
+        ...
+        # ob.set_organization(self.lane_org_ref)
         ...
         ...
         ...
