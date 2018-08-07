@@ -50,6 +50,7 @@
   - whether the text of a particular variant may be used as a substitute for the text of the main entry in a reference, or
   - whether a reference to an entry is using such a substitute value.
 * **set** — Used within a link to designate the category of records expected to be used in this sort of link. E.g. as a main or variant entry type: link href --> "Pseudonym"; set --> "Variant Type".
+* **included** — Used to denote subsumed (`narrow`)/supersumed (`broader`)/circumsumed (`related`) variants.
 
 # Builders
 

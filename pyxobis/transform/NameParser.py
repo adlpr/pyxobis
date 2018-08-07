@@ -158,6 +158,10 @@ class NameParser:
         else:
             name_code, qualifier_code = 'a', ''
 
+        if any("Tree number" in rel for rel in field.get_subfields('e')):
+            # ignore ^x on MeSH tree number variants
+            qualifier_code = ''
+
         # NAME(S)
         # ---
         concept_names_kwargs = []
@@ -256,7 +260,7 @@ class NameParser:
             # may be an event, org, or place.
             # there aren't many if any of these. so just assume Event
             for val in field.get_subfields('a'):
-                val = self.np.strip_ending_punctuation(val)
+                val = self.__strip_ending_punctuation(val)
                 erb = EventRefBuilder()
                 erb.set_link( val,
                               href_URI = self.ix.quick_lookup(val, EVENT) )
@@ -474,23 +478,30 @@ class NameParser:
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
+        nonfiling = int(field.indicator2) if field.indicator2.isdigit() else 0
 
         # NAME(S)
         # ---
         # ^a
-        org_names_kwargs = []
-        subordinates = field.get_subfields('b')
-        val = subordinates[-1] if subordinates else field['a']
-        val = self.__strip_ending_punctuation(val)
-        org_names_kwargs.append({ 'name_text': val,
-                                  'lang'     : field_lang,
-                                  'script'   : field_script,
-                                  'nonfiling' : 0 })
+        work_aut_names_kwargs = []
+        for code, val in field.get_subfields('a','d','n', with_codes=True):
+            val = self.__strip_ending_punctuation(val)
+            work_aut_names_kwargs.append({ 'name_text': val,
+                                           'type_'    : 'generic',
+                                           'lang'     : field_lang,
+                                           'script'   : field_script,
+                                           'nonfiling' : nonfiling })
+        ...
+        ...
+        ...
 
         # QUALIFIER(S)
         # ---
         #
-        org_qualifiers = []
+        ...
+        ...
+        ...
+        work_aut_qualifiers = []
         for code, val in field.get_subfields('c','d','n', with_codes=True):
             # ^c Location of meeting  --> PlaceRef
             if code == 'c':
@@ -502,10 +513,10 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                org_qualifiers.append(prb.build())
+                work_aut_qualifiers.append(prb.build())
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
-                org_qualifiers.append(self.dp.parse_as_ref(val, ORGANIZATION))
+                work_aut_qualifiers.append(self.dp.parse_as_ref(val, ORGANIZATION))
             # ^n Number of part/section/meeting  --> StringRef?
             elif code == 'n':
                 val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
@@ -516,10 +527,30 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                org_qualifiers.append(srb.build())
+                work_aut_qualifiers.append(srb.build())
 
-        return org_names_kwargs, org_qualifiers
+        return work_aut_names_kwargs, work_aut_qualifiers
 
+
+    """
+    X30  Uniform Title
+
+        a  Uniform title (R)                    -- `generic` title
+        n  Number of part/section of a work (R) -- `section` title
+        p  Name of part/section of a work (R)   -- `section` title
+
+        q  Qualifier (Lane) (R)                  -- StringRef?  `section` title?
+
+        Work title parts: subtitle, section, generic
+
+        d  Date of treaty signing (R)     -- TimeRef
+        f  Date of a work (R)             -- TimeRef
+        g  Miscellaneous information (R)  -- StringRef?  [unused]
+        h  Medium (R)                     -- StringRef?
+        k  Form subheading (R)            -- StringRef?
+        l  Language of a work (R)         -- LanguageRef
+        s  Version (R)                    -- StringRef?  [unused]
+    """
 
     # work instance [149? 245/6?]
     ...

@@ -83,6 +83,7 @@ class EventRefBuilder(PrincipalElementRefBuilder):
     # ADDITIONAL: add_prequalifier
     def __init__(self):
         super().__init__()
+        self.prequalifiers = []
     def add_subdivision_link(self, *args, **kwargs):
         raise AttributeError("Event element ref does not have subdivisions")
     def add_prequalifier(self, prequalifier):

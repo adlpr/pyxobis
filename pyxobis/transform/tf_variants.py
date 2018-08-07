@@ -42,10 +42,14 @@ def transform_variants(self, record):
         elif field.tag == '246':
             # WORK_INST or OBJECT
             if record_element_type == WORK_INST:
-                work_inst_variant = self.transform_variant_work_inst(field)
-                variants.append(work_inst_variant)
+                # work_inst_variant = self.transform_variant_work_instance(field)
+                # variants.append(work_inst_variant)
+                ...
+                ...
+                ...
             else:
-                # Object
+                # object_variant = self.transform_variant_object(field)
+                # variants.append(object_variant)
                 ...
                 ...
                 ...
@@ -67,9 +71,8 @@ def transform_variants(self, record):
 
         elif field.tag == '430':
             # WORK_AUT
-            ...
-            ...
-            ...
+            work_aut_variant = self.transform_variant_work_authority(field)
+            variants.append(work_aut_variant)
 
         elif field.tag == '450':
             # CONCEPT or TIME or LANGUAGE
@@ -79,20 +82,16 @@ def transform_variants(self, record):
                 time_variant = self.transform_variant_time(field)
                 variants.append(time_variant)
             elif record_element_type == LANGUAGE:
-                # language_variant = self.transform_variant_language(field)
-                # variants.append(language_variant)
-                ...
-                ...
-                ...
+                language_variant = self.transform_variant_language(field)
+                variants.append(language_variant)
             else:
                 concept_variant = self.transform_variant_concept(field)
                 variants.append(concept_variant)
 
         elif field.tag == '451':
             # PLACE
-            ...
-            ...
-            ...
+            place_variant = self.transform_variant_place(field)
+            variants.append(place_variant)
 
         elif field.tag == '455':
             # CONCEPT or RELATIONSHIP
@@ -106,11 +105,8 @@ def transform_variants(self, record):
 
         elif field.tag == '482':
             # STRING
-            # string_variant = self.transform_variant_string(field)
-            # variants.append(string_variant)
-            ...
-            ...
-            ...
+            string_variant = self.transform_variant_string(field)
+            variants.append(string_variant)
 
     return variants
 
@@ -123,11 +119,16 @@ def transform_variant_being(self, field):
     """
     bvb = BeingVariantBuilder()
 
+    # Included
+    # ---
+    field, included = self.extract_included_relation(field)
+    bvb.set_included(included)
+
     # Variant Group Attributes
     # ---
-    bvb.set_entry_group_attributes(id        = field['7'],
-                          group     = field['6'],
-                          preferred = bool(field['5']) if field['6'] else None)
+    bvb.set_entry_group_attributes(id        = None,
+                                   group     = field['6'] or field['7'],
+                                   preferred = bool(field['5']) if field['6'] else None)
 
     # Type / Time/Duration Ref
     # ---
@@ -175,6 +176,11 @@ def transform_variant_concept(self, field):
     """
     cvb = ConceptVariantBuilder()
 
+    # Included
+    # ---
+    field, included = self.extract_included_relation(field)
+    cvb.set_included(included)
+
     # Variant Group Attributes
     # ---
     if field.tag.endswith('55'):  # X55s use ^3/^4 for language/script
@@ -188,14 +194,8 @@ def transform_variant_concept(self, field):
         field_lang = None
         field_script = None
     cvb.set_entry_group_attributes(id        = indiv_id,
-                          group     = group_id,
-                          preferred = None)  # no field for this for Concepts
-
-    # subsumptions?
-    ...
-    ...
-    ...
-    # delete ^e to get proper Type
+                                   group     = group_id,
+                                   preferred = None)  # no field for this for Concepts
 
     # Type / Time/Duration Ref
     # ---
@@ -242,17 +242,16 @@ def transform_variant_event(self, field):
     """
     evb = EventVariantBuilder()
 
+    # Included
+    # ---
+    field, included = self.extract_included_relation(field)
+    evb.set_included(included)
+
     # Variant Group Attributes
     # ---
-    evb.set_entry_group_attributes(id        = field['7'],
-                          group     = field['6'],
-                          preferred = bool(field['5']) if field['6'] else None)
-
-    # subsumptions?
-    ...
-    ...
-    ...
-    # delete ^e to get proper Type
+    evb.set_entry_group_attributes(id        = None,
+                                   group     = field['6'] or field['7'],
+                                   preferred = bool(field['5']) if field['6'] else None)
 
     # Type / Time/Duration Ref
     # ---
@@ -306,17 +305,16 @@ def transform_variant_language(self, field):
     """
     lvb = LanguageVariantBuilder()
 
+    # Included
+    # ---
+    field, included = self.extract_included_relation(field)
+    lvb.set_included(included)
+
     # Variant Group Attributes
     # ---
     lvb.set_entry_group_attributes(id        = field['4'],
-                          group     = field['3'] or field['7'],
-                          preferred = None)  # no field for this for X50/X80s
-
-    # subsumptions?
-    ...
-    ...
-    ...
-    # delete ^e to get proper Type
+                                   group     = field['3'] or field['7'],
+                                   preferred = None)  # no field for this for X50/X80s
 
     # Type / Time/Duration Ref
     # ---
@@ -359,17 +357,16 @@ def transform_variant_organization(self, field):
     """
     ovb = OrganizationVariantBuilder()
 
+    # Included
+    # ---
+    field, included = self.extract_included_relation(field)
+    ovb.set_included(included)
+
     # Variant Group Attributes
     # ---
-    ovb.set_entry_group_attributes(id        = field['7'],
-                          group     = field['6'],
-                          preferred = bool(field['5']) if field['6'] else None)
-
-    # subsumptions?
-    ...
-    ...
-    ...
-    # delete ^e to get proper Type
+    ovb.set_entry_group_attributes(id        = None,
+                                   group     = field['6'] or field['7'],
+                                   preferred = bool(field['5']) if field['6'] else None)
 
     # Type / Time/Duration Ref
     # ---
@@ -423,17 +420,16 @@ def transform_variant_place(self, field):
     """
     pvb = PlaceVariantBuilder()
 
+    # Included
+    # ---
+    field, included = self.extract_included_relation(field)
+    pvb.set_included(included)
+
     # Variant Group Attributes
     # ---
-    pvb.set_entry_group_attributes(id        = field['7'],
-                          group     = field['6'],
-                          preferred = bool(field['5']) if field['6'] else None)
-
-    # subsumptions?
-    ...
-    ...
-    ...
-    # delete ^e to get proper Type
+    pvb.set_entry_group_attributes(id        = None,
+                                   group     = field['6'] or field['7'],
+                                   preferred = bool(field['5']) if field['6'] else None)
 
     # Type / Time/Duration Ref
     # ---
@@ -480,11 +476,16 @@ def transform_variant_string(self, field):
     """
     svb = StringVariantBuilder()
 
+    # Included
+    # ---
+    field, included = self.extract_included_relation(field)
+    svb.set_included(included)
+
     # Variant Group Attributes
     # ---
-    svb.set_entry_group_attributes(id        = field['7'],
-                          group     = field['6'],
-                          preferred = bool(field['5']) if field['6'] else None)
+    svb.set_entry_group_attributes(id        = None,
+                                   group     = field['6'] or field['7'],
+                                   preferred = bool(field['5']) if field['6'] else None)
 
     # Type / Time/Duration Ref
     # ---
@@ -523,17 +524,16 @@ def transform_variant_time(self, field):
 
     tvb = DurationVariantBuilder() if variant_is_duration else TimeVariantBuilder()
 
+    # Included
+    # ---
+    field, included = self.extract_included_relation(field)
+    tvb.set_included(included)
+
     # Variant Group Attributes
     # ---
     tvb.set_entry_group_attributes(id        = field['4'],
-                          group     = field['3'] or field['7'],
-                          preferred = None)  # no field for this for X50/X80s
-
-    # subsumptions?
-    ...
-    ...
-    ...
-    # delete ^e to get proper Type
+                                   group     = field['3'] or field['7'],
+                                   preferred = None)  # no field for this for X50/X80s
 
     # Scheme
     # ---
@@ -585,14 +585,64 @@ def transform_variant_time(self, field):
     return tvb.build()
 
 
-def transform_variant_work_aut(self, field):
-    ...
-    ...
-    ...
+def transform_variant_work_authority(self, field):
+    """
+    Input:  PyMARC 430 field
+    Output: WorkVariantEntry object
+    """
+    wvb = WorkVariantBuilder()
+
+    # Included
+    # ---
+    field, included = self.extract_included_relation(field)
+    wvb.set_included(included)
+
+    # Variant Group Attributes
+    # ---
+    wvb.set_entry_group_attributes(id        = None,
+                                   group     = field['6'] or field['7'],
+                                   preferred = bool(field['5']) if field['6'] else None)
+
+    # Type / Time/Duration Ref
+    # ---
+    type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
+    if type_kwargs:
+        wvb.set_type(**type_kwargs)
+    if type_time_or_duration_ref is not None:
+        wvb.set_time_or_duration_ref(type_time_or_duration_ref)
+
+    # Substitute
+    # ---
+    # n/a for now
+
+    # Scheme
+    # ---
+    # n/a for now
+
+    # Name(s) & Qualifier(s)
+    # ---
+    variant_names, variant_qualifiers = self.np.parse_work_authority_name(field)
+    for variant_name in variant_names:
+        wvb.add_name(**variant_name)
+    for variant_qualifier in variant_qualifiers:
+        wvb.add_qualifier(variant_qualifier)
+
+    # Note(s)
+    # ---
+    # ^j = Note/qualification
+    for note_text in field.get_subfields('j'):
+        wvb.add_note( content_text = note_text,
+                      content_lang = field['3'],
+                      type = "annotation",
+                      link_title = None,
+                      href_URI = None,
+                      set_URI  = None )
+
+    return wvb.build()
 
 # .......................
 
-def transform_variant_work_inst(self, field):
+def transform_variant_work_instance(self, field):
     ...
     ...
     ...

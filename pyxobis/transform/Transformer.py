@@ -148,9 +148,8 @@ class Transformer:
             # don't transform
             return None
 
-        # # Preprocessing for entry groups/sumptions
-        # if element_type == BEING:
-        #     record = self.preprocess_sumptions(record)
+        # Preprocessing for entry groups/sumptions
+        record = self.__preprocess_sumptions(record)
 
         if element_type != HOLDINGS:
 
@@ -363,7 +362,7 @@ class Transformer:
         # ENTRY GROUP
         # ---
         eb.set_entry_group_attributes(id    = None,
-                                      group = entry_field['6'],
+                                      group = record['111']['6'],
                                       preferred = None )
 
         # PREQUALIFIER(S)
@@ -607,7 +606,7 @@ class Transformer:
         # ---
         # intellectual, artistic
         primary_cats = record.get_primary_categories()
-        if any(cat in work_cats_artistic for cat in primary_cats):
+        if any(cat in self.work_cats_artistic for cat in primary_cats):
             wb.set_type('artistic')
         else:
             wb.set_type('intellectual')
@@ -643,7 +642,7 @@ class Transformer:
         # ---
         # intellectual, artistic
         primary_cats = record.get_primary_categories()
-        if any(cat in work_cats_artistic for cat in primary_cats):
+        if any(cat in self.work_cats_artistic for cat in primary_cats):
             wb.set_type('artistic')
         else:
             wb.set_type('intellectual')
@@ -737,8 +736,8 @@ class Transformer:
     transform_variant_place = transform_variant_place
     transform_variant_string = transform_variant_string
     transform_variant_time = transform_variant_time
-    transform_variant_work_inst = transform_variant_work_inst
-    transform_variant_work_aut = transform_variant_work_aut
+    transform_variant_work_instance = transform_variant_work_instance
+    transform_variant_work_authority = transform_variant_work_authority
     transform_variant_object = transform_variant_object
 
     transform_notes = transform_notes
@@ -780,3 +779,45 @@ class Transformer:
                 type_time_or_duration_ref = self.dp.parse_as_ref(type_datetime, element_type=None)
 
         return type_kwargs, type_time_or_duration_ref
+
+    def extract_included_relation(self, field):
+        """
+        Input: PyMARC Field
+        Output: 1) Changed (if applicable) Field object
+                2) String value for "included" attribute for use in a VariantBuilder
+        """
+        for val in field.get_subfields('e'):
+            if re.match(r"Includes broader", val, flags=re.I):
+                field.delete_subfield('e', val)
+                return field, 'broader'
+            elif re.match(r"Includes related", val, flags=re.I):
+                field.delete_subfield('e', val)
+                return field, 'related'
+            elif re.match(r"Includes[ :]*$", val, flags=re.I):
+                field.delete_subfield('e', val)
+                return field, 'narrower'
+        return field, None
+
+    def __get_entry_group_id(self, field):
+        if field.tag.endswith('50') or field.tag.endswith('80'):
+            return field['3'] or field['7']
+        else:
+            return field['6'] or field['7']
+
+    def __preprocess_sumptions(self, record):
+        """
+        For concept authority records that include 4XX variants of different scope,
+        copy all Includes.*: relations to variants of the same group.
+        """
+        sumptions_map = {}
+        for field in record.get_fields('400','410','411','430','450','451','455','480','482'):
+            for val in field.get_subfields('e'):
+                if re.match(r"Includes( broader| related|[ :]*$)", val, flags=re.I):
+                    group_id = self.__get_entry_group_id(field)
+                    sumptions_map[group_id] = val
+        for field in record.get_fields('400','410','411','430','450','451','455','480','482'):
+            group_id = self.__get_entry_group_id(field)
+            if group_id in sumptions_map:
+                if not any(re.match(r"Includes( broader| related|[ :]*$)", val, flags=re.I) for val in field.get_subfields('e')):
+                    field.add_subfield('e',sumptions_map[group_id])
+        return record

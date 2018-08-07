@@ -95,14 +95,14 @@ class ControlData(Component):
         # Returns an Element.
         control_data_e = E('controlData')
         # <id>
-        id_e = E('id')
-        id_content_elements = self.id_content.serialize_xml()
+        id_content_elements, id_content_attrs = self.id_content.serialize_xml()
+        id_e = E('id', **id_content_attrs)
         id_e.extend(id_content_elements)
         if self.id_alternates:
             variants_e = E('alternates')
             for id_alternate in self.id_alternates:
-                id_alternate_e = E('id')
-                id_alternate_elements = id_alternate.serialize_xml()
+                id_alternate_elements, id_alternate_attrs = id_alternate.serialize_xml()
+                id_alternate_e = E('id', **id_alternate_attrs)
                 id_alternate_e.extend(id_alternate_elements)
                 variants_e.append(id_alternate_e)
             id_e.append(variants_e)
@@ -152,16 +152,28 @@ class ControlDataAction(Component):
 class IDContent(Component):
     """
     idContent |=
+        attribute status {
+            (string "valid" | string "invalid" | string "cancelled" | string "incorrect")
+            (~ string " linking")?
+        }?,
         orgRef,
         element xobis:value { text }
     """
-    def __init__(self, id_org_ref, id_value):
+    STATUSES = ["valid", "invalid", "cancelled", "incorrect",
+                "valid linking", "invalid linking",
+                "cancelled linking", "incorrect linking", None]
+    def __init__(self, id_org_ref, id_value, status=None):
+        assert status in IDContent.STATUSES
+        self.status = status
         assert isinstance(id_org_ref, OrganizationRef)
         self.id_org_ref = id_org_ref
         assert isinstance(id_value, str), "id_value is {}, must be str".format(type(id_value))
         self.id_value = id_value
     def serialize_xml(self):
-        # Returns two Elements.
+        # Returns a list of two Elements, and a dict of parent attributes.
+        attrs = {}
+        if self.status is not None:
+            attrs['status'] = self.status
         elements = []
         # Org ref
         id_org_ref_e = self.id_org_ref.serialize_xml()
@@ -170,4 +182,4 @@ class IDContent(Component):
         value_e = E('value')
         value_e.text = self.id_value
         elements.append(value_e)
-        return elements
+        return elements, attrs
