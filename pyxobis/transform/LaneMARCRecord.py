@@ -162,7 +162,7 @@ class LaneMARCRecord(Record):
             else:
                 identity.append(code)
                 identity.append('')
-        if not identity:
+        if not ''.join(identity[1::2]):
             return None
         return ','.join(identity)
 

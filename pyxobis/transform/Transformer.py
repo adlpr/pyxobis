@@ -119,8 +119,8 @@ class Transformer:
         for field in record.get_fields('655'):
             if field.indicator1 == '7':
                 title = field['a']
-                href  = field['0'] or self.ix.quick_lookup(title, CONCEPT)
-                set_ref = self.ix.quick_lookup("Subset", CONCEPT)
+                href  = field['0'] or self.ix.simple_lookup(title, CONCEPT)
+                set_ref = self.ix.simple_lookup("Subset", CONCEPT)
                 rb.add_type(title, href, set_ref)
 
         # -------
@@ -748,7 +748,7 @@ class Transformer:
 
     def __build_simple_org_ref(self, name):
         orb = OrganizationRefBuilder()
-        orb.set_link(name, self.ix.quick_lookup(name, ORGANIZATION))
+        orb.set_link(name, self.ix.simple_lookup(name, ORGANIZATION))
         orb.add_name(name, 'eng')
         return orb.build()
 
@@ -766,8 +766,8 @@ class Transformer:
         if entry_type and not entry_type.startswith('Includes'):
             entry_type = entry_type.rstrip(':').strip()
             type_kwargs = { 'link_title' : entry_type,
-                            'set_URI'    : self.ix.quick_lookup("Variant Type", CONCEPT),
-                            'href_URI'   : self.ix.quick_lookup(entry_type, CONCEPT) }
+                            'set_URI'    : self.ix.simple_lookup("Variant Type", CONCEPT),
+                            'href_URI'   : self.ix.simple_lookup(entry_type, CONCEPT) }
 
         # Time or Duration
         if field.tag not in ['150','180','450','480']:  # exceptions for MeSH style fields

@@ -2,8 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 import regex as re
+from pymarc import Field
 from pyxobis.builders import *
-from .Indexer import Indexer
+from .Indexer import Indexer, UNVERIFIED
 from .DateTimeParser import DateTimeParser
 from .PlaceNormalizer import PlaceNormalizer
 from .tf_common import *
@@ -100,7 +101,7 @@ class NameParser:
             srb = StringRefBuilder()
             val_norm = self.__strip_ending_punctuation(val)
             srb.set_link(val_norm,
-                         href_URI = self.ix.quick_lookup(val_norm, STRING))
+                         href_URI = self.ix.simple_lookup(val_norm, STRING))
             srb.add_name(val_norm,
                          lang     = field_lang,
                          script   = field_script,
@@ -178,7 +179,7 @@ class NameParser:
             for val in field.get_subfields(qualifier_code):
                 crb = ConceptRefBuilder()
                 crb.set_link( val,
-                              href_URI = self.ix.quick_lookup(val, CONCEPT) )
+                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
                 crb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -225,7 +226,7 @@ class NameParser:
                     qualifier_element, rb = PLACE, PlaceRefBuilder()
                 val = self.__strip_ending_punctuation(val)
                 rb.set_link( val,
-                             href_URI = self.ix.quick_lookup(val, qualifier_element) )
+                             href_URI = self.ix.simple_lookup(val, qualifier_element) )
                 rb.add_name( val,
                              lang   = field_lang,
                              script = field_script,
@@ -239,7 +240,7 @@ class NameParser:
                 val = self.__strip_ending_punctuation(val).lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.quick_lookup(val, STRING) )
+                              href_URI = self.ix.simple_lookup(val, STRING) )
                 srb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -263,7 +264,7 @@ class NameParser:
                 val = self.__strip_ending_punctuation(val)
                 erb = EventRefBuilder()
                 erb.set_link( val,
-                              href_URI = self.ix.quick_lookup(val, EVENT) )
+                              href_URI = self.ix.simple_lookup(val, EVENT) )
                 erb.add_name( val,
                               lang   = field['3'],
                               script = field['4'],
@@ -330,7 +331,7 @@ class NameParser:
                 val = self.pn.normalize(val)
                 prb = PlaceRefBuilder()
                 prb.set_link( val,
-                              href_URI = self.ix.quick_lookup(val, PLACE) )
+                              href_URI = self.ix.simple_lookup(val, PLACE) )
                 prb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -344,7 +345,7 @@ class NameParser:
                 val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.quick_lookup(val, STRING) )
+                              href_URI = self.ix.simple_lookup(val, STRING) )
                 srb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -374,7 +375,7 @@ class NameParser:
             for val in field.get_subfields('a'):
                 val = self.__strip_ending_punctuation(val)
                 rb.set_link( val,
-                             href_URI = self.ix.quick_lookup(val, prequalifier_element) )
+                             href_URI = self.ix.simple_lookup(val, prequalifier_element) )
                 rb.add_name( val,
                              lang   = field_lang,
                              script = field_script,
@@ -385,7 +386,7 @@ class NameParser:
                 val = self.__strip_ending_punctuation(val)
                 orb = OrganizationRefBuilder()
                 orb.set_link( val,
-                              href_URI = self.ix.quick_lookup(val, ORGANIZATION) )
+                              href_URI = self.ix.simple_lookup(val, ORGANIZATION) )
                 orb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -449,7 +450,7 @@ class NameParser:
             val = self.__strip_parens(val)
             srb = StringRefBuilder()
             srb.set_link( val,
-                          href_URI = self.ix.quick_lookup(val, STRING) )
+                          href_URI = self.ix.simple_lookup(val, STRING) )
             srb.add_name( val,
                           lang   = field_lang,
                           script = field_script,
@@ -460,7 +461,7 @@ class NameParser:
             val = self.__strip_ending_punctuation(val)
             lrb = LanguageRefBuilder()
             lrb.set_link( val,
-                          href_URI = self.ix.quick_lookup(val, LANGUAGE) )
+                          href_URI = self.ix.simple_lookup(val, LANGUAGE) )
             lrb.add_name( val,
                           lang   = field_lang,
                           script = field_script,
@@ -482,47 +483,107 @@ class NameParser:
 
         # NAME(S)
         # ---
-        # ^a
+        # ^a  Uniform title                     --> `generic` title
+        # ^n  Number of part/section of a work  --> `section` title
+        # ^p  Name of part/section of a work    --> `section` title
         work_aut_names_kwargs = []
-        for code, val in field.get_subfields('a','d','n', with_codes=True):
+        for code, val in field.get_subfields('a','n','p', with_codes=True):
             val = self.__strip_ending_punctuation(val)
             work_aut_names_kwargs.append({ 'name_text': val,
-                                           'type_'    : 'generic',
+                                           'type_'    : 'generic' if code == 'a' else 'section',
                                            'lang'     : field_lang,
                                            'script'   : field_script,
-                                           'nonfiling' : nonfiling })
-        ...
-        ...
-        ...
+                                           'nonfiling' : nonfiling if code == 'a' else 0 })
 
         # QUALIFIER(S)
         # ---
-        #
-        ...
-        ...
-        ...
         work_aut_qualifiers = []
-        for code, val in field.get_subfields('c','d','n', with_codes=True):
-            # ^c Location of meeting  --> PlaceRef
-            if code == 'c':
-                val = self.pn.normalize(val)
-                prb = PlaceRefBuilder()
-                prb.set_link( val,
-                              href_URI = self.ix.quick_lookup(val, PLACE) )
-                prb.add_name( val,
+        for code, val in field.get_subfields('d','f','l','g','h','k','q','s', with_codes=True):
+            # ^d  Date of treaty signing  --> TimeRef
+            # ^f  Date of a work          --> TimeRef
+            if code in ('d','f'):
+                work_aut_qualifiers.append(self.dp.parse_as_ref(val, WORK_AUT))
+            # ^l  Language of a work      --> LanguageRef
+            elif code == 'l':
+                val = self.__strip_ending_punctuation(val)
+                lrb = LanguageRefBuilder()
+                lrb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, LANGUAGE) )
+                lrb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                work_aut_qualifiers.append(prb.build())
-            # ^d Date of meeting  --> Time/DurationRef
-            elif code == 'd':
-                work_aut_qualifiers.append(self.dp.parse_as_ref(val, ORGANIZATION))
-            # ^n Number of part/section/meeting  --> StringRef?
-            elif code == 'n':
+                work_aut_qualifiers.append(lrb.build())
+            # ^q  Qualifier (Lane)  --> variety of refs...
+            elif code == 'q':
+                # naive attempt to separate these out
+                # print(val)
+                # 1. clean punctuation
+                val = self.__strip_parens(self.__strip_ending_punctuation(val))
+                # 2. separate on ' : '
+                for val_part in val.split(' : '):
+                    # 3. if \d{4}, parse as date
+                    if re.search(r'\d{4}', val_part):
+                        # print("is a parsable time")
+                        work_aut_qualifiers.append(self.dp.parse_as_ref(val_part, WORK_AUT))
+                        continue
+                    # 4. if '. ', separate into ^a/^b+ and try to lookup as org; if found parse as such
+                    if '. ' in val_part:
+                        bespoke_subfields = [sf_part for i,val_subpart in enumerate(val_part.split('. ')) for sf_part in ('a' if i==0 else 'b', val_subpart)]
+                        bespoke_field = Field('   ','  ',bespoke_subfields)
+                        lookup_as_org = self.ix.lookup(bespoke_field, ORGANIZATION)
+                        if lookup_as_org != UNVERIFIED:
+                            # print("is an org with subdivisions")
+                            orb = OrganizationRefBuilder()
+                            orb.set_link( val_part,
+                                          href_URI = lookup_as_org )
+                            ...
+                            ...
+                            ...
+                            # orb.add_prequalifier ( prequalifier )
+                            # orb.add_name( val,
+                            #               lang   = field_lang,
+                            #               script = field_script,
+                            #               nonfiling = 0 )
+                            # work_aut_qualifiers.append(orb.build())
+                            continue
+                    # 5. otherwise attempt to look up element type with indexer
+                    element_type = self.ix.simple_element_type_from_value(val_part)
+                    # 6. finally, if all else fails, treat as string
+                    element_type = element_type or STRING
+                    # build the ref
+                    rb_class = { BEING    : BeingRefBuilder,
+                                 CONCEPT  : ConceptRefBuilder,
+                                 EVENT    : EventRefBuilder,
+                                 LANGUAGE : LanguageRefBuilder,
+                                 OBJECT   : ObjectRefBuilder,
+                                 ORGANIZATION : OrganizationRefBuilder,
+                                 PLACE    : PlaceRefBuilder,
+                                 STRING   : StringRefBuilder,
+                                 # TIME : TimeRefBuilder,  # not allowed
+                                 WORK_AUT : WorkRefBuilder,
+                                 WORK_INST: WorkRefBuilder
+                               }.get(element_type)
+                    rb = rb_class()
+                    rb.set_link( val_part,
+                                 href_URI = self.ix.simple_lookup(val_part, element_type) )
+                    ref_name_kwargs = { 'name_text' : val_part,
+                                        'lang'      : field_lang,
+                                        'script'    : field_script,
+                                        'nonfiling'  : 0 }
+                    if element_type in [BEING, WORK_INST, WORK_AUT]:
+                        ref_name_kwargs['type_'] = 'generic'
+                    rb.add_name(**ref_name_kwargs)
+                    work_aut_qualifiers.append(rb.build())
+            # ^g  Miscellaneous information  --> StringRef?  [unused]
+            # ^h  Medium                     --> StringRef?
+            # ^k  Form subheading            --> StringRef?
+            # ^s  Version                    --> StringRef?  [unused]
+            else:
                 val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.quick_lookup(val, STRING) )
+                              href_URI = self.ix.simple_lookup(val, STRING) )
                 srb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -539,16 +600,16 @@ class NameParser:
         n  Number of part/section of a work (R) -- `section` title
         p  Name of part/section of a work (R)   -- `section` title
 
-        q  Qualifier (Lane) (R)                  -- StringRef?  `section` title?
+        q  Qualifier (Lane) (R)                  -- Refs
 
         Work title parts: subtitle, section, generic
 
         d  Date of treaty signing (R)     -- TimeRef
         f  Date of a work (R)             -- TimeRef
+        l  Language of a work (R)         -- LanguageRef
         g  Miscellaneous information (R)  -- StringRef?  [unused]
         h  Medium (R)                     -- StringRef?
         k  Form subheading (R)            -- StringRef?
-        l  Language of a work (R)         -- LanguageRef
         s  Version (R)                    -- StringRef?  [unused]
     """
 

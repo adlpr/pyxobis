@@ -80,16 +80,45 @@ class Indexer:
         value = self.index[element_type].get(identity)
         return value if value is not None else UNVERIFIED
 
-    def quick_lookup(self, text, element_type):
+    def simple_lookup(self, text, element_type=None):
         """
-        Given just a single string of text, assume it's the value of
-        the primary subfield of the identity,
-        and look up its associated control number.
+        Given just a single string of text, assume it is the value of the
+        primary subfield of an identity, and look up its associated control number.
+
         Useful for Builders to look up Types for set control.
         (could Type control numbers maybe live in some separate cache?)
+
+        If element type is unspecified, only returns a matching value if there is
+        an unambigous match to one element type.
         """
+        element_type = element_type or self.element_type_from_value(text)
+        if element_type is None:
+            return UNVERIFIED
+        assert element_type in self.index, "element type {} not indexed".format(element_type)
         subf = LaneMARCRecord.IDENTITY_SUBFIELD_MAP[element_type][0]
         return self.lookup(Field('   ','  ',[subf, text]), element_type)
+
+    def element_type_from_value(self, field):
+        """
+        If there is a match to a field identity in only one element type,
+        return that element type.
+        """
+        results = []
+        for element_type, identities in self.index.items():
+            field_identity = LaneMARCRecord.get_field_identity(field, element_type)
+            if field_identity in identities.keys():
+                results.append(element_type)
+        return results[0] if len(results) == 1 else None
+
+    def simple_element_type_from_value(self, text):
+        """
+        If there is a match to a (simplified) identity in only one element type,
+        return that element type.
+        """
+        primary_subfs = set([subfs[0] for subfs in LaneMARCRecord.IDENTITY_SUBFIELD_MAP.values()])
+        bespoke_fields = [Field('   ','  ',[subf, text]) for subf in primary_subfs]
+        results = list(filter(None, [self.element_type_from_value(bespoke_field) for bespoke_field in bespoke_fields]))
+        return results[0] if len(results) == 1 else None
 
     def list_conflicts(self):
         return { element_type : [identity for identity, value in index.items() if value == CONFLICT] for element_type, index in self.index.items() }

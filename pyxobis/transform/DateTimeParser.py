@@ -10,9 +10,10 @@ from .tf_common import *
 DEFAULT_TIME_TYPES = {
     None  : ("",""),
     BEING : ("Born", "Died"),
-    EVENT : ("Began", "Ended")
+    EVENT : ("Began", "Ended"),
     # ORGANIZATION : ("Began", "Ended")
     # OBJECT : ("Created", "Destroyed"),
+    WORK_AUT  : ("",""),  # ??
 }
 
 class DateTimeParser:
@@ -134,7 +135,7 @@ class DateTimeParser:
             # LINK
             if time_content2 is None:
                 time_content_str = str(time_content1)
-                trb.set_link(time_content_str, self.ix.quick_lookup(time_content_str, TIME))
+                trb.set_link(time_content_str, self.ix.simple_lookup(time_content_str, TIME))
 
             return trb.build()
 
@@ -185,10 +186,10 @@ class DateTimeParser:
 
             if time_content_single_s2 is None:
                 time_content_single_s1_str = str(time_content_single_s1)
-                drb.set_time_content1_link(time_content_single_s1_str, self.ix.quick_lookup(time_content_single_s1_str, TIME))
+                drb.set_time_content1_link(time_content_single_s1_str, self.ix.simple_lookup(time_content_single_s1_str, TIME))
             if time_content_single_e2 is None:
                 time_content_single_e1_str = str(time_content_single_e1)
-                drb.set_time_content2_link(time_content_single_e1_str, self.ix.quick_lookup(time_content_single_e1_str, TIME))
+                drb.set_time_content2_link(time_content_single_e1_str, self.ix.simple_lookup(time_content_single_e1_str, TIME))
 
             return drb.build()
 
@@ -251,8 +252,8 @@ class DateTimeParser:
 
         calendar_kwargs = {
             'link_title' : calendar,
-            'set_URI'    : self.ix.quick_lookup("Calendars", CONCEPT),
-            'href_URI'   : self.ix.quick_lookup(calendar, CONCEPT)
+            'set_URI'    : self.ix.simple_lookup("Calendars", CONCEPT),
+            'href_URI'   : self.ix.simple_lookup(calendar, CONCEPT)
             } if calendar else None
 
         return calendar_kwargs, datestring
@@ -367,8 +368,8 @@ class DateTimeParser:
 
     def __type_string_to_kwargs(self, type_string):
         return { 'link_title' : type_string,
-                 'set_URI'  : self.ix.quick_lookup("Time Type", CONCEPT),
-                 'href_URI' : self.ix.quick_lookup(type_string, RELATIONSHIP) }  \
+                 'set_URI'  : self.ix.simple_lookup("Time Type", CONCEPT),
+                 'href_URI' : self.ix.simple_lookup(type_string, RELATIONSHIP) }  \
                if type_string else {}
 
 
