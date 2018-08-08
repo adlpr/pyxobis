@@ -156,17 +156,18 @@ class IDContent(Component):
             (string "valid" | string "invalid" | string "cancelled" | string "incorrect")
             (~ string " linking")?
         }?,
-        orgRef,
+        ( orgRef | element xobis:description { text } ),
         element xobis:value { text }
     """
     STATUSES = ["valid", "invalid", "cancelled", "incorrect",
                 "valid linking", "invalid linking",
                 "cancelled linking", "incorrect linking", None]
-    def __init__(self, id_org_ref, id_value, status=None):
+    def __init__(self, org_ref_or_description, id_value, status=None):
         assert status in IDContent.STATUSES
         self.status = status
-        assert isinstance(id_org_ref, OrganizationRef)
-        self.id_org_ref = id_org_ref
+        self.has_org_ref = isinstance(org_ref_or_description, OrganizationRef)
+        assert self.has_org_ref or isinstance(org_ref_or_description, str)
+        self.org_ref_or_description = org_ref_or_description
         assert isinstance(id_value, str), "id_value is {}, must be str".format(type(id_value))
         self.id_value = id_value
     def serialize_xml(self):
@@ -176,8 +177,12 @@ class IDContent(Component):
             attrs['status'] = self.status
         elements = []
         # Org ref
-        id_org_ref_e = self.id_org_ref.serialize_xml()
-        elements.append(id_org_ref_e)
+        if self.has_org_ref:
+            org_ref_or_description_e = self.org_ref_or_description.serialize_xml()
+        else:
+            org_ref_or_description_e = E('description')
+            org_ref_or_description_e.text = self.org_ref_or_description
+        elements.append(org_ref_or_description_e)
         # <value>
         value_e = E('value')
         value_e.text = self.id_value

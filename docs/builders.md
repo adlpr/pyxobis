@@ -56,14 +56,14 @@
 
 ## RecordBuilder
 ```
-# Organization owning/managing the record.
-set_id_org_ref ( id_org_ref )  # OrganizationRef
+# Organization owning/managing the record; or text description of the ID.
+set_id_org_ref_or_description ( id_org_ref_or_description )  # OrganizationRef or str
 
 # Record ID.
 set_id_value ( id_value )  # str
 
 # Other record IDs (LCCN, etc.).
-add_id_alternate ( id_org_ref,
+add_id_alternate ( id_org_ref_or_description,
                    id_value )
 
 # Type of record (e.g. original, derivative, suppressed?)
@@ -443,10 +443,7 @@ add_name ( name_text,
 
 add_qualifier ( qualifier )  # RefElement
 
-set_organization ( link_title,
-                   link_href = None,
-                   id_content = None,
-                   id_content_lang = None )
+set_organization ( org_ref )
 
 add_variant ( variant )
 

@@ -14,22 +14,14 @@ class ObjectBuilder(PrincipalElementBuilder):
     # ADDITIONAL: set_organization, set_holdings
     def __init__(self):
         super().__init__()
-        # org info
-        self.organization_link_title = None
-        self.organization_link_href = None
-        self.organization_id_content = None
-        self.organization_id_content_lang = None
-        # holdings
+        self.org_ref = None
         self.holdings = VersionsHoldingsOpt()
     def set_scheme(self, *args, **kwargs):
         raise AttributeError("Object element does not have property 'scheme'")
     def set_usage(self, *args, **kwargs):
         raise AttributeError("Object element does not have property 'usage'")
-    def set_organization(self, link_title, link_href=None, id_content=None, id_content_lang=None):
-        self.organization_link_title = link_title
-        self.organization_link_href = link_href
-        self.organization_id_content = id_content
-        self.organization_id_content_lang = id_content_lang
+    def set_organization(self, org_ref):
+        self.org_ref = org_ref
     def set_holdings(self, versions_holdings_opt):
         # input should be a VersionsHoldingsOpt object (TEMPORARY UNTIL BETTER SCHEME).
         # use VersionsHoldingsBuilder to build.
@@ -55,8 +47,7 @@ class ObjectBuilder(PrincipalElementBuilder):
                            QualifiersOpt(self.qualifiers)
                        ),
                        type_ = self.type,
-                       organization_link_attributes = organization_link_attributes,
-                       organization_id_content = organization_id_content,
+                       org_ref = self.org_ref,
                        opt_entry_group_attributes = self.opt_entry_group_attributes,
                        variants = self.variants,
                        opt_note_list = OptNoteList(self.note_list)

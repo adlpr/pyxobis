@@ -546,6 +546,7 @@ class NameParser:
                             work_aut_qualifiers.append(orb.build())
                             continue
                     # 5. otherwise attempt to look up element type with indexer
+                    val_part = re.sub(r"^\s*U\.?\s*S\.?\s*$", "United States", val_part)
                     element_type = self.ix.simple_element_type_from_value(val_part)
                     # 6. finally, if all else fails, treat as string
                     if element_type == TIME: element_type = STRING
@@ -592,7 +593,8 @@ class NameParser:
         return work_aut_names_kwargs, work_aut_qualifiers
 
 
-    # work instance [149? 245/6?]
+    # work instance
+    # needs separate methods for main [149] and variant [245/6]
     ...
     ...
     ...

@@ -28,7 +28,7 @@ def transform_variants(self, record):
 
     variants = []
 
-    for field in record.get_fields('150','246','400','410','411','430','450','451','455','480','482'):
+    for field in record.get_fields('150','245','246','400','410','411','430','450','451','455','480','482'):
         # Doing this as one large query then using a switch conditional
         # retains original order.
 
@@ -39,7 +39,7 @@ def transform_variants(self, record):
             concept_variant = self.transform_variant_concept(field)
             variants.append(concept_variant)
 
-        elif field.tag == '246':
+        elif field.tag in ['245','246']:
             # WORK_INST or OBJECT
             if record_element_type == WORK_INST:
                 # work_inst_variant = self.transform_variant_work_instance(field)
@@ -640,15 +640,161 @@ def transform_variant_work_authority(self, field):
 
     return wvb.build()
 
-# .......................
+
 
 def transform_variant_work_instance(self, field):
+    """
+    Input:  PyMARC 210/245/246/247/249 field
+    Output: WorkVariantEntry object
+    """
+    wvb = WorkVariantBuilder()
+
+    # Included
+    # ---
+    # n/a
+
+    # Variant Group Attributes
+    # ---
+    # n/a
+
+    # Type / Time/Duration Ref
+    # ---
+    # Type depends on field tag and indicators.
+    type_kwargs = self.get_type_and_time_from_title_field(field)
+    if type_kwargs:
+        wvb.set_type(**type_kwargs)
+    # Time/Duration is n/a
+
+    # Substitute
+    # ---
+    # n/a for now
+
+    # Scheme
+    # ---
+    # 210 _5 = NLM abbrev
+    if field.tag == '210' and field.indicator2 == '5':
+        wvb.set_scheme('NLM')  # ??
+
+    # Name(s) & Qualifier(s)
+    # ---
+    variant_names, variant_qualifiers = self.np.parse_work_authority_name(field)
+    for variant_name in variant_names:
+        wvb.add_name(**variant_name)
+    for variant_qualifier in variant_qualifiers:
+        wvb.add_qualifier(variant_qualifier)
+
+    # Note(s)
+    # ---
+    # ^j = Note/qualification
+    for note_text in field.get_subfields('j'):
+        wvb.add_note( content_text = note_text,
+                      content_lang = field['3'],
+                      type = "annotation",
+                      link_title = None,
+                      href_URI = None,
+                      set_URI  = None )
+
+    return wvb.build()
+
+    """
+	210  Abbreviated Title (R)
+		Ind1
+			0  No title added entry (abbrev same as title)
+			1  Title added entry
+		Ind2
+			0  Standard abbrev of 245 title (Lane doesn't use key title)
+			5  NLM abbrev (Only when different from standard)
+			9  Other abbrev
+		a  Abbreviated title (NR)
+		b  Qualifying information (NR)
+		h  Medium (Lane) (NR)
+	245  Title Statement (NR)
+		Ind1
+			0  No title added entry
+			1  Title added entry
+		Ind2
+			0  nonfiling character
+			1  nonfiling character
+			2  nonfiling characters
+			3  nonfiling characters
+			4  nonfiling characters
+			5  nonfiling characters
+			6  nonfiling characters
+			7  nonfiling characters
+			8  nonfiling characters
+			9  nonfiling characters
+		3  Language of entry (Lane) (except English) (R)
+		4  Romanization scheme (Lane) (NR)
+		a  Title (NR)
+		b  Remainder of title (NR)
+		c  Remainder of title page transcription/statement of responsibility (NR)
+		f  Inclusive dates (NR)
+		g  Bulk dates (NR)
+		h  Medium (NR)
+		k  Form (R)
+		n  Number of part/section of a work (R)
+		p  Name of part/section of a work (R)
+		q  Qualifier (Lane) (NR)
+		s  Version (NR)
+	246  Variant Title (R)
+		Ind1
+			0  No title added entry
+			1  Title added entry
+			2  No note, no title added entry
+			3  No note, title added entry
+		Ind2
+			0  Portion of title
+			1  Parallel title
+			2  Distinctive title
+			3  Other title
+			4  Cover title
+			5  Added title page title
+			6  Caption title
+			7  Running title
+			8  Spine title
+			_  No information provided
+		3  Language of entry (Lane) (except English) (R)
+		4  Romanization scheme (Lane) (NR)
+		a  Title proper/short title (NR)
+		f  Designation of volume and issue number and/or date of a work (NR)
+		g  Miscellaneous information (NR)
+		h  Medium (NR)
+		i  Display text (NR)
+		n  Number of part/section of a work (R)
+		p  Name of part/section of a work (R)
+		q  Qualifier (Lane) (NR)
+		s  Version (Lane) (NR)
+	247  Former Title or Title Variations (R)
+		Ind1
+			0  No title added entry
+			1  Title added entry
+		Ind2
+			0  Display note
+			1  Do not display note
+		3  Language of entry (Lane) (except English) (R)
+		4  Romanization scheme (Lane) (NR)
+		a  Title proper/short title (NR)
+		b  Remainder of title (NR)
+		f  Designation of volume and issue number and/or date of a work (NR)
+		g  Miscellaneous information (NR)
+		h  Medium (NR)
+		n  Number of part/section of a work (R)
+		p  Name of part/section of a work (R)
+		q  Qualifier (Lane) (NR)
+		s  Version (Lane) (NR)
+	249  Added Title for Website (Lane) (R)
+		a  Added title for website (Lane) (NR)
+    """
     ...
     ...
     ...
 
 
 def transform_variant_object(self, field):
+    """
+    Input:  PyMARC 245/246 field
+    Output: ObjectVariantEntry object
+    """
     ...
     ...
     ...

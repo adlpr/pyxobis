@@ -675,7 +675,7 @@ class Transformer:
         ...
         ...
 
-        return None
+        return wb
 
 
     def init_object_builder(self, record):
@@ -704,13 +704,7 @@ class Transformer:
         # ORGANIZATION
         # ---
         # = Lane for all our items
-        ...
-        ...
-        ...
-        # ob.set_organization(self.lane_org_ref)
-        ...
-        ...
-        ...
+        ob.set_organization(self.lane_org_ref)
 
         # HOLDINGS
         # ---
@@ -718,7 +712,7 @@ class Transformer:
         ...
         ...
 
-        return None
+        return ob
 
 
 
@@ -781,6 +775,49 @@ class Transformer:
                 type_time_or_duration_ref = self.dp.parse_as_ref(type_datetime, element_type=None)
 
         return type_kwargs, type_time_or_duration_ref
+
+    def get_type_and_time_from_title_field(self, field):
+        """
+        For bib 2XX fields, its tag and indicators indicate the type of title variant.
+        Returns a Type kwarg dict for use in a Builder.
+        """
+        #
+        entry_type = None
+
+        if field.tag == '210':
+            entry_type = "Abbreviated title"
+        elif field.tag == '245':
+            entry_type = "Descriptive title"
+        elif field.tag == '246':
+            if field.indicator2 == '0':
+                entry_type = "Portion of title"
+            elif field.indicator2 == '1':
+                entry_type = "Parallel title"
+            elif field.indicator2 == '2':
+                entry_type = "Distinctive title"
+            elif field.indicator2 == '4':
+                entry_type = "Cover title"
+            elif field.indicator2 == '5':
+                entry_type = "Added title page title"
+            elif field.indicator2 == '6':
+                entry_type = "Caption title"
+            elif field.indicator2 == '7':
+                entry_type = "Running title"
+            elif field.indicator2 == '8':
+                entry_type = "Spine title"
+            else:
+                entry_type = "Other title"
+        elif field.tag == '247':
+            entry_type = "Former title"
+        elif field.tag == '249':
+            entry_type = "Added title for website"
+
+        type_kwargs = { 'link_title' : entry_type,
+                        'set_URI'    : self.ix.simple_lookup("Variant Type", CONCEPT),
+                        'href_URI'   : self.ix.simple_lookup(entry_type, CONCEPT)
+                      } if entry_type else {}
+
+        return type_kwargs
 
     def extract_included_relation(self, field):
         """
