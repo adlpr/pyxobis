@@ -594,11 +594,43 @@ class NameParser:
 
 
     # work instance
-    # needs separate methods for main [149] and variant [245/6]
-    ...
-    ...
-    ...
+    def parse_work_instance_main_name(self, field):
+        """
+        Parse a 149 field containing a Work inst main entry name into:
+        - a list of names as kwarg dicts, and
+        - a list of qualifiers as RefElement objects,
+        to pass into a Builder.
+        """
+        ...
+        ...
+        ...
+        """
+        149  Uniform Entry (Lane-Experimental) (NR)
+            1  Nonfiling characters (articles, punct., etc. excluded from filing) (NR)
+            3  Language of entry (except English) (R)
+            4  Romanization scheme (NR)
+            a  Uniform title (NR)
+            d  Date of a work (NR)
+            h  Medium (NR)
+            k  Form subheading (R)
+            l  Language of a work (NR)
+            n  Number of part/section of a work (R)
+            p  Name of part/section of a work (R)
+            q  Qualifier (NR)
+            s  Version/edition (NR)
+            w  Lane control no. (autocopied here) (NR)
+        """
 
+    def parse_work_instance_variant_name(self, field):
+        """
+        Parse a 2XX field containing a Work inst variant entry name into:
+        - a list of names as kwarg dicts, and
+        - a list of qualifiers as RefElement objects,
+        to pass into a Builder.
+        """
+        ...
+        ...
+        ...
 
     # object [149? 245/6?]
     ...

@@ -56,15 +56,21 @@
 
 ## RecordBuilder
 ```
+set_lang ( lang )
+
 # Organization owning/managing the record; or text description of the ID.
 set_id_org_ref_or_description ( id_org_ref_or_description )  # OrganizationRef or str
 
 # Record ID.
 set_id_value ( id_value )  # str
 
+# Record ID status.
+set_id_status ( id_status )  # "valid", "invalid", "cancelled", "incorrect", "valid linking", "invalid linking", "cancelled linking", "incorrect linking", None
+
 # Other record IDs (LCCN, etc.).
 add_id_alternate ( id_org_ref_or_description,
-                   id_value )
+                   id_value,
+                   id_status = None )
 
 # Type of record (e.g. original, derivative, suppressed?)
 add_type ( xlink_title = None,  # str

@@ -13,7 +13,7 @@ def transform_variants(self, record):
     Returns a list of zero or more VariantEntry objects.
 
     150 ^m : CONCEPT (MeSH "as Topic")
-    246 : WORK_INST or OBJECT
+    210/245/246/247/249 : WORK_INST or OBJECT
     400 : BEING
     410 : ORGANIZATION
     411 : EVENT
@@ -28,18 +28,13 @@ def transform_variants(self, record):
 
     variants = []
 
-    for field in record.get_fields('150','245','246','400','410','411','430','450','451','455','480','482'):
-        # Doing this as one large query then using a switch conditional
-        # retains original order.
+    for field in record.get_variant_fields():
 
-        if field.tag == '150' and 'm' in field:
-            # add MeSH "as Topic" version as a variant
-            field['a'] = field['m']
-            field.delete_all_subfields('m')
+        if field.tag == '150':
             concept_variant = self.transform_variant_concept(field)
             variants.append(concept_variant)
 
-        elif field.tag in ['245','246']:
+        elif field.tag.startswith('2'):
             # WORK_INST or OBJECT
             if record_element_type == WORK_INST:
                 # work_inst_variant = self.transform_variant_work_instance(field)
@@ -677,7 +672,7 @@ def transform_variant_work_instance(self, field):
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_work_authority_name(field)
+    variant_names, variant_qualifiers = self.np.parse_work_instance_variant_name(field)
     for variant_name in variant_names:
         wvb.add_name(**variant_name)
     for variant_qualifier in variant_qualifiers:
@@ -686,6 +681,9 @@ def transform_variant_work_instance(self, field):
     # Note(s)
     # ---
     # ^j = Note/qualification
+    ...
+    ...
+    ...
     for note_text in field.get_subfields('j'):
         wvb.add_note( content_text = note_text,
                       content_lang = field['3'],
@@ -742,17 +740,6 @@ def transform_variant_work_instance(self, field):
 			1  Title added entry
 			2  No note, no title added entry
 			3  No note, title added entry
-		Ind2
-			0  Portion of title
-			1  Parallel title
-			2  Distinctive title
-			3  Other title
-			4  Cover title
-			5  Added title page title
-			6  Caption title
-			7  Running title
-			8  Spine title
-			_  No information provided
 		3  Language of entry (Lane) (except English) (R)
 		4  Romanization scheme (Lane) (NR)
 		a  Title proper/short title (NR)
@@ -785,9 +772,6 @@ def transform_variant_work_instance(self, field):
 	249  Added Title for Website (Lane) (R)
 		a  Added title for website (Lane) (NR)
     """
-    ...
-    ...
-    ...
 
 
 def transform_variant_object(self, field):

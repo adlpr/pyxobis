@@ -12,6 +12,7 @@ class RecordBuilder:
         self.lang = None
         self.id_org_ref_or_description = None
         self.id_value = None
+        self.id_status = None
         self.id_alternates = []
         self.types = []
         self.actions = []
@@ -23,8 +24,10 @@ class RecordBuilder:
         self.id_org_ref_or_description = id_org_ref_or_description
     def set_id_value(self, id_value):
         self.id_value = id_value
-    def add_id_alternate(self, id_org_ref_or_description, id_value):
-        self.id_alternates.append( IDContent(id_org_ref_or_description, id_value) )
+    def add_id_alternate(self, id_org_ref_or_description, id_value, id_status=None):
+        self.id_alternates.append( IDContent(id_org_ref_or_description, id_value, id_status) )
+    def set_id_status(self, id_status):
+        self.id_status = id_status
     def add_type(self, xlink_title=None, xlink_href=None, set_ref=None):
         self.types.append(
             GenericType( LinkAttributes(xlink_title, XSDAnyURI(xlink_href)  \
@@ -51,7 +54,9 @@ class RecordBuilder:
     def build(self):
         return Record(
                    ControlData(
-                       IDContent(self.id_org_ref_or_description, self.id_value),
+                       IDContent( self.id_org_ref_or_description,
+                                  self.id_value,
+                                  self.id_status ),
                        self.id_alternates,
                        self.types,
                        self.actions
