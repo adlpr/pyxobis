@@ -71,12 +71,12 @@ class Indexer:
                         if element_type not in index:
                             index[element_type] = {}
                         if id_string in index[element_type]:
-                            # Multiple record main entries have this same identity tuple
+                            # Multiple main entries have this same identity tuple
                             conflicts.add((element_type, id_string))
                         else:
                             index[element_type][id_string] = ctrlno
                         # Variant entries:
-                        for variant_element_type, variant_id_string in record.get_variant_identity_information():
+                        for variant_element_type, variant_id_string in record.get_variant_types_and_ids():
                             if variant_element_type not in index_variants:
                                 index_variants[variant_element_type] = {}
                             if variant_id_string in index_variants[variant_element_type]:
@@ -99,12 +99,13 @@ class Indexer:
                 main_id_strings = set(id_map.keys())
                 variant_id_strings = set(index_variants[element_type].keys())
                 colliding_id_strings = main_id_strings & variant_id_strings
-                print(element_type, )
                 for id_string in colliding_id_strings:
                     index_variants[element_type].pop(id_string)
 
         # Finally merge main and variant together
-        index.update(index_variants)
+        for element_type, id_map in index.items():
+            if element_type in index_variants:
+                index[element_type].update(index_variants[element_type])
 
         self.index, self.index_reverse = index, index_reverse
 

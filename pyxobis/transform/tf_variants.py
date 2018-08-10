@@ -28,80 +28,26 @@ def transform_variants(self, record):
 
     variants = []
 
-    for field in record.get_variant_fields():
+    for field, variant_element_type in record.get_variant_fields_and_types():
 
-        if field.tag == '150':
-            concept_variant = self.transform_variant_concept(field)
-            variants.append(concept_variant)
+        transform_variant = {
+            # WORK_INST    : self.transform_variant_work_instance,
+            # OBJECT       : self.transform_variant_object,
+            WORK_AUT     : self.transform_variant_work_authority,
+            BEING        : self.transform_variant_being,
+            CONCEPT      : self.transform_variant_concept,
+            RELATIONSHIP : self.transform_variant_concept,
+            EVENT        : self.transform_variant_event,
+            LANGUAGE     : self.transform_variant_language,
+            ORGANIZATION : self.transform_variant_organization,
+            PLACE        : self.transform_variant_place,
+            STRING       : self.transform_variant_string,
+            TIME         : self.transform_variant_time
+        }.get(variant_element_type)
 
-        elif field.tag.startswith('2'):
-            # WORK_INST or OBJECT
-            if record_element_type == WORK_INST:
-                # work_inst_variant = self.transform_variant_work_instance(field)
-                # variants.append(work_inst_variant)
-                ...
-                ...
-                ...
-            else:
-                # object_variant = self.transform_variant_object(field)
-                # variants.append(object_variant)
-                ...
-                ...
-                ...
-
-        elif field.tag == '400':
-            # BEING
-            being_variant = self.transform_variant_being(field)
-            variants.append(being_variant)
-
-        elif field.tag == '410':
-            # ORGANIZATION
-            organization_variant = self.transform_variant_organization(field)
-            variants.append(organization_variant)
-
-        elif field.tag == '411':
-            # EVENT
-            event_variant = self.transform_variant_event(field)
-            variants.append(event_variant)
-
-        elif field.tag == '430':
-            # WORK_AUT
-            work_aut_variant = self.transform_variant_work_authority(field)
-            variants.append(work_aut_variant)
-
-        elif field.tag == '450':
-            # CONCEPT or TIME or LANGUAGE
-            # Assume variant is the same type as the heading;
-            # if it doesn't match it's most likely a CONCEPT
-            if record_element_type == TIME:
-                time_variant = self.transform_variant_time(field)
-                variants.append(time_variant)
-            elif record_element_type == LANGUAGE:
-                language_variant = self.transform_variant_language(field)
-                variants.append(language_variant)
-            else:
-                concept_variant = self.transform_variant_concept(field)
-                variants.append(concept_variant)
-
-        elif field.tag == '451':
-            # PLACE
-            place_variant = self.transform_variant_place(field)
-            variants.append(place_variant)
-
-        elif field.tag == '455':
-            # CONCEPT or RELATIONSHIP
-            concept_variant = self.transform_variant_concept(field)
-            variants.append(concept_variant)
-
-        elif field.tag == '480':
-            # CONCEPT
-            concept_variant = self.transform_variant_concept(field)
-            variants.append(concept_variant)
-
-        elif field.tag == '482':
-            # STRING
-            string_variant = self.transform_variant_string(field)
-            variants.append(string_variant)
+        if transform_variant:
+            variant = transform_variant(field)
+            variants.append(variant)
 
     return variants
 

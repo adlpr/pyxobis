@@ -143,6 +143,9 @@ class LaneMARCRecord(Record):
                               STRING:       'yqg3' }       # X82
 
     def get_variant_fields(self):
+        """
+        Returns list of fields for variant entries of this record.
+        """
         variant_fields = []
         for field in self.get_fields('150','210','245','246','247','249','400','410','411','430','450','451','455','480','482'):
             if field.tag == '150' and 'm' in field:
@@ -155,18 +158,29 @@ class LaneMARCRecord(Record):
                 variant_fields.append(field)
         return variant_fields
 
-    def get_variant_identity_information(self, normalized=True):
+    def get_variant_fields_and_types(self):
         """
-        Returns list of element types and identity strings for variant entries of this record.
+        Returns list of element types and fields
+        for variant entries of this record.
         """
-        variant_id_info = []
+        variant_fields_with_type = []
         for variant_field in self.get_variant_fields():
             element_type = self.get_xobis_element_type(variant_field.tag)
+            variant_fields_with_type.append((variant_field, element_type))
+        return variant_fields_with_type
+
+    def get_variant_types_and_ids(self, normalized=True):
+        """
+        Returns list of element types and identity strings
+        for variant entries of this record.
+        """
+        variant_types_and_ids = []
+        for element_type, variant_field in self.get_variant_fields_and_types():
             variant_id_string = self.get_identity_from_field( variant_field, \
                                                              element_type, \
                                                              normalized )
-            variant_id_info.append((element_type, variant_id_string))
-        return variant_id_info
+            variant_types_and_ids.append((element_type, variant_id_string))
+        return variant_types_and_ids
 
     @classmethod
     def get_identity_from_field(cls, field, element_type, normalized=True):
@@ -193,13 +207,15 @@ class LaneMARCRecord(Record):
                 else:
                     identity.append(code)
                     identity.append('')
+            sep = ','
         else:
             # if no normalization, only include what's in the field, in the original order
             # this isn't really an "identity," it's really being used to record an authorized form
             identity = [code_or_val for code_and_val in field.get_subfields(*list(subfield_codes), with_codes=True) for code_or_val in code_and_val]
+            sep = '\t'
         if not ''.join(identity[1::2]):
             return None
-        return '\t'.join(identity)
+        return sep.join(identity)
 
     @classmethod
     def normalize(cls, text):

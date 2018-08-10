@@ -786,11 +786,12 @@ class Transformer:
         type_kwargs, type_time_or_duration_ref = {}, None
 
         # Type "relator"
+        # Valid variant types include any Equivalence relationship concepts
         entry_type = field['e']
         if entry_type and not entry_type.startswith('Includes'):
             entry_type = entry_type.rstrip(':').strip()
             type_kwargs = { 'link_title' : entry_type,
-                            'set_URI'    : self.ix.simple_lookup("Variant Type", CONCEPT),
+                            'set_URI'    : self.ix.simple_lookup("Equivalence", CONCEPT),
                             'href_URI'   : self.ix.simple_lookup(entry_type, CONCEPT) }
 
         # Time or Duration
@@ -840,7 +841,7 @@ class Transformer:
             entry_type = "Added title for website"
 
         type_kwargs = { 'link_title' : entry_type,
-                        'set_URI'    : self.ix.simple_lookup("Variant Type", CONCEPT),
+                        'set_URI'    : self.ix.simple_lookup("Equivalence", CONCEPT),
                         'href_URI'   : self.ix.simple_lookup(entry_type, CONCEPT)
                       } if entry_type else {}
 
