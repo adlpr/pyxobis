@@ -516,67 +516,9 @@ class NameParser:
                 work_aut_qualifiers.append(lrb.build())
             # ^q  Qualifier (Lane)  --> variety of refs
             elif code == 'q':
-                # naive attempt to separate these out
-                # print(val)
-                # 1. clean punctuation
-                val = self.__strip_parens(self.__strip_ending_punctuation(val))
-                # 2. separate on ' : '
-                for val_part in val.split(' : '):
-                    # 3. if \d{4}, parse as date
-                    if re.search(r'\d{4}', val_part):
-                        # print("is a parsable time")
-                        work_aut_qualifiers.append(self.dp.parse_as_ref(val_part, WORK_AUT))
-                        continue
-                    # 4. if '. ', separate into ^a/^b+ and try to lookup as org; if found parse as such
-                    if '. ' in val_part:
-                        bespoke_subfields = [sf_part for i,val_subpart in enumerate(val_part.split('. ')) for sf_part in ('a' if i==0 else 'b', val_subpart)]
-                        bespoke_field = Field('   ','  ',bespoke_subfields)
-                        lookup_as_org = self.ix.lookup(bespoke_field, ORGANIZATION)
-                        if lookup_as_org != UNVERIFIED:
-                            # print("is an org with subdivisions")
-                            orb = OrganizationRefBuilder()
-                            orb.set_link( val_part,
-                                          href_URI = lookup_as_org )
-                            for prequalifier in self.parse_organization_prequalifiers(bespoke_field):
-                                orb.add_prequalifier ( prequalifier )
-                            orb.add_name( bespoke_subfields[-1],
-                                          lang   = field_lang,
-                                          script = field_script,
-                                          nonfiling = 0 )
-                            work_aut_qualifiers.append(orb.build())
-                            continue
-                    # 5. otherwise attempt to look up element type with indexer
-                    val_part = re.sub(r"^\s*U\.?\s*S\.?\s*$", "United States", val_part)
-                    element_type = self.ix.simple_element_type_from_value(val_part)
-                    # 6. finally, if all else fails, treat as string
-                    if element_type == TIME: element_type = STRING
-                    element_type = element_type or STRING
-                    # build the ref
-                    rb_class = { BEING    : BeingRefBuilder,
-                                 CONCEPT  : ConceptRefBuilder,
-                                 EVENT    : EventRefBuilder,
-                                 LANGUAGE : LanguageRefBuilder,
-                                 OBJECT   : ObjectRefBuilder,
-                                 ORGANIZATION : OrganizationRefBuilder,
-                                 PLACE    : PlaceRefBuilder,
-                                 STRING   : StringRefBuilder,
-                                 # TIME : TimeRefBuilder,  # not allowed
-                                 WORK_AUT : WorkRefBuilder,
-                                 WORK_INST: WorkRefBuilder
-                               }.get(element_type)
-                    rb = rb_class()
-                    rb.set_link( val_part,
-                                 href_URI = self.ix.simple_lookup(val_part, element_type) )
-                    ref_name_kwargs = { 'name_text' : val_part,
-                                        'lang'      : field_lang,
-                                        'script'    : field_script,
-                                        'nonfiling'  : 0 }
-                    if element_type in [BEING, WORK_INST, WORK_AUT]:
-                        ref_name_kwargs['type_'] = 'generic'
-                    rb.add_name(**ref_name_kwargs)
-                    work_aut_qualifiers.append(rb.build())
+                work_aut_qualifiers.extend(self.__parse_generic_name_qualifier(val, field_lang, field_script))
             # ^g  Miscellaneous information  --> StringRef?  [unused]
-            # ^h  Medium                     --> StringRef?
+            # ^h  Medium                     --> StringRef? ConceptRef?
             # ^k  Form subheading            --> StringRef?
             # ^s  Version                    --> StringRef?  [unused]
             else:
@@ -601,25 +543,60 @@ class NameParser:
         - a list of qualifiers as RefElement objects,
         to pass into a Builder.
         """
-        ...
-        ...
-        ...
-        """
-        149  Uniform Entry (Lane-Experimental) (NR)
-            1  Nonfiling characters (articles, punct., etc. excluded from filing) (NR)
-            3  Language of entry (except English) (R)
-            4  Romanization scheme (NR)
-            a  Uniform title (NR)
-            d  Date of a work (NR)
-            h  Medium (NR)
-            k  Form subheading (R)
-            l  Language of a work (NR)
-            n  Number of part/section of a work (R)
-            p  Name of part/section of a work (R)
-            q  Qualifier (NR)
-            s  Version/edition (NR)
-            w  Lane control no. (autocopied here) (NR)
-        """
+        field_lang, field_script = field['3'], field['4']
+        nonfiling = int(field.indicator2) if field.indicator2.isdigit() else 0
+
+        # NAME(S)
+        # ---
+        # a  Uniform title (NR)                    --> `generic` title
+        # n  Number of part/section of a work (R)  --> `section` title
+        # p  Name of part/section of a work (R)    --> `section` title
+        work_inst_names_kwargs = []
+        # 1  Nonfiling characters (articles, punct., etc. excluded from filing) (NR)
+        if '1' in field:
+            nonfiling = len(field['1'])
+            field['a'] = field['1'] + field['a']
+        else:
+            nonfiling = 0
+        for code, val in field.get_subfields('a','n','p', with_codes=True):
+            val = self.__strip_ending_punctuation(val)
+            work_inst_names_kwargs.append({ 'name_text': val,
+                                            'type_'    : 'generic' if code == 'a' else 'section',
+                                            'lang'     : field_lang,
+                                            'script'   : field_script,
+                                            'nonfiling' : nonfiling if code == 'a' else 0 })
+
+        # QUALIFIER(S)
+        # ---
+        work_inst_qualifiers = []
+        for code, val in field.get_subfields('d','h','k','l','q','s', with_codes=True):
+            # ^d  Date of a work (NR)     --> TimeRef
+            if code == 'd':
+                work_inst_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
+            # ^l  Language of a work      --> LanguageRef
+            elif code == 'l':
+                val = self.__strip_ending_punctuation(val)
+                lrb = LanguageRefBuilder()
+                lrb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, LANGUAGE) )
+                lrb.add_name( val,
+                              lang   = field_lang,
+                              script = field_script,
+                              nonfiling = 0 )
+                work_inst_qualifiers.append(lrb.build())
+            # ^q  Qualifier (NR)   --> parse
+            elif code == 'q':
+                parsed = self.__parse_generic_name_qualifier(val, field_lang, field_script)
+                work_inst_qualifiers.extend(parsed)
+                # print(val, '::', [str(type(q))[24:-2] for q in parsed])
+            # ^h  Medium (NR)             --> StringRef?? ConceptRef??
+            # ^s  Version/edition (NR)    --> StringRef?? (Numeral)
+            # ^k  Form subheading (R)     --> ConceptRef?? StringRef??
+                ...
+                ...
+                ...
+
+        return work_inst_names_kwargs, work_inst_qualifiers
 
     def parse_work_instance_variant_name(self, field):
         """
@@ -631,6 +608,83 @@ class NameParser:
         ...
         ...
         ...
+
+    def __parse_generic_name_qualifier(self, val, lang, script):
+        """
+        Use regex and Indexer to try to determine what type of reference to build
+        from an unspecified qualifying element of a title.
+
+        Defaults to String if better guess unable to be determined.
+
+        Returns list of RefElements.
+        """
+        ref_elements = []
+        # 1. clean punctuation
+        val = self.__strip_parens(self.__strip_ending_punctuation(val))
+        # 2. separate on ' : '
+        for val_part in val.split(' : '):
+            # 3. if \d{4}, parse as date
+            if re.search(r'\d{4}', val_part):
+                ref_elements.append(self.dp.parse_as_ref(val_part, None))
+                continue
+            # 4. if '. ', separate into ^a/^b+ and try to lookup as org; if found parse as such
+            if '. ' in val_part:
+                bespoke_subfields = [sf_part for i,val_subpart in enumerate(val_part.split('. ')) for sf_part in ('a' if i==0 else 'b', val_subpart)]
+                bespoke_field = Field('   ','  ',bespoke_subfields)
+                lookup_as_org = self.ix.lookup(bespoke_field, ORGANIZATION)
+                if lookup_as_org != UNVERIFIED:
+                    # print("is an org with subdivisions")
+                    orb = OrganizationRefBuilder()
+                    orb.set_link( val_part,
+                                  href_URI = lookup_as_org )
+                    for prequalifier in self.parse_organization_prequalifiers(bespoke_field):
+                        orb.add_prequalifier ( prequalifier )
+                    orb.add_name( bespoke_subfields[-1],
+                                  lang   = lang,
+                                  script = script,
+                                  nonfiling = 0 )
+                    ref_elements.append(orb.build())
+                    continue
+            # 5. otherwise attempt to look up element type with indexer
+            val_part = re.sub(r"(^|[\s\(])U\.?\s*S\.?([\s\)]|$)", r"\1United States\2", val_part, flags=re.I)
+            val_part = re.sub(r"(^|[\s\(])N\.?\s*Y\.?([\s\)]|$)", r"\1New York\2", val_part, flags=re.I)
+            val_part = re.sub(r"(^|[\s\(])N\.?\s*J\.?([\s\)]|$)", r"\1New Jersey\2", val_part, flags=re.I)
+            val_part = re.sub(r"(^|[\s\(])Calif\.?([\s\)]|$)", r"\1California\2", val_part, flags=re.I)
+            val_part = re.sub(r"(^|[\s\(])Md\.([\s\)]|$)", r"\1Maryland\2", val_part, flags=re.I)
+            val_part = re.sub(r"(^|[\s\(])Mass\.([\s\)]|$)", r"\1Massachusetts\2", val_part, flags=re.I)
+            val_part = re.sub(r"(^|[\s\(])Dept\.?([\s\)]|$)", r"\1Department\2", val_part, flags=re.I)
+            element_type = self.ix.simple_element_type_from_value(val_part)
+            # 6. finally, if all else fails, treat as string
+            if element_type == TIME: element_type = STRING
+            element_type = element_type or STRING
+            # build the ref
+            rb_class = { BEING    : BeingRefBuilder,
+                         CONCEPT  : ConceptRefBuilder,
+                         RELATIONSHIP : ConceptRefBuilder,
+                         EVENT    : EventRefBuilder,
+                         LANGUAGE : LanguageRefBuilder,
+                         OBJECT   : ObjectRefBuilder,
+                         ORGANIZATION : OrganizationRefBuilder,
+                         PLACE    : PlaceRefBuilder,
+                         STRING   : StringRefBuilder,
+                         # TIME : TimeRefBuilder,  # not allowed
+                         WORK_AUT : WorkRefBuilder,
+                         WORK_INST: WorkRefBuilder
+                       }.get(element_type)
+            print(val_part, element_type)
+            rb = rb_class()
+            rb.set_link( val_part,
+                         href_URI = self.ix.simple_lookup(val_part, element_type) )
+            ref_name_kwargs = { 'name_text' : val_part,
+                                'lang'      : lang,
+                                'script'    : script,
+                                'nonfiling'  : 0 }
+            if element_type in [BEING, WORK_INST, WORK_AUT]:
+                ref_name_kwargs['type_'] = 'generic'
+            rb.add_name(**ref_name_kwargs)
+            ref_elements.append(rb.build())
+        return ref_elements
+
 
     def parse_object_main_name(self, field):
         ...

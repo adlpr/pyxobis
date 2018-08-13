@@ -11,9 +11,10 @@ DEFAULT_TIME_TYPES = {
     None  : ("",""),
     BEING : ("Born", "Died"),
     EVENT : ("Began", "Ended"),
-    # ORGANIZATION : ("Began", "Ended")
+    ORGANIZATION : ("Began", "Ended"),
+    WORK_AUT  : ("", ""),  # ??
+    WORK_INST : ("", ""),  # ??
     # OBJECT : ("Created", "Destroyed"),
-    WORK_AUT  : ("",""),  # ??
 }
 
 class DateTimeParser:
@@ -332,6 +333,11 @@ class DateTimeParser:
         if m: dts = re.sub(r"^(-?)(\d{1,3})(-|$)", r"\g<1>"+m.group(2).zfill(4)+r"\g<3>", dts)
         # make sure DOTM is zero padded
         dts = re.sub(r"(\-\d\d\-)(\d(?:[^\d]|$))", r"\g<1>0\g<2>", dts, flags=re.I)
+
+        # if dts is blank at this point, there's an issue; print a warning
+        if not dts:
+            raise ValueError("attempt to parse blank datestring")
+            return None
 
         # FINALLY: try to parse dts as ISO 8601, otherwise treat as a name
         time_kwargs = self.__parse_as_iso_datetime(dts)

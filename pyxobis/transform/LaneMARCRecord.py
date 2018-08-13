@@ -64,7 +64,10 @@ class LaneMARCRecord(Record):
         Defaults to this record's identity field tag, and so returns the
         element type of this record as a whole.
         """
-        id_tag = self.get_id_field().tag
+        id_field = self.get_id_field()
+        if id_field is None:
+            return None
+        id_tag = id_field.tag
         tag = tag or id_tag
 
         if 'Suppressed' in self.get_subsets():

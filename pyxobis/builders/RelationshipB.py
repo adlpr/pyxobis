@@ -17,18 +17,21 @@ class RelationshipBuilder:
         self.element_ref = None
         self.type = None
         self.degree = None
+        self.enumeration = None
         self.time_or_duration_ref = None
     def set_name(self, name_text, name_lang=None):
         self.name_text, self.name_lang = name_text, name_lang
     def set_modifier(self, modifier_text, modifier_lang=None, modifier_nonfiling=0):
         self.modifier_text, self.modifier_lang = modifier_text, modifier_lang
         self.modifier_nonfiling = modifier_nonfiling
-    def set_element_ref(self, element_ref):
+    def set_target(self, element_ref):
         # assert isinstance(element_ref, RefElement)
         self.element_ref = element_ref
     def set_type(self, new_type):
         self.type = new_type
-    def set_degree(self, new_degree):
+    def set_degree(self, degree):
+        self.degree = degree
+    def set_enumeration(self, enumeration):
         self.degree = new_degree
     def set_time_or_duration_ref(self, time_or_duration_ref):
         # assert isinstance(time_or_duration_ref, RefElement)
@@ -44,9 +47,10 @@ class RelationshipBuilder:
                                                        lang = self.modifier_lang ) \
                                               if self.modifier_text else None
                        ),
-                       self.element_ref, # some RefElement
+                       self.element_ref,
                        type   = self.type,
                        degree = self.degree,
+                       enumeration = self.enumeration,
                        time_or_duration_ref = self.time_or_duration_ref
                    )
                )

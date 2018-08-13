@@ -1056,9 +1056,9 @@ add_qualifier ( qualifier )  # RefElement
 
 ## RelationshipBuilder
 ```
-set_type ( new_type )  [????? this has a type aut though: Relationship Type]
+set_type ( new_type )  # "subordinate", "superordinate", "preordinate", "postordinate", "associative", "dissociative", None
 
-set_degree ( new_degree )
+set_degree ( degree )  # "primary", "secondary", "tertiary", "broad", None
 
 set_name ( name_text,
            name_lang = None )
@@ -1067,9 +1067,11 @@ set_modifier ( modifier_text,
               modifier_lang = None,
               modifier_nonfiling = 0 )
 
+set_enumeration ( enumeration )
+
 set_time_or_duration_ref ( time_or_duration_ref )
 
-set_element_ref ( element_ref )
+set_target ( element_ref )
 ```
 
 ------------------------------------------------------

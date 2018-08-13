@@ -39,22 +39,26 @@ class RelationshipContent(Component):
               string "primary" | string "secondary" | string "tertiary" | string "broad"
             }?,
             relationshipName,
+            element xobis:enumeration { xsd:integer }?,
             (timeRef | durationRef)?,
-            conceptRef
+            element xobis:target { conceptRef },
           )
          |
           (
             attribute xobis:degree { string "primary" | string "secondary" }?,
             relationshipName,
+            element xobis:enumeration { xsd:integer }?,
             (timeRef | durationRef)?,
-            (beingRef | stringRef | languageRef | orgRef | placeRef | eventRef | objectRef | workRef)
+            element xobis:target {
+              (beingRef | stringRef | languageRef | orgRef | placeRef | eventRef | objectRef | workRef | timeRef | durationRef)
+            },
           )
         )
     """
     TYPES = ["subordinate", "superordinate", "preordinate", "postordinate", "associative", "dissociative", None]
     DEGREES_CONCEPT = ["primary", "secondary", "tertiary", "broad", None]
     DEGREES_NONCONCEPT = ["primary", "secondary", None]
-    def __init__(self, relationship_name, element_ref, type=None, degree=None, time_or_duration_ref=None):
+    def __init__(self, relationship_name, element_ref, type=None, degree=None, enumeration=None, time_or_duration_ref=None):
         assert type in RelationshipContent.TYPES
         self.type = type
         assert isinstance(element_ref, RefElement)
@@ -66,26 +70,33 @@ class RelationshipContent(Component):
         self.degree = degree
         assert isinstance(relationship_name, RelationshipName)
         self.relationship_name = relationship_name
-        if time_or_duration_ref:
+        if enumeration is not None:
+            assert isinstance(enumeration, int) or str(enumeration).lstrip('-').isdigit()
+        self.enumeration = int(enumeration)
+        if time_or_duration_ref is not None:
             assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
         self.element_ref = element_ref
     def serialize_xml(self):
-        # Returns a list of two to four Elements and a dict of parent attributes.
+        # Returns a list of two to five Elements and a dict of parent attributes.
         elements, attrs = [], {}
         if self.type:
             attrs['type'] = self.type
         if self.degree:
             attrs['degree'] = self.degree
-        if self.has_concept_ref:
-            assert degree in RelationshipContent.DEGREES_CONCEPT
         relationship_name_es = self.relationship_name.serialize_xml()
         elements.extend(relationship_name_es)
-        if self.time_or_duration_ref:
-            time_or_duration_ref_e = time_or_duration_ref.serialize_xml()
+        if self.enumeration is not None:
+            enumeration_e = E('enumeration')
+            enumeration_e.text = str(self.enumeration)
+            elements.append(enumeration_e)
+        if self.time_or_duration_ref is not None:
+            time_or_duration_ref_e = self.time_or_duration_ref.serialize_xml()
             elements.append(time_or_duration_ref_e)
+        target_e = E('target')
         element_ref_e = self.element_ref.serialize_xml()
-        elements.append(element_ref_e)
+        target_e.append(element_ref_e)
+        elements.append(target_e)
         return elements, attrs
 
 
