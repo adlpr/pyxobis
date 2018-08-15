@@ -39,7 +39,7 @@ class RelationshipContent(Component):
               string "primary" | string "secondary" | string "tertiary" | string "broad"
             }?,
             relationshipName,
-            element xobis:enumeration { xsd:integer }?,
+            stringRef?,  # enumeration
             (timeRef | durationRef)?,
             element xobis:target { conceptRef },
           )
@@ -47,7 +47,7 @@ class RelationshipContent(Component):
           (
             attribute xobis:degree { string "primary" | string "secondary" }?,
             relationshipName,
-            element xobis:enumeration { xsd:integer }?,
+            stringRef?,  # enumeration
             (timeRef | durationRef)?,
             element xobis:target {
               (beingRef | stringRef | languageRef | orgRef | placeRef | eventRef | objectRef | workRef | timeRef | durationRef)
@@ -71,8 +71,8 @@ class RelationshipContent(Component):
         assert isinstance(relationship_name, RelationshipName)
         self.relationship_name = relationship_name
         if enumeration is not None:
-            assert isinstance(enumeration, int) or str(enumeration).lstrip('-').isdigit()
-        self.enumeration = int(enumeration)
+            assert isinstance(enumeration, StringRef)
+        self.enumeration = enumeration
         if time_or_duration_ref is not None:
             assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
@@ -87,8 +87,7 @@ class RelationshipContent(Component):
         relationship_name_es = self.relationship_name.serialize_xml()
         elements.extend(relationship_name_es)
         if self.enumeration is not None:
-            enumeration_e = E('enumeration')
-            enumeration_e.text = str(self.enumeration)
+            enumeration_e = self.enumeration.serialize_xml()
             elements.append(enumeration_e)
         if self.time_or_duration_ref is not None:
             time_or_duration_ref_e = self.time_or_duration_ref.serialize_xml()

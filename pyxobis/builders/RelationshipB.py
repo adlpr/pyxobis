@@ -32,7 +32,7 @@ class RelationshipBuilder:
     def set_degree(self, degree):
         self.degree = degree
     def set_enumeration(self, enumeration):
-        self.degree = new_degree
+        self.enumeration = enumeration
     def set_time_or_duration_ref(self, time_or_duration_ref):
         # assert isinstance(time_or_duration_ref, RefElement)
         self.time_or_duration_ref = time_or_duration_ref

@@ -487,7 +487,7 @@ class NameParser:
         # ^n  Number of part/section of a work  --> `section` title
         # ^p  Name of part/section of a work    --> `section` title
         work_aut_names_kwargs = []
-        for code, val in field.get_subfields('a','n','p', with_codes=True):
+        for code, val in field.get_subfields('a','p', with_codes=True):
             val = self.__strip_ending_punctuation(val)
             work_aut_names_kwargs.append({ 'name_text': val,
                                            'type_'    : 'generic' if code == 'a' else 'section',
@@ -514,13 +514,13 @@ class NameParser:
                               script = field_script,
                               nonfiling = 0 )
                 work_aut_qualifiers.append(lrb.build())
-            # ^q  Qualifier (Lane)  --> variety of refs
+            # ^q  Qualifier (Lane)  --> parse
             elif code == 'q':
                 work_aut_qualifiers.extend(self.__parse_generic_name_qualifier(val, field_lang, field_script))
-            # ^g  Miscellaneous information  --> StringRef?  [unused]
-            # ^h  Medium                     --> StringRef? ConceptRef?
-            # ^k  Form subheading            --> StringRef?
-            # ^s  Version                    --> StringRef?  [unused]
+            # ^g  Miscellaneous information  --> StringRef  [unused]
+            # ^h  Medium                     --> THIS IS HOLDINGS
+            # ^k  Form subheading            --> ConceptRef
+            # ^s  Version                    --> try to extract for Enumeration ?? (see what they all are, they're only in bibs)
             else:
                 val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
@@ -549,7 +549,7 @@ class NameParser:
         # NAME(S)
         # ---
         # a  Uniform title (NR)                    --> `generic` title
-        # n  Number of part/section of a work (R)  --> `section` title
+        # n  Number of part/section of a work (R)  --> `section` title <-- NO, this is a STRINGREF
         # p  Name of part/section of a work (R)    --> `section` title
         work_inst_names_kwargs = []
         # 1  Nonfiling characters (articles, punct., etc. excluded from filing) (NR)
@@ -589,10 +589,10 @@ class NameParser:
                 parsed = self.__parse_generic_name_qualifier(val, field_lang, field_script)
                 work_inst_qualifiers.extend(parsed)
                 # print(val, '::', [str(type(q))[24:-2] for q in parsed])
-            # ^h  Medium (NR)             --> StringRef?? ConceptRef??
-            # ^s  Version/edition (NR)    --> StringRef?? (Numeral)
-            # ^k  Form subheading (R)     --> ConceptRef?? StringRef??
+            # ^h  Medium (NR)             --> goes to HOLDINGS!
+            # ^k  Form subheading (R)     --> ConceptRef
                 ...
+            # ^s  Version/edition (NR)    --> this is a separate thing, Enumeration
                 ...
                 ...
 
@@ -647,7 +647,7 @@ class NameParser:
                     continue
             # 5. otherwise attempt to look up element type with indexer
             val_part = re.sub(r"(^|[\s\(])U\.?\s*S\.?([\s\)]|$)", r"\1United States\2", val_part, flags=re.I)
-            val_part = re.sub(r"(^|[\s\(])N\.?\s*Y\.?([\s\)]|$)", r"\1New York\2", val_part, flags=re.I)
+            val_part = re.sub(r"(^|[\s\(])N\.?\s*Y\.?([\s\)]|$)", r"\1New York (State)\2", val_part, flags=re.I)
             val_part = re.sub(r"(^|[\s\(])N\.?\s*J\.?([\s\)]|$)", r"\1New Jersey\2", val_part, flags=re.I)
             val_part = re.sub(r"(^|[\s\(])Calif\.?([\s\)]|$)", r"\1California\2", val_part, flags=re.I)
             val_part = re.sub(r"(^|[\s\(])Md\.([\s\)]|$)", r"\1Maryland\2", val_part, flags=re.I)
@@ -671,7 +671,6 @@ class NameParser:
                          WORK_AUT : WorkRefBuilder,
                          WORK_INST: WorkRefBuilder
                        }.get(element_type)
-            print(val_part, element_type)
             rb = rb_class()
             rb.set_link( val_part,
                          href_URI = self.ix.simple_lookup(val_part, element_type) )

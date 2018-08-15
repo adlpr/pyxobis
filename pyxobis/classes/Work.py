@@ -121,45 +121,89 @@ class WorkContent(Component):
 class WorkEntryContent(Component):
     """
     workEntryContent |=
-        element xobis:name {
-            (attribute type { string "generic" },
-             nameContent)
-            | element xobis:part {
-                  attribute type { string "subtitle" | string "section" | string "generic" }?,
-                  nameContent
-              }+
+      ( element xobis:name {
+            attribute type { string "generic" },
+            nameContent
         },
         qualifiersOpt
+      | ( element xobis:part {
+                attribute type { string "subtitle" | string "section" | string "generic" }?,
+                nameContent
+          },
+          qualifiersOpt
+        )+
+      )
     """
-    PART_TYPES = ["subtitle", "section", "generic", None]
-    def __init__(self, name_content, qualifiers_opt=QualifiersOpt()):
-        # name_content should be either NameContent,
-        # or a list of tuples of form (type string, NameContent)
-        self.is_parts = not isinstance(name_content, NameContent)
+    def __init__(self, content):
+        # content should be either a WorkEntryContentSingleGeneric,
+        # or a list of WorkEntryContentPart objects
+        self.is_parts = not isinstance(content, WorkEntryContentSingleGeneric)
         if self.is_parts:
-            assert name_content, "Work needs at least one name"
-            assert all(len(t) == 2 for t in name_content), "Invalid format for name content parts"
-            assert all(t[0] in WorkEntryContent.PART_TYPES for t in name_content)
-            assert all(isinstance(t[1], NameContent) for t in name_content)
+            assert content, "Work entry content must have at least one part"
+            assert all(isinstance(content_part, WorkEntryContentPart) for content_part in content)
+        self.content = content
+    def serialize_xml(self):
+        # Returns list of one or more Elements.
+        if self.is_parts:
+            elements = [element for content_parts in self.content for element in content_parts.serialize_xml()]
+        else:
+            elements = self.content.serialize_xml()
+        return elements
+
+
+class WorkEntryContentSingleGeneric(Component):
+    """
+    element xobis:name {
+          attribute type { string "generic" },
+          nameContent
+    },
+    qualifiersOpt
+    """
+    def __init__(self, name_content, qualifiers_opt=QualifiersOpt()):
+        assert isinstance(name_content, NameContent)
         self.name_content = name_content
         assert isinstance(qualifiers_opt, QualifiersOpt)
         self.qualifiers_opt = qualifiers_opt
     def serialize_xml(self):
         # Returns list of one or two Elements.
-        if self.is_parts:
-            name_e = E('name')
-            for part_type, part_content in self.name_content:
-                name_content_text, name_content_attrs = part_content.serialize_xml()
-                name_content_attrs['type'] = part_type
-                part_e = E('part', **name_content_attrs)
-                part_e.text = name_content_text
-                name_e.append(part_e)
-        else:
-            name_content_text, name_content_attrs = self.name_content.serialize_xml()
-            name_content_attrs['type'] = 'generic'
-            name_e = E('name', **name_content_attrs)
-            name_e.text = name_content_text
+        name_content_text, name_content_attrs = self.name_content.serialize_xml()
+        name_content_attrs['type'] = 'generic'
+        name_e = E('name', **name_content_attrs)
+        name_e.text = name_content_text
         elements = [name_e]
+        qualifiers_e = self.qualifiers_opt.serialize_xml()
+        if qualifiers_e is not None:
+            elements.append(qualifiers_e)
+        return elements
+
+
+class WorkEntryContentPart(Component):
+    """
+    element xobis:part {
+          attribute type { string "subtitle" | string "section" | string "generic" }?,
+          nameContent
+    },
+    qualifiersOpt
+    """
+    PART_TYPES = ["subtitle", "section", "generic", None]
+    def __init__(self, name_content, qualifiers_opt=QualifiersOpt()):
+        # name_content should be a list of tuples of form (type string, NameContent)
+        assert name_content, "Work needs at least one name"
+        assert all(len(t) == 2 for t in name_content), "Invalid format for name content parts"
+        assert all(t[0] in WorkEntryContentPart.PART_TYPES for t in name_content)
+        assert all(isinstance(t[1], NameContent) for t in name_content)
+        self.name_content = name_content
+        assert isinstance(qualifiers_opt, QualifiersOpt)
+        self.qualifiers_opt = qualifiers_opt
+    def serialize_xml(self):
+        # Returns list of one or more Elements.
+        elements = []
+        for part_type, part_content in self.name_content:
+            name_content_text, name_content_attrs = part_content.serialize_xml()
+            name_content_attrs['type'] = part_type
+            part_e = E('part', **name_content_attrs)
+            part_e.text = name_content_text
+            elements.append(part_e)
         qualifiers_e = self.qualifiers_opt.serialize_xml()
         if qualifiers_e is not None:
             elements.append(qualifiers_e)

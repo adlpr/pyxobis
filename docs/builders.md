@@ -17,7 +17,7 @@
     - String: `textual`, `numeric`, `mixed`
     - Time: ***generic type***
     - Work: `intellectual`, `artistic`
-      - Work Parts: `subtitle`, `section`, `generic`
+      - Work Parts (Titles): `generic`, `section`, `subtitle`
   - Relationship: `subordinate`, `superordinate`, `preordinate`, `postordinate`, `associative`, `dissociative`
 * **class** — Represents a _broad category_ of Entry, often `individual`, `collective`, or `referential`, but varies by Principal Element.
   - Being: `individual`, `familial`, `collective`, `undifferentiated`, `referential`

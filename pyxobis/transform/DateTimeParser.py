@@ -115,7 +115,7 @@ class DateTimeParser:
         # SPLIT
         # --------
         # Attempt to split dates at an appropriate hyphen; should result in 1-2.
-        split_dates = re.split(r'-(?!\d\d(?:[\-\.]|$))', dts)
+        split_dates = re.split(r'-(?!\d\d(?:[\-\.]|[\?~]?$))', dts)
 
         if len(split_dates) == 1:
             # This should be a TimeRef.
@@ -334,9 +334,10 @@ class DateTimeParser:
         # make sure DOTM is zero padded
         dts = re.sub(r"(\-\d\d\-)(\d(?:[^\d]|$))", r"\g<1>0\g<2>", dts, flags=re.I)
 
-        # if dts is blank at this point, there's an issue; print a warning
+        # if dts is blank at this point, there's an issue
+        # decided to ignore and return nothing
         if not dts:
-            raise ValueError("attempt to parse blank datestring")
+            # raise ValueError("attempt to parse blank datestring")
             return None
 
         # FINALLY: try to parse dts as ISO 8601, otherwise treat as a name

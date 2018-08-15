@@ -100,7 +100,7 @@ class Transformer:
         # Determine which function to delegate PE building based on record type
 
         element_type = record.get_xobis_element_type()
-        assert element_type, "could not determine type of record {}".format(record['001'].data)
+        # assert element_type, "could not determine type of record {}".format(record['001'].data)
         # @@@@@ TEMPORARY @@@@@
         if not element_type:
             # don't transform
@@ -728,7 +728,7 @@ class Transformer:
                 id_description += " assigned by: {}".format(field['b'].strip())
             rb.add_id_alternate(id_description, field['a'].strip())
 
-        # ARE THESE IDS OR NOTES OR WHAT
+        # ARE THESE IDS OR NOTES OR WHAT?
         # 020  International Standard Book Number (R)
         ...
         ...
@@ -752,6 +752,13 @@ class Transformer:
                     rb.add_id_alternate(self.nlm_org_ref, val.strip(), 'valid')
                 for val in field.get_subfields('z'):  # ^z ??
                     rb.add_id_alternate(self.nlm_org_ref, val.strip(), 'invalid')
+            else:
+                # other prefixed control numbers
+                # DNLM OCoLC PMID Stanf LaneConnex
+                for val in field.get_subfields('a','z', with_codes=True):
+                    ...
+                    ...
+                    ...
 
         # 040   Cataloging Source (NR)
         # 041   Language Code (NR)
