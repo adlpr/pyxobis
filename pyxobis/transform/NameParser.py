@@ -146,22 +146,24 @@ class NameParser:
             # ^3/^4 are taken up in X50/X80 fields by MeSH UIs
             field_lang, field_script = None, None
 
-        # If this is a 150/155, ^a is name (+ hypothetical ^x is Concept qualifier).
+        # If this is a 150/155, ^a is name
+        #     (hypothetical ^x is Concept qualifier / precomposed concept
+        #      w/ subdivision).
         # If this is a X80, ^x is name.
         # Otherwise, ^a is name, ^x is subdivision.
         #     (don't deal with subdivisions here, delegate to
-        #      whatever method is handling the ref builder)
+        #      whatever method is handling the builder)
 
-        if field.tag in ['150','155','450','455']:
+        if any("Tree number" in rel for rel in field.get_subfields('e')):
+            # Tree number is always ^a (even on X80s)
+            # and the ^x should be ignored
+            name_code, qualifier_code = 'a', ''
+        elif field.tag in ['150','155','450','455']:
             name_code, qualifier_code = 'a', 'x'
         elif field.tag.endswith('80'):
             name_code, qualifier_code = 'x', ''
         else:
             name_code, qualifier_code = 'a', ''
-
-        if any("Tree number" in rel for rel in field.get_subfields('e')):
-            # ignore ^x on MeSH tree number variants
-            qualifier_code = ''
 
         # NAME(S)
         # ---
@@ -255,19 +257,35 @@ class NameParser:
         - a list of prequalifiers as RefElement objects,
         to pass into a Builder.
         """
+        field_lang, field_script = field['3'], field['4']
+
         event_prequalifiers = []
         # if ^e, then ^a is a prequalifier.
         if 'e' in field:
-            # may be an event, org, or place.
-            # there aren't many if any of these. so just assume Event
+            # is ^a Org or Place? ^b are always going to be orgs
+            if field.indicator1 == '1':
+                prequalifier_element, rb = PLACE, PlaceRefBuilder()
+            else:
+                prequalifier_element, rb = EVENT, EventRefBuilder()
+            # ^a
             for val in field.get_subfields('a'):
+                val = self.__strip_ending_punctuation(val)
+                rb.set_link( val,
+                             href_URI = self.ix.simple_lookup(val, prequalifier_element) )
+                rb.add_name( val,
+                             lang   = field_lang,
+                             script = field_script,
+                             nonfiling = 0 )
+                event_prequalifiers.append(rb.build())
+            # there aren't many if any of these. so just assume Event
+            for val in field.get_subfields('e')[:-1]:
                 val = self.__strip_ending_punctuation(val)
                 erb = EventRefBuilder()
                 erb.set_link( val,
                               href_URI = self.ix.simple_lookup(val, EVENT) )
                 erb.add_name( val,
-                              lang   = field['3'],
-                              script = field['4'],
+                              lang   = field_lang,
+                              script = field_script,
                               nonfiling = 0 )
                 event_prequalifiers.append(erb.build())
         return event_prequalifiers
@@ -340,7 +358,7 @@ class NameParser:
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
                 org_qualifiers.append(self.dp.parse_as_ref(val, ORGANIZATION))
-            # ^n Number of part/section/meeting  --> StringRef?
+            # ^n Number of part/section/meeting  --> StringRef
             elif code == 'n':
                 val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
@@ -444,7 +462,7 @@ class NameParser:
 
         # QUALIFIER(S)
         # ---
-        # ^q Qualifier  [StringRef?]
+        # ^q Qualifier  [StringRef]
         string_qualifiers = []
         for val in field.get_subfields('q'):
             val = self.__strip_parens(val)
@@ -456,7 +474,7 @@ class NameParser:
                           script = field_script,
                           nonfiling = 0 )
             string_qualifiers.append(srb.build())
-        # ^l Language?? / ^3 Language of entry??  [LanguageRef]
+        # ^l Language [defunct] / ^3 Language of entry  [LanguageRef]
         for val in field.get_subfields('l','3'):
             val = self.__strip_ending_punctuation(val)
             lrb = LanguageRefBuilder()
@@ -474,37 +492,43 @@ class NameParser:
     def parse_work_authority_name(self, field):
         """
         Parse a X30 field containing a Work aut name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects,
+        - a list of either names as kwarg dicts or qualifiers as RefElement objects,
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
         nonfiling = int(field.indicator2) if field.indicator2.isdigit() else 0
 
-        # NAME(S)
+        # NAME(S) & QUALIFIER(S)
         # ---
-        # ^a  Uniform title                     --> `generic` title
-        # ^n  Number of part/section of a work  --> `section` title
-        # ^p  Name of part/section of a work    --> `section` title
-        work_aut_names_kwargs = []
-        for code, val in field.get_subfields('a','p', with_codes=True):
-            val = self.__strip_ending_punctuation(val)
-            work_aut_names_kwargs.append({ 'name_text': val,
-                                           'type_'    : 'generic' if code == 'a' else 'section',
-                                           'lang'     : field_lang,
-                                           'script'   : field_script,
-                                           'nonfiling' : nonfiling if code == 'a' else 0 })
-
-        # QUALIFIER(S)
-        # ---
-        work_aut_qualifiers = []
-        for code, val in field.get_subfields('d','f','l','g','h','k','q','s', with_codes=True):
-            # ^d  Date of treaty signing  --> TimeRef
-            # ^f  Date of a work          --> TimeRef
-            if code in ('d','f'):
-                work_aut_qualifiers.append(self.dp.parse_as_ref(val, WORK_AUT))
-            # ^l  Language of a work      --> LanguageRef
+        work_aut_names_and_qualifiers = []
+        for code, val in field.get_subfields('a','p','d','f','k','l','q','g','n','s', with_codes=True):
+            if code in 'ap':
+                # ^a  Uniform title                     --> `generic` title
+                # ^p  Name of part/section of a work    --> `section` title
+                val = self.__strip_ending_punctuation(val)
+                work_aut_names_and_qualifiers.append(
+                    { 'name_text': val,
+                      'type_'    : 'generic' if code == 'a' else 'section',
+                      'lang'     : field_lang,
+                      'script'   : field_script,
+                      'nonfiling' : nonfiling if code == 'a' else 0 } )
+            elif code in 'df':
+                # ^d  Date of treaty signing  --> TimeRef
+                # ^f  Date of a work          --> TimeRef
+                work_aut_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_AUT))
+            elif code == 'k':
+                # ^k  Form subheading            --> ConceptRef
+                val = self.__strip_ending_punctuation(val)
+                crb = ConceptRefBuilder()
+                crb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
+                crb.add_name( val,
+                              lang   = field_lang,
+                              script = field_script,
+                              nonfiling = 0 )
+                work_aut_names_and_qualifiers.append(crb.build())
             elif code == 'l':
+                # ^l  Language of a work      --> LanguageRef
                 val = self.__strip_ending_punctuation(val)
                 lrb = LanguageRefBuilder()
                 lrb.set_link( val,
@@ -513,15 +537,14 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                work_aut_qualifiers.append(lrb.build())
-            # ^q  Qualifier (Lane)  --> parse
+                work_aut_names_and_qualifiers.append(lrb.build())
             elif code == 'q':
-                work_aut_qualifiers.extend(self.__parse_generic_name_qualifier(val, field_lang, field_script))
-            # ^g  Miscellaneous information  --> StringRef  [unused]
-            # ^h  Medium                     --> THIS IS HOLDINGS
-            # ^k  Form subheading            --> ConceptRef
-            # ^s  Version                    --> try to extract for Enumeration ?? (see what they all are, they're only in bibs)
+                # ^q  Qualifier (Lane)  --> parse
+                work_aut_names_and_qualifiers.extend(self.__parse_generic_name_qualifier(val, field_lang, field_script))
             else:
+                # ^g  Miscellaneous information  --> StringRef  [unused]
+                # ^n  Number of part/section of a work  --> StringRef
+                # ^s  Version                    --> StringRef
                 val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
@@ -530,12 +553,13 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                work_aut_qualifiers.append(srb.build())
+                work_aut_names_and_qualifiers.append(srb.build())
 
-        return work_aut_names_kwargs, work_aut_qualifiers
+        # ^h  Medium                     --> SHOULD GO TO HOLDINGS
+
+        return work_aut_names_and_qualifiers
 
 
-    # work instance
     def parse_work_instance_main_name(self, field):
         """
         Parse a 149 field containing a Work inst main entry name into:
@@ -544,37 +568,43 @@ class NameParser:
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
-        nonfiling = int(field.indicator2) if field.indicator2.isdigit() else 0
-
-        # NAME(S)
-        # ---
-        # a  Uniform title (NR)                    --> `generic` title
-        # n  Number of part/section of a work (R)  --> `section` title <-- NO, this is a STRINGREF
-        # p  Name of part/section of a work (R)    --> `section` title
-        work_inst_names_kwargs = []
-        # 1  Nonfiling characters (articles, punct., etc. excluded from filing) (NR)
+        # ^1  Nonfiling characters (articles, punct., etc. excluded from filing) (NR)
         if '1' in field:
             nonfiling = len(field['1'])
             field['a'] = field['1'] + field['a']
         else:
             nonfiling = 0
-        for code, val in field.get_subfields('a','n','p', with_codes=True):
-            val = self.__strip_ending_punctuation(val)
-            work_inst_names_kwargs.append({ 'name_text': val,
-                                            'type_'    : 'generic' if code == 'a' else 'section',
-                                            'lang'     : field_lang,
-                                            'script'   : field_script,
-                                            'nonfiling' : nonfiling if code == 'a' else 0 })
 
-        # QUALIFIER(S)
+        # NAME(S) & QUALIFIER(S)
         # ---
-        work_inst_qualifiers = []
-        for code, val in field.get_subfields('d','h','k','l','q','s', with_codes=True):
-            # ^d  Date of a work (NR)     --> TimeRef
-            if code == 'd':
-                work_inst_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
-            # ^l  Language of a work      --> LanguageRef
+        work_inst_main_names_and_qualifiers = []
+        for code, val in field.get_subfields('a','p','d','l','q','n','k','s', with_codes=True):
+            if code in 'ap':
+                # ^a  Uniform title (NR)                    --> `generic` title
+                # ^p  Name of part/section of a work (R)    --> `section` title
+                val = self.__strip_ending_punctuation(val)
+                work_inst_main_names_and_qualifiers.append(
+                    { 'name_text': val,
+                      'type_'    : 'generic' if code == 'a' else 'section',
+                      'lang'     : field_lang,
+                      'script'   : field_script,
+                      'nonfiling' : nonfiling if code == 'a' else 0 } )
+            elif code in 'df':
+                # ^d  Date of a work (NR)        --> Time/DurationRef
+                work_inst_main_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_AUT))
+            elif code == 'k':
+                # ^k  Form subheading (R)        --> ConceptRef
+                val = self.__strip_ending_punctuation(val)
+                crb = ConceptRefBuilder()
+                crb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
+                crb.add_name( val,
+                              lang   = field_lang,
+                              script = field_script,
+                              nonfiling = 0 )
+                work_inst_main_names_and_qualifiers.append(crb.build())
             elif code == 'l':
+                # ^l  Language of a work (NR)    --> LanguageRef
                 val = self.__strip_ending_punctuation(val)
                 lrb = LanguageRefBuilder()
                 lrb.set_link( val,
@@ -583,31 +613,118 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                work_inst_qualifiers.append(lrb.build())
-            # ^q  Qualifier (NR)   --> parse
+                work_inst_main_names_and_qualifiers.append(lrb.build())
             elif code == 'q':
+                # ^q  Qualifier (NR)   --> parse
                 parsed = self.__parse_generic_name_qualifier(val, field_lang, field_script)
-                work_inst_qualifiers.extend(parsed)
-                # print(val, '::', [str(type(q))[24:-2] for q in parsed])
-            # ^h  Medium (NR)             --> goes to HOLDINGS!
-            # ^k  Form subheading (R)     --> ConceptRef
-                ...
-            # ^s  Version/edition (NR)    --> this is a separate thing, Enumeration
-                ...
-                ...
+                work_inst_main_names_and_qualifiers.extend(parsed)
+            else:
+                # ^n  Number of part/section of a work (R)  --> StringRef
+                # ^s  Version/edition (NR)                  --> StringRef
+                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                srb = StringRefBuilder()
+                srb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, STRING) )
+                srb.add_name( val,
+                              lang   = field_lang,
+                              script = field_script,
+                              nonfiling = 0 )
+                work_inst_main_names_and_qualifiers.append(srb.build())
 
-        return work_inst_names_kwargs, work_inst_qualifiers
+        # ^h  Medium (NR)  --> SHOULD GO TO HOLDINGS
+
+        return work_inst_main_names_and_qualifiers
 
     def parse_work_instance_variant_name(self, field):
         """
-        Parse a 2XX field containing a Work inst variant entry name into:
+        Parse a 210/245/246/247/249 field containing a Work inst variant entry name into:
         - a list of names as kwarg dicts, and
         - a list of qualifiers as RefElement objects,
         to pass into a Builder.
         """
-        ...
-        ...
-        ...
+        field_lang, field_script = field['3'], field['4']
+        if field.tag == '245' and field.indicator2.isdigit():
+            nonfiling = int(field.indicator2)
+        else:
+            nonfiling = 0
+
+        # NAME(S) & QUALIFIER(S)
+        # ---
+        work_inst_variant_names_and_qualifiers = []
+        for code, val in field.get_subfields('a','p','b','c','f','g','i','k','q','n','s', with_codes=True):
+            if code in 'ap':
+                # ^a  * title (NR)                        --> `generic` title
+                # ^p  Name of part/section of a work (R)  --> `section` title
+                val = self.__strip_ending_punctuation(val)
+                work_inst_variant_names_and_qualifiers.append(
+                    { 'name_text': val,
+                      'type_'    : 'generic' if code == 'a' else 'section',
+                      'lang'     : field_lang,
+                      'script'   : field_script,
+                      'nonfiling' : nonfiling if code == 'a' else 0 } )
+            elif code == 'b':
+                if field.tag == '210':
+                    # 210 ^b    Qualifying information (NR) --> ????
+                    ...
+                    ...
+                    ...
+                else:
+                    # other ^b  Remainder of title (NR)     --> Note??
+                    ...
+                    ...
+                    ...
+            elif code == 'c':
+                # ^c  Remainder of title page transcription/statement of responsibility (NR)  --> Note?
+                ...
+                ...
+                ...
+            elif code in 'fg':
+                if field.tag == '245':
+                    # 245 ^f    Inclusive dates (NR)        --> Time/DurationRef ??
+                    # 245 ^g    Bulk dates (NR)             --> Time/DurationRef ??
+                    ...
+                    ...
+                    ...
+                else:
+                    # other ^f  Designation of volume and issue number and/or date of a work (NR)  --> StringRef or Time/DurationRef ??
+                    # other ^g  Miscellaneous information (NR)  --> Note??
+                    ...
+                    ...
+                    ...
+            elif code == 'i':
+                # ^i  Display text (NR)    --> Note??
+                ...
+                ...
+                ...
+            elif code == 'k':
+                # ^k  Form (R)             --> ConceptRef
+                val = self.__strip_ending_punctuation(val)
+                crb = ConceptRefBuilder()
+                crb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
+                crb.add_name( val,
+                              lang   = field_lang,
+                              script = field_script,
+                              nonfiling = 0 )
+                work_inst_variant_names_and_qualifiers.append(crb.build())
+            elif code == 'q':
+                # ^q  Qualifier (Lane) (NR)  --> parse
+                parsed = self.__parse_generic_name_qualifier(val, field_lang, field_script)
+                work_inst_main_names_and_qualifiers.extend(parsed)
+            else:
+                # ^n  Number of part/section of a work (R)   --> StringRef
+                # ^s  Version (Lane) (NR)   --> StringRef
+                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                srb = StringRefBuilder()
+                srb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, STRING) )
+                srb.add_name( val,
+                              lang   = field_lang,
+                              script = field_script,
+                              nonfiling = 0 )
+                work_inst_variant_names_and_qualifiers.append(srb.build())
+
+        return work_inst_variant_names_and_qualifiers
 
     def __parse_generic_name_qualifier(self, val, lang, script):
         """
@@ -633,7 +750,7 @@ class NameParser:
                 bespoke_field = Field('   ','  ',bespoke_subfields)
                 lookup_as_org = self.ix.lookup(bespoke_field, ORGANIZATION)
                 if lookup_as_org != UNVERIFIED:
-                    # print("is an org with subdivisions")
+                    # yes, this is a subdivided org
                     orb = OrganizationRefBuilder()
                     orb.set_link( val_part,
                                   href_URI = lookup_as_org )

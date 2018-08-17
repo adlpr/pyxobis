@@ -41,8 +41,8 @@ class WorkBuilder(PrincipalElementBuilder):
         # Dump current name(s)/qualifier(s) to content
         self.__dump_to_content()
         # Build the right content object
-        if len(self.contents) == 1 and self.contents[0][0][0] == "generic":
-            content = WorkEntryContentSingleGeneric(*self.contents[0])
+        if len(self.contents) == 1 and self.contents[0][0][0][0] == "generic":
+            content = WorkEntryContentSingleGeneric(self.contents[0][0][0][1], self.contents[0][1])
         else:
             content = [WorkEntryContentPart(*content_part) for content_part in self.contents]
         return Work(
@@ -84,8 +84,8 @@ class WorkVariantBuilder(PrincipalElementVariantBuilder):
         # Dump current name(s)/qualifier(s) to content
         self.__dump_to_content()
         # Build the right content object
-        if len(self.contents) == 1 and self.contents[0][0][0] == "generic":
-            content = WorkEntryContentSingleGeneric(*self.contents[0])
+        if len(self.contents) == 1 and self.contents[0][0][0][0] == "generic":
+            content = WorkEntryContentSingleGeneric(self.contents[0][0][0][1], self.contents[0][1])
         else:
             content = [WorkEntryContentPart(*content_part) for content_part in self.contents]
         return WorkVariantEntry(
@@ -127,8 +127,8 @@ class WorkRefBuilder(PrincipalElementRefBuilder):
         # Dump current name(s)/qualifier(s) to content
         self.__dump_to_content()
         # Build the right content object
-        if len(self.contents) == 1 and self.contents[0][0][0] == "generic":
-            content = WorkEntryContentSingleGeneric(*self.contents[0])
+        if len(self.contents) == 1 and self.contents[0][0][0][0] == "generic":
+            content = WorkEntryContentSingleGeneric(self.contents[0][0][0][1], self.contents[0][1])
         else:
             content = [WorkEntryContentPart(*content_part) for content_part in self.contents]
         return WorkRef(

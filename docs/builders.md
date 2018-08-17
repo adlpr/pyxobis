@@ -1058,7 +1058,7 @@ add_qualifier ( qualifier )  # RefElement
 ```
 set_type ( new_type )  # "subordinate", "superordinate", "preordinate", "postordinate", "associative", "dissociative", None
 
-set_degree ( degree )  # "primary", "secondary", "tertiary", "broad", None
+set_degree ( degree )  # "primary", "secondary", None ; if target is ConceptRef also "tertiary", "broad"
 
 set_name ( name_text,
            name_lang = None )
@@ -1067,7 +1067,7 @@ set_modifier ( modifier_text,
               modifier_lang = None,
               modifier_nonfiling = 0 )
 
-set_enumeration ( enumeration )
+set_enumeration ( enumeration )  # StringRef
 
 set_time_or_duration_ref ( time_or_duration_ref )
 

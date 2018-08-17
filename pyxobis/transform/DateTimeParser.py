@@ -77,6 +77,36 @@ class DateTimeParser:
         dts = re.sub(r"נפ?[׳'] +", "died ", dts)
         dts = re.sub(r" +או +", " or ", dts)
 
+        # single digit days
+        dts = re.sub(r"(^|[ \-])([\w\.]+) (\d)(\D)",  r"\1\2 0\3\4", dts, flags=re.I)
+        dts = re.sub(r"(^|[ \-])(\d) ([\w\.]+)([ \-]|$)",  r"\1\3 0\2\4", dts, flags=re.I)
+
+        # English
+        dts = re.sub(r"jan(?:\.|uary)? (\d+),? (\d+)",  r"\2-01-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+) jan(?:\.|uary)?,? (\d+)",  r"\2-01-\1", dts, flags=re.I)
+        dts = re.sub(r"feb(?:\.|ruary)? (\d+),? (\d+)", r"\2-02-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? feb(?:\.|ruary)? (\d+)", r"\2-02-\1", dts, flags=re.I)
+        dts = re.sub(r"mar(?:\.|ch)? (\d+),? (\d+)",    r"\2-03-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? mar(?:\.|ch)? (\d+)",    r"\2-03-\1", dts, flags=re.I)
+        dts = re.sub(r"apr(?:\.|ch)? (\d+),? (\d+)",    r"\2-04-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? apr(?:\.|ch)? (\d+)",    r"\2-04-\1", dts, flags=re.I)
+        dts = re.sub(r"may (\d+),? (\d+)",              r"\2-05-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? may (\d+)",              r"\2-05-\1", dts, flags=re.I)
+        dts = re.sub(r"jun[\.e]? (\d+),? (\d+)",        r"\2-06-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? jun[\.e]? (\d+)",        r"\2-06-\1", dts, flags=re.I)
+        dts = re.sub(r"jul[\.y]? (\d+),? (\d+)",           r"\2-07-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? jul[\.y]? (\d+)",           r"\2-07-\1", dts, flags=re.I)
+        dts = re.sub(r"aug(?:\.|ust)? (\d+),? (\d+)",      r"\2-08-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? aug(?:\.|ust)? (\d+)",      r"\2-08-\1", dts, flags=re.I)
+        dts = re.sub(r"sep(?:t?\.|tember)? (\d+),? (\d+)", r"\2-09-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? sep(?:t?\.|tember)? (\d+)", r"\2-09-\1", dts, flags=re.I)
+        dts = re.sub(r"oct(?:\.|ober)? (\d+),? (\d+)",     r"\2-10-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? oct(?:\.|ober)? (\d+)",     r"\2-10-\1", dts, flags=re.I)
+        dts = re.sub(r"nov(?:\.|ember)? (\d+),? (\d+)",    r"\2-11-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? nov(?:\.|ember)? (\d+)",    r"\2-11-\1", dts, flags=re.I)
+        dts = re.sub(r"dec(?:\.|ember)? (\d+),? (\d+)",    r"\2-12-\1", dts, flags=re.I)
+        dts = re.sub(r"(\d+),? dec(?:\.|ember)? (\d+)",    r"\2-12-\1", dts, flags=re.I)
+
         # --------
         # ELEMENT-SPECIFIC PARSING
         # --------
@@ -314,7 +344,7 @@ class DateTimeParser:
         # synonyms for "Unknown"
         dts = re.sub(r"(yyyy|uuuu)", "Unknown", dts, flags=re.I)
 
-        # convert month names
+        # convert solo month names
         dts = re.sub(r" +jan(uary|\.)? +",  "-01-", dts, flags=re.I)
         dts = re.sub(r" +feb(ruary|\.)? +", "-02-", dts, flags=re.I)
         dts = re.sub(r" +mar(ch|\.)? +",    "-03-", dts, flags=re.I)

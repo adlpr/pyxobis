@@ -133,11 +133,20 @@ class Transformer:
 
             # ENTRY NAME(S) AND QUALIFIERS
             # -------
-            entry_names, entry_qualifiers = parse_name(record.get_id_field())
-            for entry_name in entry_names:
-                peb.add_name(**entry_name)
-            for entry_qualifier in entry_qualifiers:
-                peb.add_qualifier(entry_qualifier)
+            if element_type in (WORK_INST, WORK_AUT):
+                # works require order preservation
+                entry_names_and_qualifiers = parse_name(record.get_id_field())
+                for entry_name_or_qualifier in entry_names_and_qualifiers:
+                    if isinstance(entry_name_or_qualifier, dict):
+                        peb.add_name(**entry_name_or_qualifier)
+                    else:
+                        peb.add_qualifier(entry_name_or_qualifier)
+            else:
+                entry_names, entry_qualifiers = parse_name(record.get_id_field())
+                for entry_name in entry_names:
+                    peb.add_name(**entry_name)
+                for entry_qualifier in entry_qualifiers:
+                    peb.add_qualifier(entry_qualifier)
 
             # VARIANTS
             # -------
@@ -493,7 +502,7 @@ class Transformer:
 
         # PART(S) OF SPEECH
         # ---
-        # ^g Grammatical type
+        # ^g Grammatical type (R)
         field_lang, field_script = id_field['3'], id_field['4']
         for val in id_field.get_subfields('g'):
             sb.add_pos( pos_text    = val,
@@ -710,12 +719,11 @@ class Transformer:
 
     def process_id_alternates(self, record, rb):
         # 010  Library of Congress Control Number (NR)
-        for val in record.get_subfields('010','a'):
-            rb.add_id_alternate(self.lc_org_ref, val.strip(), 'valid')
-        for val in record.get_subfields('010','b'):
-            rb.add_id_alternate("NUCMC", val.strip(), 'valid')
-        for val in record.get_subfields('010','z'):
-            rb.add_id_alternate(self.lc_org_ref, val.strip(), 'invalid')
+        for field in record.get_fields('010'):
+            for code, val in field.get_subfields('a','b','z', with_codes=True):
+                rb.add_id_alternate("NUCMC" if code=='b' else self.lc_org_ref,
+                                    val.strip(),
+                                    'invalid' if code=='z' else 'valid')
 
         # 015  National Bibliography Number (NR)
         for val in record.get_subfields('015','a'):
@@ -728,37 +736,116 @@ class Transformer:
                 id_description += " assigned by: {}".format(field['b'].strip())
             rb.add_id_alternate(id_description, field['a'].strip())
 
-        # ARE THESE IDS OR NOTES OR WHAT?
         # 020  International Standard Book Number (R)
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
+        for field in record.get_fields('020'):
+            for code, val in field.get_subfields('a','z', with_codes=True):
+                rb.add_id_alternate("International Standard Book Number",
+                                    val.strip(),
+                                    'invalid' if code=='z' else 'valid')
+
         # 022  International Standard Serial Number (R)
+        for field in record.get_fields('022'):
+            for code, val in field.get_subfields('a','l','m','y','z', with_codes=True):
+                status = { 'a': 'valid',
+                           'l': 'valid linking',
+                           'm': 'cancelled linking',
+                           'y': 'incorrect',
+                           'z': 'cancelled' }.get(code)
+                rb.add_id_alternate("International Standard Serial Number",
+                                    val.strip(),
+                                    status)
+
         # 024  Other Standard Identifier (incl ISBN 13) (R)
+        for field in record.get_fields('024'):
+            id_description = { '1': "Universal Product Code",
+                               '3': "International Article Number (EAN) / ISBN 13",
+                               '4': "Serial Item and Contribution Identifier",
+                               '7': "Standard identifier; source: {}".format(
+                                        field['2'] if '2' in field else 'unknown'
+                                    )
+                               }.get(field.indicator1)
+            if not id_description:
+                id_description = "Unspecified standard identifier"
+            for code, val in field.get_subfields('a','z', with_codes=True):
+                rb.add_id_alternate(id_description, val.strip(),
+                                    'invalid' if code=='z' else 'valid')
+
         # 027  Standard Technical Report Number (R)
+        for field in record.get_fields('027'):
+            for code, val in field.get_subfields('a','z', with_codes=True):
+                rb.add_id_alternate("Standard Technical Report Number",
+                                    val.strip(),
+                                    'invalid' if code=='z' else 'valid')
+
         # 028  [NON-LANE] Publisher or Distributor Number (R)
+        for field in record.get_fields('028'):
+            id_description = { '0': "Issue number",
+                               '1': "Matrix number",
+                               '2': "Plate number",
+                               '3': "Music publisher number",
+                               '4': "Video recording publisher number",
+                               '5': "Publisher number",
+                               '6': "Distributor number"
+                               }.get(field.indicator1)
+            if not id_description:
+                id_description = "Unspecified standard identifier"
+            id_description += " ({})".format(field['b'] if 'b' in field else 'source unknown')
+            for code, val in field.get_subfields('a', with_codes=True):
+                rb.add_id_alternate(id_description, val.strip())
+
         # 030  CODEN Designation (R)
+        for field in record.get_fields('030'):
+            for code, val in field.get_subfields('a','z', with_codes=True):
+                rb.add_id_alternate("CODEN",
+                                    val.strip(),
+                                    'invalid' if code=='z' else 'valid')
+
         # 032  Postal Registration Number (R)
-        # 034  [NON-LANE] Coded Cartographic Mathematical Data (R)
+        for field in record.get_fields('032'):
+            id_description = "Postal Registration Number"
+            id_description += " ({})".format(field['b'] if 'b' in field else 'source unknown')
+            for code, val in field.get_subfields('a', with_codes=True):
+                rb.add_id_alternate(id_description, val.strip())
 
         # 035  System Control Number
-        #    8#  MeSH Control No.
         for field in record.get_fields('035'):
-            if field.indicator1 == '8':
-                for val in field.get_subfields('a'):  # ^z ??
-                    rb.add_id_alternate(self.nlm_org_ref, val.strip(), 'valid')
-                for val in field.get_subfields('z'):  # ^z ??
-                    rb.add_id_alternate(self.nlm_org_ref, val.strip(), 'invalid')
-            else:
-                # other prefixed control numbers
-                # DNLM OCoLC PMID Stanf LaneConnex
-                for val in field.get_subfields('a','z', with_codes=True):
-                    ...
-                    ...
-                    ...
+            for code, val in field.get_subfields('a','z', with_codes=True):
+                if code == 'a' and val == record['001'].data:
+                    # ignore repeated Lane control number
+                    continue
+                if field.indicator1 == '8':
+                    # 8#  MeSH Control No.
+                    id_desc = self.nlm_org_ref
+                else:
+                    val_lower = val.lower()
+                    if val_lower.startswith("(ocolc)(dnlm)") or val_lower.startswith("(dnlm)(ocolc)"):
+                        id_desc = "OCoLC/DNLM"
+                    elif val_lower.startswith("(dnlm)"):
+                        id_desc = self.nlm_org_ref
+                    elif val_lower.startswith("(ocolc)"):
+                        id_desc = self.__build_simple_org_ref("OCLC")
+                    elif val_lower.startswith("(pmid)"):
+                        id_desc = "PubMed"
+                    elif val_lower.startswith("(orcid)"):
+                        id_desc = self.__build_simple_org_ref("ORCID Initiative")
+                    elif val_lower.startswith("(stanf)"):
+                        # id_desc = "Stanford ID" # ?
+                        ...
+                        ...
+                        ...
+                    elif val_lower.startswith("(ssn)"):
+                        id_desc = "Social Security Number"
+                    elif val_lower.startswith("(laneconnex)"):
+                        id_desc = "LaneConnex"
+                    elif val_lower.startswith("(bassett)"):
+                        id_desc = "Bassett Anatomy Collection"
+                    elif val_lower.startswith("(geonameid)"):
+                        id_desc = "GeoNames"
+                    elif val_lower.startswith("(isni)"):
+                        id_desc = "International Standard Name Identifier"
+                    else:
+                        id_desc = "Other system control number"
+                rb.add_id_alternate(self.nlm_org_ref, val.strip(), 'valid' if code=='a' else 'invalid')
 
         # 040   Cataloging Source (NR)
         # 041   Language Code (NR)
@@ -796,7 +883,11 @@ class Transformer:
 
         # Type "relator"
         # Valid variant types include any Equivalence relationship concepts
-        entry_type = field['e']
+        if field.tag in ['411']:
+            # exceptions where ^e has other uses
+            entry_type = field['i']
+        else:
+            entry_type = field['e']
         if entry_type and not entry_type.startswith('Includes'):
             entry_type = entry_type.rstrip(':').strip()
             type_kwargs = { 'link_title' : entry_type,

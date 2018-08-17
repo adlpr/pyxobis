@@ -152,7 +152,12 @@ def transform_variant_concept(self, field):
 
     # Scheme
     # ---
-    # n/a for now
+    # I1 8 = MeSH Topical Variant
+    #    9 = Local Topical Variant / ^h  Designation as local MeSH xref
+    if field.indicator1 == '9' or 'h' in field:
+        cvb.set_scheme('LaSH')
+    elif field.indicator1 == '8':
+        cvb.set_scheme('MeSH')
 
     # Name(s) & Qualifier(s)
     # ---
@@ -562,11 +567,12 @@ def transform_variant_work_authority(self, field):
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_work_authority_name(field)
-    for variant_name in variant_names:
-        wvb.add_name(**variant_name)
-    for variant_qualifier in variant_qualifiers:
-        wvb.add_qualifier(variant_qualifier)
+    variant_names_and_qualifiers = self.np.parse_work_authority_name(field)
+    for variant_name_or_qualifier in variant_names_and_qualifiers:
+        if isinstance(variant_name_or_qualifier, dict):
+            wvb.add_name(**variant_name_or_qualifier)
+        else:
+            wvb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---
@@ -626,17 +632,17 @@ def transform_variant_work_instance(self, field):
 
     # Note(s)
     # ---
-    # ^j = Note/qualification
+    # 
     ...
     ...
     ...
-    for note_text in field.get_subfields('j'):
-        wvb.add_note( content_text = note_text,
-                      content_lang = field['3'],
-                      type = "annotation",
-                      link_title = None,
-                      href_URI = None,
-                      set_URI  = None )
+    # for note_text in field.get_subfields('j'):
+    #     wvb.add_note( content_text = note_text,
+    #                   content_lang = field['3'],
+    #                   type = "annotation",
+    #                   link_title = None,
+    #                   href_URI = None,
+    #                   set_URI  = None )
 
     return wvb.build()
 
