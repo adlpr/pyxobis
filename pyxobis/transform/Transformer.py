@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import regex as re
+import pyxobis
 from pyxobis.builders import *
 from .LaneMARCRecord import LaneMARCRecord
 from .Indexer import Indexer
@@ -829,10 +830,7 @@ class Transformer:
                     elif val_lower.startswith("(orcid)"):
                         id_desc = self.__build_simple_org_ref("ORCID Initiative")
                     elif val_lower.startswith("(stanf)"):
-                        # id_desc = "Stanford ID" # ?
-                        ...
-                        ...
-                        ...
+                        id_desc = "Stanford ID"
                     elif val_lower.startswith("(ssn)"):
                         id_desc = "Social Security Number"
                     elif val_lower.startswith("(laneconnex)"):
@@ -881,7 +879,7 @@ class Transformer:
         """
         type_kwargs, type_time_or_duration_ref = {}, None
 
-        # Type "relator"
+        # Entry Type
         # Valid variant types include any Equivalence relationship concepts
         if field.tag in ['411']:
             # exceptions where ^e has other uses
@@ -907,45 +905,66 @@ class Transformer:
 
     def get_type_and_time_from_title_field(self, field):
         """
-        For bib 2XX fields, its tag and indicators indicate the type of title variant.
-        Returns a Type kwarg dict for use in a Builder.
+        For bib 2XX fields, take into account particular subfields and
+        indicator values to determine the type of title variant.
+
+        Returns a Type kwarg dict and a Time/Duration Ref object, for use in a Builder.
         """
+        type_kwargs, type_time_or_duration_ref = {}, None
+
+        # Entry Type
         entry_type = None
 
-        if field.tag == '210':
-            entry_type = "Abbreviated title"
-        elif field.tag == '245':
-            entry_type = "Descriptive title"
-        elif field.tag == '246':
-            if field.indicator2 == '0':
-                entry_type = "Portion of title"
-            elif field.indicator2 == '1':
-                entry_type = "Parallel title"
-            elif field.indicator2 == '2':
-                entry_type = "Distinctive title"
-            elif field.indicator2 == '4':
-                entry_type = "Cover title"
-            elif field.indicator2 == '5':
-                entry_type = "Added title page title"
-            elif field.indicator2 == '6':
-                entry_type = "Caption title"
-            elif field.indicator2 == '7':
-                entry_type = "Running title"
-            elif field.indicator2 == '8':
-                entry_type = "Spine title"
-            else:
-                entry_type = "Other title"
-        elif field.tag == '247':
-            entry_type = "Former title"
-        elif field.tag == '249':
-            entry_type = "Added title for website"
+        # 246 ^i
+        if 'i' in field:
+            entry_type = field['i'].strip()
+
+        # if not otherwise specified, use tag/I2
+        if not entry_type:
+            if field.tag == '210':
+                entry_type = "Abbreviated title"
+            elif field.tag == '245':
+                entry_type = "Descriptive title"
+            elif field.tag == '246':
+                if field.indicator2 == '0':
+                    entry_type = "Portion of title"
+                elif field.indicator2 == '1':
+                    entry_type = "Parallel title"
+                elif field.indicator2 == '2':
+                    entry_type = "Distinctive title"
+                elif field.indicator2 == '4':
+                    entry_type = "Cover title"
+                elif field.indicator2 == '5':
+                    entry_type = "Added title page title"
+                elif field.indicator2 == '6':
+                    entry_type = "Caption title"
+                elif field.indicator2 == '7':
+                    entry_type = "Running title"
+                elif field.indicator2 == '8':
+                    entry_type = "Spine title"
+                else:
+                    entry_type = "Other title"
+            elif field.tag == '247':
+                entry_type = "Former title"
+            elif field.tag == '249':
+                entry_type = "Added title for website"
 
         type_kwargs = { 'link_title' : entry_type,
                         'set_URI'    : self.ix.simple_lookup("Equivalence", CONCEPT),
                         'href_URI'   : self.ix.simple_lookup(entry_type, CONCEPT)
                       } if entry_type else {}
 
-        return type_kwargs
+        # Time or Duration
+        if field.tag in ('246','247'):
+            for code, val in field.get_subfields('f','g', with_codes=True):
+                # only use this if solely parsable as Time/Duration.
+                # otherwise treat as Variant Note
+                parsed = self.np.parse_generic_qualifier(val, field['3'], field['4'])
+                if isinstance(parsed, pyxobis.classes.TimeRef) or isinstance(parsed, pyxobis.classes.DurationRef):
+                    type_time_or_duration_ref = parsed
+                    field.delete_subfield(code, val)
+
+        return type_kwargs, type_time_or_duration_ref
 
     def extract_included_relation(self, field):
         """

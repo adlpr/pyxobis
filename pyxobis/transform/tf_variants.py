@@ -31,7 +31,7 @@ def transform_variants(self, record):
     for field, variant_element_type in record.get_variant_fields_and_types():
 
         transform_variant = {
-            # WORK_INST    : self.transform_variant_work_instance,
+            WORK_INST    : self.transform_variant_work_instance,
             # OBJECT       : self.transform_variant_object,
             WORK_AUT     : self.transform_variant_work_authority,
             BEING        : self.transform_variant_being,
@@ -607,10 +607,11 @@ def transform_variant_work_instance(self, field):
     # Type / Time/Duration Ref
     # ---
     # Type depends on field tag and indicators.
-    type_kwargs = self.get_type_and_time_from_title_field(field)
+    type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_title_field(field)
     if type_kwargs:
         wvb.set_type(**type_kwargs)
-    # Time/Duration is n/a
+    if type_time_or_duration_ref is not None:
+        wvb.set_time_or_duration_ref(type_time_or_duration_ref)
 
     # Substitute
     # ---
@@ -618,31 +619,45 @@ def transform_variant_work_instance(self, field):
 
     # Scheme
     # ---
-    # 210 _5 = NLM abbrev
-    if field.tag == '210' and field.indicator2 == '5':
-        wvb.set_scheme('NLM')  # ??
+    # 210 abbreviation schemes
+    if field.tag == '210':
+        if field.indicator2 == '0':
+            wvb.set_scheme('ISSN')
+        elif field.indicator2 == '5':
+            wvb.set_scheme('NLM')  # ??
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_work_instance_variant_name(field)
-    for variant_name in variant_names:
-        wvb.add_name(**variant_name)
-    for variant_qualifier in variant_qualifiers:
-        wvb.add_qualifier(variant_qualifier)
+    variant_names_and_qualifiers = self.np.parse_work_instance_variant_name(field)
+    for variant_name_or_qualifier in variant_names_and_qualifiers:
+        if isinstance(variant_name_or_qualifier, dict):
+            wvb.add_name(**variant_name_or_qualifier)
+        else:
+            wvb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---
-    # 
-    ...
-    ...
-    ...
-    # for note_text in field.get_subfields('j'):
-    #     wvb.add_note( content_text = note_text,
-    #                   content_lang = field['3'],
-    #                   type = "annotation",
-    #                   link_title = None,
-    #                   href_URI = None,
-    #                   set_URI  = None )
+    # 247 ^b = Remainder of title
+    if field.tag == '247':
+        for note_text in field.get_subfields('b'):
+            wvb.add_note( content_text = note_text,
+                          content_lang = field['3'],
+                          type = "transcription",
+                          link_title = None,
+                          href_URI = None,
+                          set_URI  = None )
+    # 246/7 ^f = Designation of volume and issue number and/or date of a work
+    #       ^g = Miscellaneous information
+    #         (^f/^g may be pre-parsed out as Entry Type Time/DurationRefs by
+    #            parse_work_instance_variant_name)
+    if field.tag in ('246','247'):
+        for note_text in field.get_subfields('f','g'):
+            wvb.add_note( content_text = note_text,
+                          content_lang = field['3'],
+                          type = "transcription",
+                          link_title = None,
+                          href_URI = None,
+                          set_URI  = None )
 
     return wvb.build()
 

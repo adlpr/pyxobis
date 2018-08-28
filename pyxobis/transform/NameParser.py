@@ -540,7 +540,7 @@ class NameParser:
                 work_aut_names_and_qualifiers.append(lrb.build())
             elif code == 'q':
                 # ^q  Qualifier (Lane)  --> parse
-                work_aut_names_and_qualifiers.extend(self.__parse_generic_name_qualifier(val, field_lang, field_script))
+                work_aut_names_and_qualifiers.extend(self.parse_generic_qualifier(val, field_lang, field_script))
             else:
                 # ^g  Miscellaneous information  --> StringRef  [unused]
                 # ^n  Number of part/section of a work  --> StringRef
@@ -563,8 +563,7 @@ class NameParser:
     def parse_work_instance_main_name(self, field):
         """
         Parse a 149 field containing a Work inst main entry name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects,
+        - a list of either names as kwarg dicts or qualifiers as RefElement objects,
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -589,7 +588,7 @@ class NameParser:
                       'lang'     : field_lang,
                       'script'   : field_script,
                       'nonfiling' : nonfiling if code == 'a' else 0 } )
-            elif code in 'df':
+            elif code == 'd':
                 # ^d  Date of a work (NR)        --> Time/DurationRef
                 work_inst_main_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_AUT))
             elif code == 'k':
@@ -616,7 +615,7 @@ class NameParser:
                 work_inst_main_names_and_qualifiers.append(lrb.build())
             elif code == 'q':
                 # ^q  Qualifier (NR)   --> parse
-                parsed = self.__parse_generic_name_qualifier(val, field_lang, field_script)
+                parsed = self.parse_generic_qualifier(val, field_lang, field_script)
                 work_inst_main_names_and_qualifiers.extend(parsed)
             else:
                 # ^n  Number of part/section of a work (R)  --> StringRef
@@ -638,8 +637,7 @@ class NameParser:
     def parse_work_instance_variant_name(self, field):
         """
         Parse a 210/245/246/247/249 field containing a Work inst variant entry name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects,
+        - a list of either names as kwarg dicts or qualifiers as RefElement objects,
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -650,8 +648,10 @@ class NameParser:
 
         # NAME(S) & QUALIFIER(S)
         # ---
+        # other ^b  Remainder of title (NR)     --> Main Note
+        # ^c  Remainder of title page transcription/statement of responsibility (NR)  --> Main Note
         work_inst_variant_names_and_qualifiers = []
-        for code, val in field.get_subfields('a','p','b','c','f','g','i','k','q','n','s', with_codes=True):
+        for code, val in field.get_subfields('a','p','b','f','g','k','q','n','s', with_codes=True):
             if code in 'ap':
                 # ^a  * title (NR)                        --> `generic` title
                 # ^p  Name of part/section of a work (R)  --> `section` title
@@ -664,38 +664,14 @@ class NameParser:
                       'nonfiling' : nonfiling if code == 'a' else 0 } )
             elif code == 'b':
                 if field.tag == '210':
-                    # 210 ^b    Qualifying information (NR) --> ????
-                    ...
-                    ...
-                    ...
-                else:
-                    # other ^b  Remainder of title (NR)     --> Note??
-                    ...
-                    ...
-                    ...
-            elif code == 'c':
-                # ^c  Remainder of title page transcription/statement of responsibility (NR)  --> Note?
-                ...
-                ...
-                ...
+                    # 210 ^b    Qualifying information (NR) --> parse
+                    parsed = self.parse_generic_qualifier(val, field_lang, field_script)
+                    work_inst_variant_names_and_qualifiers.extend(parsed)
             elif code in 'fg':
                 if field.tag == '245':
-                    # 245 ^f    Inclusive dates (NR)        --> Time/DurationRef ??
-                    # 245 ^g    Bulk dates (NR)             --> Time/DurationRef ??
-                    ...
-                    ...
-                    ...
-                else:
-                    # other ^f  Designation of volume and issue number and/or date of a work (NR)  --> StringRef or Time/DurationRef ??
-                    # other ^g  Miscellaneous information (NR)  --> Note??
-                    ...
-                    ...
-                    ...
-            elif code == 'i':
-                # ^i  Display text (NR)    --> Note??
-                ...
-                ...
-                ...
+                    # 245 ^f    Inclusive dates (NR)        --> Time/DurationRef
+                    # 245 ^g    Bulk dates (NR)             --> Time/DurationRef
+                    work_inst_variant_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
             elif code == 'k':
                 # ^k  Form (R)             --> ConceptRef
                 val = self.__strip_ending_punctuation(val)
@@ -709,8 +685,8 @@ class NameParser:
                 work_inst_variant_names_and_qualifiers.append(crb.build())
             elif code == 'q':
                 # ^q  Qualifier (Lane) (NR)  --> parse
-                parsed = self.__parse_generic_name_qualifier(val, field_lang, field_script)
-                work_inst_main_names_and_qualifiers.extend(parsed)
+                parsed = self.parse_generic_qualifier(val, field_lang, field_script)
+                work_inst_variant_names_and_qualifiers.extend(parsed)
             else:
                 # ^n  Number of part/section of a work (R)   --> StringRef
                 # ^s  Version (Lane) (NR)   --> StringRef
@@ -726,7 +702,21 @@ class NameParser:
 
         return work_inst_variant_names_and_qualifiers
 
-    def __parse_generic_name_qualifier(self, val, lang, script):
+
+
+    def parse_object_main_name(self, field):
+        ...
+        ...
+        ...
+
+    def parse_object_variant_name(self, field):
+        ...
+        ...
+        ...
+
+
+
+    def parse_generic_qualifier(self, val, lang, script):
         """
         Use regex and Indexer to try to determine what type of reference to build
         from an unspecified qualifying element of a title.
@@ -740,11 +730,14 @@ class NameParser:
         val = self.__strip_parens(self.__strip_ending_punctuation(val))
         # 2. separate on ' : '
         for val_part in val.split(' : '):
-            # 3. if \d{4}, parse as date
+            # 3. if \d{4} in part, attempt parse as date
             if re.search(r'\d{4}', val_part):
-                ref_elements.append(self.dp.parse_as_ref(val_part, None))
-                continue
-            # 4. if '. ', separate into ^a/^b+ and try to lookup as org; if found parse as such
+                try:
+                    ref_elements.append(self.dp.parse_as_ref(val_part, None))
+                    continue
+                except ValueError:
+                    pass
+            # 4. if '. ', separate into ^a/^b+ and attempt lookup as org; if found parse as such
             if '. ' in val_part:
                 bespoke_subfields = [sf_part for i,val_subpart in enumerate(val_part.split('. ')) for sf_part in ('a' if i==0 else 'b', val_subpart)]
                 bespoke_field = Field('   ','  ',bespoke_subfields)
@@ -800,17 +793,6 @@ class NameParser:
             rb.add_name(**ref_name_kwargs)
             ref_elements.append(rb.build())
         return ref_elements
-
-
-    def parse_object_main_name(self, field):
-        ...
-        ...
-        ...
-
-    def parse_object_variant_name(self, field):
-        ...
-        ...
-        ...
 
 
     def __strip_ending_punctuation(self, namestring):
