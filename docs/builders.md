@@ -55,11 +55,11 @@
 # Builders
 
 ## RecordBuilder
-```
+```python
 set_lang ( lang )
 
-# Organization owning/managing the record; or text description of the ID.
-set_id_org_ref_or_description ( id_org_ref_or_description )  # OrganizationRef or str
+# Organization/Work owning/managing the record, or text description of the ID
+add_id_description( id_description )  # OrganizationRef or WorkRef or str
 
 # Record ID.
 set_id_value ( id_value )  # str
@@ -67,10 +67,19 @@ set_id_value ( id_value )  # str
 # Record ID status.
 set_id_status ( id_status )  # "valid", "invalid", "cancelled", "incorrect", "valid linking", "invalid linking", "cancelled linking", "incorrect linking", None
 
+# note on main record ID
+add_id_note( content_text,
+             content_lang = None,
+             class_ = None,
+             link_title = None,
+             href_URI = None,
+             set_URI = None )
+
 # Other record IDs (LCCN, etc.).
-add_id_alternate ( id_org_ref_or_description,
+add_id_alternate ( id_descriptions,
                    id_value,
-                   id_status = None )
+                   id_status = None,
+                   opt_note_list = OptNoteList() )
 
 # Type of record (e.g. original, derivative, suppressed?)
 add_type ( xlink_title = None,  # str
@@ -92,7 +101,7 @@ add_relationship ( relationship )   # Relationship
 ## Being
 
 ### BeingBuilder
-```
+```python
 set_role ( new_role )
 
 set_type ( new_type )
@@ -133,7 +142,7 @@ add_note ( content_text,
 ```
 
 ### BeingVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -167,7 +176,7 @@ add_note ( content_text,
 ```
 
 ### BeingRefBuilder
-```
+```python
 add_name ( name_text,
            type_  = "generic",
            lang   = None,
@@ -183,7 +192,7 @@ set_link ( link_title,
 ## Concept
 
 ### ConceptBuilder
-```
+```python
 set_type ( new_type )  # abstract, collective, control, specific
 
 set_usage ( new_usage )  # subdivision ?
@@ -215,7 +224,7 @@ add_note ( content_text,
 ```
 
 ### ConceptVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -248,7 +257,7 @@ add_note ( content_text,
 ```
 
 ### ConceptRefBuilder
-```
+```python
 set_link ( link_title,
            href_URI = None )
 
@@ -269,7 +278,7 @@ add_subdivision_link ( content_text,
 ## Event
 
 ### EventBuilder
-```
+```python
 set_type ( new_type )  # natural, meeting, journey, occurrence, miscellaneous
 
 set_class ( new_class )  # individual, collective, referential
@@ -300,7 +309,7 @@ add_note ( content_text,
 ```
 
 ### EventVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -335,7 +344,7 @@ add_note ( content_text,
 ```
 
 ### EventRefBuilder
-```
+```python
 set_link ( link_title,
            href_URI = None )
 
@@ -352,7 +361,7 @@ add_qualifier ( qualifier )  # RefElement
 ## Language
 
 ### LanguageBuilder
-```
+```python
 set_class ( new_class )  # individual, collective, referential
 
 set_usage ( new_usage )
@@ -379,7 +388,7 @@ add_note ( content_text,
 ```
 
 ### LanguageVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -410,7 +419,7 @@ add_note ( content_text,
 ```
 
 ### LanguageRefBuilder
-```
+```python
 set_link ( link_title,
            href_URI = None )
 
@@ -431,7 +440,7 @@ add_subdivision_link ( content_text,
 ## Object
 
 ### ObjectBuilder
-```
+```python
 set_role ( new_role )  # authority, instance, authority instance
 
 set_class ( new_class )  # individual, collective, referential [aut only]
@@ -464,7 +473,7 @@ set_holdings ( versions_holdings_opt )
 ```
 
 ### ObjectVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -497,7 +506,7 @@ add_note ( content_text,
 ```
 
 ### ObjectRefBuilder
-```
+```python
 set_link ( link_title,
            href_URI = None )
 
@@ -512,7 +521,7 @@ add_qualifier ( qualifier )  # RefElement
 ## Organization
 
 ### OrganizationBuilder
-```
+```python
 set_type ( new_type )  # business, government, nonprofit, other
 
 set_class ( new_class )  # individual, collective, referential
@@ -543,7 +552,7 @@ add_note ( content_text,
 ```
 
 ### OrganizationVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -578,7 +587,7 @@ add_note ( content_text,
 ```
 
 ### OrganizationRefBuilder
-```
+```python
 set_link ( link_title,
            href_URI = None )
 
@@ -601,7 +610,7 @@ add_subdivision_link ( content_text,
 ## Place
 
 ### PlaceBuilder
-```
+```python
 set_role ( new_role )  # authority, instance, authority instance
 
 set_type ( new_type )  # natural, constructed, jurisdictional
@@ -634,7 +643,7 @@ add_note ( content_text,
 ```
 
 ### PlaceVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -667,7 +676,7 @@ add_note ( content_text,
 ```
 
 ### PlaceRefBuilder
-```
+```python
 set_link ( link_title,
            href_URI = None )
 
@@ -682,7 +691,7 @@ add_qualifier ( qualifier )  # RefElement
 ## String
 
 ### StringBuilder
-```
+```python
 set_type ( new_type )  # textual, numeric, mixed
 
 set_class ( new_class )  # word, phrase
@@ -714,7 +723,7 @@ add_note ( content_text,
 ```
 
 ### StringVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -750,7 +759,7 @@ add_note ( content_text,
 ```
 
 ### StringRefBuilder
-```
+```python
 set_link ( link_title,
            href_URI = None )
 
@@ -770,7 +779,7 @@ add_qualifier ( qualifier )  # RefElement
 ## Time
 
 ### TimeContentSingleBuilder
-```
+```python
 set_type ( link_title,
            set_URI,    # Time Type
            href_URI = None )
@@ -796,7 +805,7 @@ set_time_contents ( year = None,
 ```
 
 ### TimeBuilder
-```
+```python
 set_class ( new_class )
 
 set_usage ( new_usage )
@@ -824,7 +833,7 @@ add_note ( content_text,
 ```
 
 ### DurationBuilder
-```
+```python
 set_class ( new_class )
 
 set_usage ( new_usage )
@@ -865,7 +874,7 @@ add_note ( content_text,
 ```
 
 ### TimeVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -887,7 +896,7 @@ set_time_content_single ( time_content_single )
 
 
 ### DurationVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -928,7 +937,7 @@ set_time_content2_link ( link_title,
 ```
 
 ### TimeRefBuilder
-```
+```python
 set_calendar ( link_title,
                set_URI,
                href_URI = None )
@@ -941,7 +950,7 @@ set_time_content ( time_content_single1,
 ```
 
 ### DurationRefBuilder
-```
+```python
 set_calendar ( link_title,
                set_URI,
                href_URI = None )
@@ -973,7 +982,7 @@ set_time_content2_link ( link_title,
 ## Work
 
 ### WorkBuilder
-```
+```python
 set_type ( new_type )  # intellectual, artistic
 
 set_role ( new_role )  # authority, instance, or authority instance
@@ -1005,7 +1014,7 @@ set_holdings ( versions_holdings_opt )
 ```
 
 ### WorkVariantBuilder
-```
+```python
 set_included ( included )
 
 set_entry_group_attributes ( id = None,
@@ -1039,7 +1048,7 @@ add_note ( content_text,
 ```
 
 ### WorkRefBuilder
-```
+```python
 set_link ( link_title,
            href_URI = None )
 
@@ -1055,7 +1064,7 @@ add_qualifier ( qualifier )  # RefElement
 ------------------------------------------------------
 
 ## RelationshipBuilder
-```
+```python
 set_type ( new_type )  # "subordinate", "superordinate", "preordinate", "postordinate", "associative", "dissociative", None
 
 set_degree ( degree )  # "primary", "secondary", None ; if target is ConceptRef also "tertiary", "broad"

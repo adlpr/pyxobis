@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+# -*- coding: UTF-8 -*-
+
 from .Transformer import Transformer
 from .Indexer import Indexer
 from .LaneMARCRecord import LaneMARCRecord

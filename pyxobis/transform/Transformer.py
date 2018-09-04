@@ -50,7 +50,7 @@ class Transformer:
         # ID ORG
         # ---
         # is us, Lane
-        rb.set_id_org_ref_or_description(self.lane_org_ref)
+        rb.add_id_description(self.lane_org_ref)
 
         # ID VALUE
         # ---
@@ -72,11 +72,11 @@ class Transformer:
         # -------
         # TYPES
         # -------
-        # Record "Types" = Subsets = 655 77
+        # Record "Types" = Subsets = 655 77 / 87 (MeSH)
         # NB: Established aut "Record Type" (Z47381) actually refers
         #     to which PE a record is
         for field in record.get_fields('655'):
-            if field.indicator1 == '7':
+            if field.indicator1 in '78':
                 title = field['a']
                 href  = field['0'] or self.ix.simple_lookup(title, CONCEPT)
                 set_ref = self.ix.simple_lookup("Subset", CONCEPT)
@@ -845,30 +845,26 @@ class Transformer:
                         id_desc = "Other system control number"
                 rb.add_id_alternate(self.nlm_org_ref, val.strip(), 'valid' if code=='a' else 'invalid')
 
-        # 040   Cataloging Source (NR)
-        # 041   Language Code (NR)
-        # 042   Authentication Code (NR)
-        # 043   Geographic Area Code (NR)
-        # 044   [NON-LANE] ??????????
-        # 045   Time Period of Content (NR)
-        # 046   [NON-LANE] Special Coded Dates (R)
-        # 050   Library of Congress Call Number (R)
-        # 055   [NON-LANE] Classification Numbers Assigned in Canada (R)
-        # 060   National Library of Medicine Call Number (R)
-        # 066   [NON-LANE] Character Sets Present (NR)
         # 072   Subject Category Code (Lane: MeSH tree no.) (R)
+        ...
+
         # 074   GPO Item Number (R)
-        # 075   Qualifiers Allowed with Descriptor (Lane: cf. new 925) (R)
+        for field in record.get_fields('074'):
+            for code, val in field.get_subfields('a','z', with_codes=True):
+                rb.add_id_alternate("GPO Item Number",
+                                    val.strip(),
+                                    'invalid' if code=='z' else 'valid')
+
         # 086   Government Document Classification Number (R)
+        ...
+
         # 088   Report Number (R)
-        # 090   [NON-LANE] [local call number]
-        # 092   [NON-LANE] [local call number]
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
+        for field in record.get_fields('088'):
+            for code, val in field.get_subfields('a','z', with_codes=True):
+                rb.add_id_alternate("Report Number",
+                                    val.strip(),
+                                    'invalid' if code=='z' else 'valid')
+
 
     def get_type_and_time_from_relator(self, field):
         """

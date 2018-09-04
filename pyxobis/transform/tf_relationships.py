@@ -7,6 +7,10 @@ from pyxobis.builders import *
 from .tf_common import *
 
 def transform_relationships_aut(self, record):
+    """
+    For each field describing a relationship in record, build a Relationship.
+    Returns a list of zero or more Relationship objects.
+    """
     ...
     ...
     ...
@@ -16,6 +20,10 @@ def transform_relationships_aut(self, record):
     return []
 
 def transform_relationships_bib(self, record):
+    """
+    For each field describing a relationship in record, build a Relationship.
+    Returns a list of zero or more Relationship objects.
+    """
     ...
     ...
     ...

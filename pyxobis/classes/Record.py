@@ -4,6 +4,7 @@
 from .common import *
 from .Time import TimeRef, DurationRef
 from .Organization import OrganizationRef
+from .Work import WorkRef
 
 from lxml.builder import ElementMaker
 E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",
@@ -156,35 +157,44 @@ class IDContent(Component):
             (string "valid" | string "invalid" | string "cancelled" | string "incorrect")
             (~ string " linking")?
         }?,
-        ( orgRef | element xobis:description { text } ),
-        element xobis:value { text }
+        ( orgRef | workRef | element xobis:description { text } )+,
+        element xobis:value { text },
+        optNoteList
     """
     STATUSES = ["valid", "invalid", "cancelled", "incorrect",
                 "valid linking", "invalid linking",
                 "cancelled linking", "incorrect linking", None]
-    def __init__(self, org_ref_or_description, id_value, status=None):
+    def __init__(self, descriptions, id_value, status=None, opt_note_list=OptNoteList()):
         assert status in IDContent.STATUSES
         self.status = status
-        self.has_org_ref = isinstance(org_ref_or_description, OrganizationRef)
-        assert self.has_org_ref or isinstance(org_ref_or_description, str)
-        self.org_ref_or_description = org_ref_or_description
+        assert descriptions
+        for description in descriptions:
+            assert any(isinstance(description, valid_type) for valid_type in (OrganizationRef, WorkRef, str))
+        self.descriptions = descriptions
         assert isinstance(id_value, str), "id_value is {}, must be str".format(type(id_value))
         self.id_value = id_value
+        assert isinstance(opt_note_list, OptNoteList)
+        self.opt_note_list = opt_note_list
     def serialize_xml(self):
-        # Returns a list of two Elements, and a dict of parent attributes.
+        # Returns a list of two or more Elements, and a dict of parent attributes.
         attrs = {}
         if self.status is not None:
             attrs['status'] = self.status
         elements = []
-        # Org ref
-        if self.has_org_ref:
-            org_ref_or_description_e = self.org_ref_or_description.serialize_xml()
-        else:
-            org_ref_or_description_e = E('description')
-            org_ref_or_description_e.text = self.org_ref_or_description
-        elements.append(org_ref_or_description_e)
+        # description(s)
+        for description in self.descriptions:
+            if isinstance(description, RefElement):
+                description_e = description.serialize_xml()
+            else:
+                description_e = E('description')
+                description_e.text = description
+            elements.append(description_e)
         # <value>
         value_e = E('value')
         value_e.text = self.id_value
         elements.append(value_e)
+        # note list
+        opt_note_list_e = self.opt_note_list.serialize_xml()
+        if opt_note_list_e is not None:
+            elements.append(opt_note_list_e)
         return elements, attrs
