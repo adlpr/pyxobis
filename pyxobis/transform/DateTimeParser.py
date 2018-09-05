@@ -8,7 +8,7 @@ from .tf_common import *
 
 # Default starting and ending Time Types by PE type
 DEFAULT_TIME_TYPES = {
-    None  : ("",""),
+    None  : ("", ""),
     BEING : ("Born", "Died"),
     EVENT : ("Began", "Ended"),
     ORGANIZATION : ("Began", "Ended"),

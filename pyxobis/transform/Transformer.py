@@ -19,10 +19,10 @@ class Transformer:
         self.ix = Indexer()
         self.dp = DateTimeParser()
         self.np = NameParser()
-        self.lane_org_ref = self.__build_simple_org_ref("Lane Medical Library")
-        self.lc_org_ref   = self.__build_simple_org_ref("Library of Congress")
-        self.nlm_org_ref  = self.__build_simple_org_ref("National Library of Medicine (U.S.)")
-        self.oclc_org_ref = self.__build_simple_org_ref("OCLC")
+        self.lane_org_ref = self.build_simple_org_ref("Lane Medical Library")
+        self.lc_org_ref   = self.build_simple_org_ref("Library of Congress")
+        self.nlm_org_ref  = self.build_simple_org_ref("National Library of Medicine (U.S.)")
+        self.oclc_org_ref = self.build_simple_org_ref("OCLC")
 
     def transform(self, record):
         record.__class__ = LaneMARCRecord
@@ -713,17 +713,25 @@ class Transformer:
     transform_relationships_bib = transform_relationships_bib
 
 
-    def __build_simple_org_ref(self, name):
+    # should unite this repeated code into a single method
+
+    def build_simple_org_ref(self, name):
         orb = OrganizationRefBuilder()
         orb.set_link(name, self.ix.simple_lookup(name, ORGANIZATION))
         orb.add_name(name)
         return orb.build()
 
-    def __build_simple_work_inst_ref(self, name):
+    def build_simple_work_inst_ref(self, name):
         wrb = WorkRefBuilder()
         wrb.set_link(name, self.ix.simple_lookup(name, WORK_INST))
         wrb.add_name(name)
         return wrb.build()
+
+    def build_simple_string_ref(self, val):
+        srb = StringRefBuilder()
+        srb.set_link(val, self.ix.simple_lookup(val, STRING))
+        srb.add_name(val)
+        return srb.build()
 
 
     def process_id_alternates(self, record, rb):
@@ -777,7 +785,7 @@ class Transformer:
             if field.indicator1 == '7':
                 id_source = field['2'] if '2' in field else 'unknown'
                 if id_source.strip().lower() == 'doi':
-                    id_description = self.__build_simple_org_ref("International DOI Foundation")
+                    id_description = self.build_simple_org_ref("International DOI Foundation")
                 else:
                     id_description = "Standard identifier; source: {}".format(id_source)
             else:
@@ -855,11 +863,11 @@ class Transformer:
                     elif val_lower.startswith("(ocolc)"):
                         id_desc = self.oclc_org_ref
                     elif val_lower.startswith("(pmid)"):
-                        id_desc = self.__build_simple_work_inst_ref("PubMed")
+                        id_desc = self.build_simple_work_inst_ref("PubMed")
                     elif val_lower.startswith("(orcid)"):
-                        id_desc = self.__build_simple_org_ref("ORCID Initiative")
+                        id_desc = self.build_simple_org_ref("ORCID Initiative")
                     elif val_lower.startswith("(stanf)"):
-                        id_desc = "Stanford University ID"
+                        id_desc = self.build_simple_org_ref("Stanford University")
                     elif val_lower.startswith("(ssn)"):
                         orb = OrganizationRefBuilder()
                         orb.add_prequalifier("United States")
@@ -868,9 +876,9 @@ class Transformer:
                         orb.add_name("Social Security Administration")
                         id_desc = orb.build()
                     elif val_lower.startswith("(laneconnex)"):
-                        id_desc = self.__build_simple_work_inst_ref("LaneConnex")
+                        id_desc = self.build_simple_work_inst_ref("LaneConnex")
                     elif val_lower.startswith("(bassett)"):
-                        id_desc = self.__build_simple_work_inst_ref("Bassett collection of stereoscopic images of human anatomy")
+                        id_desc = self.build_simple_work_inst_ref("Bassett collection of stereoscopic images of human anatomy")
                     elif val_lower.startswith("(geonameid)"):
                         id_desc = "GeoNames"
                     elif val_lower.startswith("(isni)"):
@@ -1051,9 +1059,9 @@ class Transformer:
 
     def get_linking_info(self, field, element_type):
         """
-        Get the control number the given field refers to,
-        and a string representation of its authorized heading,
-        if there is one (if not, generate a representation from the field).
+        Return a string representation of the authorized heading of the record
+        the given field refers to, and the record's control number,
+        if there is such a record (if not, generate a representation from the field).
         """
         ctrlno = self.ix.lookup(field, element_type)
         if ctrlno in (Indexer.UNVERIFIED, Indexer.CONFLICT):
@@ -1064,4 +1072,4 @@ class Transformer:
             id_subfs = self.ix.reverse_lookup(ctrlno)
         # this part could be altered to use ISBD punctuation?
         id_repr = ' '.join(filter(None, id_subfs[1::2]))
-        return ctrlno, id_repr
+        return id_repr, ctrlno

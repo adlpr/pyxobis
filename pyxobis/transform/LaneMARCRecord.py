@@ -18,7 +18,7 @@ class LaneMARCRecord(Record):
         elif '852' in self:
             # Holdings don't currently have them; build from 001 instead
             return 'H' + self['001'].data
-        # TEMPORARY: PASS ANY RECORD THAT DOESN'T HAVE 035 9 INSERTED
+        # @@@ TEMPORARY: PASS ANY RECORD THAT DOESN'T HAVE 035 9 INSERTED
         return None
 
     def get_primary_categories(self):
@@ -33,6 +33,7 @@ class LaneMARCRecord(Record):
             return None
         elif len(broad_categories) > 1:
             print("WARNING: record {} has more than one broad category (655 47)".format(self['001'].data))
+            return None
         return broad_categories.pop()
 
     def get_subsets(self):
@@ -45,6 +46,9 @@ class LaneMARCRecord(Record):
         if '008' not in self:
             return None
         return self['008'].data[9] in 'bce' or 'Unestablished' in self.get_subsets()
+
+    def is_monographic(self):
+        return self.get_broad_category() in ("Book Sets", "Books", "Pamphlets", "Leaflets", "Documents", "Components")
 
     ID_FIELDS = ('149','100','110','111','130','150','151','155','180','182','852')
 

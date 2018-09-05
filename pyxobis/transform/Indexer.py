@@ -62,7 +62,7 @@ class Indexer:
         index, index_variants = {}, {}
         conflicts, conflicts_variants = set(), set()
         # reverse index (ctrl number --> authorized form string)
-        index_reverse = {}
+        index_reverse = { UNVERIFIED: None, CONFLICT: None }
         # relationship type index (relationship name --> list of types)
         index_rel_type = {}
         all_rel_types = set(["Subordinate", "Superordinate", "Preordinate",
@@ -171,6 +171,13 @@ class Indexer:
         if main_entry is None:
             return None
         return main_entry.split(LaneMARCRecord.UNNORMALIZED_SEP)
+
+    def lookup_rel_types(self, rel_name):
+        # get rid of Equivalence (only used for Variant Types, not Relationships)
+        rel_types = self.index_rel_type.get(rel_name)
+        if rel_types is None:
+            return []
+        return sorted(list(set(rel_types) - set(["Equivalence"])))
 
     def element_type_from_value(self, field):
         """

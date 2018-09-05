@@ -59,7 +59,7 @@
 set_lang ( lang )
 
 # Organization/Work owning/managing the record, or text description of the ID
-add_id_description( id_description )  # OrganizationRef or WorkRef or str
+add_id_description ( id_description )  # OrganizationRef or WorkRef or str
 
 # Record ID.
 set_id_value ( id_value )  # str
@@ -68,26 +68,26 @@ set_id_value ( id_value )  # str
 set_id_status ( id_status )  # "valid", "invalid", "cancelled", "incorrect", "valid linking", "invalid linking", "cancelled linking", "incorrect linking", None
 
 # note on main record ID
-add_id_note( content_text,
-             content_lang = None,
-             class_ = None,
-             link_title = None,
-             href_URI = None,
-             set_URI = None )
+add_id_note ( content_text,
+              content_lang = None,
+              class_ = None,
+              link_title = None,
+              href_URI = None,
+              set_URI = None )
 
 # Other record IDs (LCCN, etc.).
-set_id_alternate( id_descriptions,
-                  id_value,
-                  id_status = None )
+set_id_alternate ( id_descriptions,
+                   id_value,
+                   id_status = None )
 
-add_id_alternate_note( content_text,
-                       content_lang = None,
-                       class_ = None,
-                       link_title = None,
-                       href_URI = None,
-                       set_URI = None )
+add_id_alternate_note ( content_text,
+                        content_lang = None,
+                        class_ = None,
+                        link_title = None,
+                        href_URI = None,
+                        set_URI = None )
 
-add_id_alternate( *args )  # if args, equivalent to set_id_alternate(*args); add_id_alternate()
+add_id_alternate ( *args )  # if args, equivalent to set_id_alternate(*args); add_id_alternate()
 
 # Type of record (e.g. original, derivative, suppressed?)
 add_type ( xlink_title = None,  # str
