@@ -28,11 +28,12 @@ class LaneMARCRecord(Record):
         # returns 655 47 ^a if record has exactly one, otherwise prints warning
         broad_categories = [field['a'] for field in self.get_fields('655') if field.indicator1 == '4']
         if not broad_categories:
-            print("WARNING: record {} has no broad category (655 47)".format(self['001'].data))
-            broad_categories.append(None)
+            if '852' not in self:
+                print("WARNING: record {} has no broad category (655 47)".format(self['001'].data))
+            return None
         elif len(broad_categories) > 1:
             print("WARNING: record {} has more than one broad category (655 47)".format(self['001'].data))
-        return broad_categories[0]
+        return broad_categories.pop()
 
     def get_subsets(self):
         return [val for field in self.get_fields('655') for val in field.get_subfields('a') if field.indicator1 in '78']
@@ -132,9 +133,12 @@ class LaneMARCRecord(Record):
                               if identity_string else None
         return ctrlno, element_type, identity_string, authorized_form
 
-    IDENTITY_SUBFIELD_MAP = { WORK_INST:    'adhklnpqs',   # X49
-                              OBJECT:       'adhklnpqs',   # X49
-                              WORK_AUT:     'adfghklnpqs', # X30
+    IDENTITY_SUBFIELD_MAP = { WORK_INST:    'adklnpqs',   # X49
+                              OBJECT:       'adklnpqs',   # X49
+                              WORK_AUT:     'adfgklnpqs', # X30
+                              # WORK_INST:    'adhklnpqs',   # X49 + h (medium)
+                              # OBJECT:       'adhklnpqs',   # X49 + h (medium)
+                              # WORK_AUT:     'adfghklnpqs', # X30 + h (medium)
                               BEING:        'abcdq',       # X00
                               ORGANIZATION: 'abcdn',       # X10
                               EVENT:        'acden',       # X11
@@ -163,14 +167,14 @@ class LaneMARCRecord(Record):
 
     def get_variant_fields_and_types(self):
         """
-        Returns list of element types and fields
+        Returns list of fields and their element types
         for variant entries of this record.
         """
-        variant_fields_with_type = []
+        variant_fields_and_types = []
         for variant_field in self.get_variant_fields():
             element_type = self.get_xobis_element_type(variant_field.tag)
-            variant_fields_with_type.append((variant_field, element_type))
-        return variant_fields_with_type
+            variant_fields_and_types.append((variant_field, element_type))
+        return variant_fields_and_types
 
     def get_variant_types_and_ids(self, normalized=True):
         """
@@ -178,12 +182,15 @@ class LaneMARCRecord(Record):
         for variant entries of this record.
         """
         variant_types_and_ids = []
-        for element_type, variant_field in self.get_variant_fields_and_types():
+        for variant_field, element_type in self.get_variant_fields_and_types():
             variant_id_string = self.get_identity_from_field( variant_field, \
                                                              element_type, \
                                                              normalized )
             variant_types_and_ids.append((element_type, variant_id_string))
         return variant_types_and_ids
+
+    NORMALIZED_SEP = ','
+    UNNORMALIZED_SEP = '\t'
 
     @classmethod
     def get_identity_from_field(cls, field, element_type, normalized=True):
@@ -210,12 +217,12 @@ class LaneMARCRecord(Record):
                 else:
                     identity.append(code)
                     identity.append('')
-            sep = ','
+            sep = cls.NORMALIZED_SEP
         else:
             # if no normalization, only include what's in the field, in the original order
             # this isn't really an "identity," it's really being used to record an authorized form
             identity = [code_or_val for code_and_val in field.get_subfields(*list(subfield_codes), with_codes=True) for code_or_val in code_and_val]
-            sep = '\t'
+            sep = cls.UNNORMALIZED_SEP
         if not ''.join(identity[1::2]):
             return None
         return sep.join(identity)

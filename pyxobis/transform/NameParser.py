@@ -4,7 +4,7 @@
 import regex as re
 from pymarc import Field
 from pyxobis.builders import *
-from .Indexer import Indexer, UNVERIFIED
+from .Indexer import Indexer
 from .DateTimeParser import DateTimeParser
 from .PlaceNormalizer import PlaceNormalizer
 from .tf_common import *
@@ -742,7 +742,7 @@ class NameParser:
                 bespoke_subfields = [sf_part for i,val_subpart in enumerate(val_part.split('. ')) for sf_part in ('a' if i==0 else 'b', val_subpart)]
                 bespoke_field = Field('   ','  ',bespoke_subfields)
                 lookup_as_org = self.ix.lookup(bespoke_field, ORGANIZATION)
-                if lookup_as_org != UNVERIFIED:
+                if lookup_as_org != Indexer.UNVERIFIED:
                     # yes, this is a subdivided org
                     orb = OrganizationRefBuilder()
                     orb.set_link( val_part,

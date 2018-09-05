@@ -79,10 +79,10 @@ class PrincipalElementBuilder(Builder):
     #     super().add_qualifier(*args, **kwargs)
     def add_variant(self, variant):
         self.variants.append(variant)
-    def add_note(self, content_text, content_lang=None, class_=None, link_title=None, href_URI=None, set_URI=None):
+    def add_note(self, content_text, content_lang=None, type=None, link_title=None, href_URI=None, set_URI=None):
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
-            class_ = class_,  # ["transcription", "annotation", "documentation", "description", None]
+            type = type,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
             set_ref = XSDAnyURI(set_URI) if set_URI else None

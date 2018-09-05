@@ -14,23 +14,26 @@ from tqdm import tqdm
 
 INDEX = None
 INDEX_REVERSE = None
+INDEX_REL_TYPE = None
 
 # @@@@@@ TEMPORARY, ONLY WORKS FROM DIR WITH THESE FILES,
 #        DO SOMETHING BETTER WITH INPUT FILENAMES
-BIB_INF_NAME = "bibmfhd.20180716.1009"
-AUT_INF_NAME = "aut.20180730.0924"
+BIB_INF_NAME = "bibmfhd.20180904.1448"
+AUT_INF_NAME = "aut.20180904.1455"
 
-# constants for lookups unable to be resolved,
-# either due to conflict or having no match
-CONFLICT   = "conflict"
-UNVERIFIED = "unverified"
 
 class Indexer:
+    # constants for lookups unable to be resolved,
+    # either due to conflict or having no match
+    CONFLICT   = "conflict"
+    UNVERIFIED = "unverified"
+
     def __init__(self, inf_names=(BIB_INF_NAME, AUT_INF_NAME)):
-        # Store index as json
-        global INDEX, INDEX_REVERSE
+        # Store index as json (for now, maybe change to pickle later?)
+        global INDEX, INDEX_REVERSE, INDEX_REL_TYPE
         self.index, self.index_reverse = INDEX, INDEX_REVERSE
-        if INDEX is None or INDEX_REVERSE is None:
+        self.index_rel_type = INDEX_REL_TYPE
+        if not all((INDEX, INDEX_REVERSE, INDEX_REL_TYPE)):
             # read index from file, or generate it
             import json
             try:
@@ -38,13 +41,18 @@ class Indexer:
                     self.index = json.load(inf)
                 with open("index_reverse.json",'r') as inf:
                     self.index_reverse = json.load(inf)
+                with open("index_rel_type.json",'r') as inf:
+                    self.index_rel_type = json.load(inf)
             except:
                 self.__generate_index(inf_names)
                 with open("index.json",'w') as outf:
                     json.dump(self.index, outf)
                 with open("index_reverse.json",'w') as outf:
                     json.dump(self.index_reverse, outf)
+                with open("index_rel_type.json",'w') as outf:
+                    json.dump(self.index_rel_type, outf)
             INDEX, INDEX_REVERSE = self.index, self.index_reverse
+            INDEX_REL_TYPE = self.index_rel_type
 
     def __generate_index(self, inf_names):
         # Generate index from given input MARC files.
@@ -55,12 +63,25 @@ class Indexer:
         conflicts, conflicts_variants = set(), set()
         # reverse index (ctrl number --> authorized form string)
         index_reverse = {}
+        # relationship type index (relationship name --> list of types)
+        index_rel_type = {}
+        all_rel_types = set(["Subordinate", "Superordinate", "Preordinate",
+            "Postordinate", "Associative", "Dissociative", "Equivalence"])
 
         for inf_name in inf_names:
             with open(inf_name,'rb') as inf:
                 reader = MARCReader(inf)
                 for record in tqdm(reader):
+                # for record in reader:
                     record.__class__ = LaneMARCRecord
+
+                    # if relationship, add to rel type index
+                    if record.get_broad_category() == 'Relationships':
+                        rel_types = sorted(list(all_rel_types & set(record.get_all_categories())))
+                        rel_name = record['155']['a']
+                        index_rel_type[rel_name] = rel_types
+
+                    # main indices
                     ctrlno, element_type, id_string, auth_form = record.get_identity_information()
                     if element_type and id_string:
                         # Record has a valid identity, add to indices
@@ -88,10 +109,10 @@ class Indexer:
         # Go back and mark conflicts:
         # Conflicts within main identities
         for element_type, conflict in conflicts:
-            index[element_type][conflict] = CONFLICT
+            index[element_type][conflict] = self.CONFLICT
         # Conflicts within variant identities
         for element_type, conflict in conflicts_variants:
-            index_variants[element_type][conflict] = CONFLICT
+            index_variants[element_type][conflict] = self.CONFLICT
         # If a variant identity is the same as a main identity,
         # the main one wins out
         for element_type, id_map in index.items():
@@ -108,6 +129,7 @@ class Indexer:
                 index[element_type].update(index_variants[element_type])
 
         self.index, self.index_reverse = index, index_reverse
+        self.index_rel_type = index_rel_type
 
     def lookup(self, field, element_type):
         """
@@ -119,7 +141,7 @@ class Indexer:
         assert element_type in self.index, "element type {} not indexed".format(element_type)
         identity = LaneMARCRecord.get_identity_from_field(field, element_type)
         value = self.index[element_type].get(identity)
-        return value if value is not None else UNVERIFIED
+        return self.UNVERIFIED if value is None else value
 
     def simple_lookup(self, text, element_type=None):
         """
@@ -134,10 +156,21 @@ class Indexer:
         """
         element_type = element_type or self.element_type_from_value(text)
         if element_type is None:
-            return UNVERIFIED
+            return self.UNVERIFIED
         assert element_type in self.index, "element type {} not indexed".format(element_type)
         subf = LaneMARCRecord.IDENTITY_SUBFIELD_MAP[element_type][0]
         return self.lookup(Field('   ','  ',[subf, text]), element_type)
+
+    def reverse_lookup(self, ctrlno):
+        """
+        Given a control number, return identity subfield list of the main entry
+        of the associated record,
+        or None if not found.
+        """
+        main_entry = self.index_reverse.get(ctrlno)
+        if main_entry is None:
+            return None
+        return main_entry.split(LaneMARCRecord.UNNORMALIZED_SEP)
 
     def element_type_from_value(self, field):
         """
@@ -162,4 +195,4 @@ class Indexer:
         return results[0] if len(results) == 1 else None
 
     def list_conflicts(self):
-        return { element_type : [identity for identity, value in index.items() if value == CONFLICT] for element_type, index in self.index.items() }
+        return { element_type : [identity for identity, value in index.items() if value == self.CONFLICT] for element_type, index in self.index.items() }

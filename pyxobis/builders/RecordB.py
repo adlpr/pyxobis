@@ -14,6 +14,10 @@ class RecordBuilder:
         self.id_value = None
         self.id_status = None
         self.id_alternates = []
+        self.current_id_alternate_descriptions = []
+        self.current_id_alternate_value = None
+        self.current_id_alternate_status = None
+        self.current_id_alternate_notes = []
         self.types = []
         self.actions = []
         self.principal_element = None
@@ -35,10 +39,34 @@ class RecordBuilder:
                               if link_title else None,
             set_ref = XSDAnyURI(set_URI) if set_URI else None
         ))
-    def add_id_alternate(self, id_descriptions, id_value, id_status=None, opt_note_list=OptNoteList()):
+    def set_id_alternate(self, id_descriptions, id_value, id_status=None):
         if not isinstance(id_descriptions, list):
             id_descriptions = [id_descriptions]
-            self.id_alternates.append( IDContent(id_descriptions, id_value, id_status, opt_note_list) )
+        self.current_id_alternate_descriptions = id_descriptions
+        self.current_id_alternate_value = id_value
+        self.current_id_alternate_status = id_status
+    def add_id_alternate_note(self, content_text, content_lang=None, type=None, link_title=None, href_URI=None, set_URI=None):
+        self.current_id_alternate_notes.append(Note(
+            GenericContent(content_text, content_lang),
+            type = type,  # ["transcription", "annotation", "documentation", "description", None]
+            link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
+                              if link_title else None,
+            set_ref = XSDAnyURI(set_URI) if set_URI else None
+        ))
+    def add_id_alternate(self, *args):
+        # this set of methods is extremely awkward, maybe figure something better out
+        if args:
+            self.set_id_alternate(*args)
+            self.add_id_alternate()
+        else:
+            self.id_alternates.append( IDContent(self.current_id_alternate_descriptions,
+                                                 self.current_id_alternate_value,
+                                                 self.current_id_alternate_status,
+                                                 OptNoteList(self.current_id_alternate_notes) ) )
+            self.current_id_alternate_descriptions = []
+            self.current_id_alternate_value = None
+            self.current_id_alternate_status = None
+            self.current_id_alternate_notes = []
     def add_type(self, xlink_title=None, xlink_href=None, set_ref=None):
         self.types.append(
             GenericType( LinkAttributes(xlink_title, XSDAnyURI(xlink_href)  \

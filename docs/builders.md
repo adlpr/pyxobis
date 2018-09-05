@@ -76,10 +76,18 @@ add_id_note( content_text,
              set_URI = None )
 
 # Other record IDs (LCCN, etc.).
-add_id_alternate ( id_descriptions,
-                   id_value,
-                   id_status = None,
-                   opt_note_list = OptNoteList() )
+set_id_alternate( id_descriptions,
+                  id_value,
+                  id_status = None )
+
+add_id_alternate_note( content_text,
+                       content_lang = None,
+                       class_ = None,
+                       link_title = None,
+                       href_URI = None,
+                       set_URI = None )
+
+add_id_alternate( *args )  # if args, equivalent to set_id_alternate(*args); add_id_alternate()
 
 # Type of record (e.g. original, derivative, suppressed?)
 add_type ( xlink_title = None,  # str
@@ -169,7 +177,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -217,7 +225,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -250,7 +258,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -302,7 +310,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -337,7 +345,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -381,7 +389,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -412,7 +420,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -464,7 +472,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -499,7 +507,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -545,7 +553,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -580,7 +588,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -636,7 +644,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -669,7 +677,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -716,7 +724,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -752,7 +760,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -826,7 +834,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -867,7 +875,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -1005,7 +1013,7 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -1041,7 +1049,7 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,  # transcription, annotation, documentation, description
+           type = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
            set_URI = None )
@@ -1072,9 +1080,12 @@ set_degree ( degree )  # "primary", "secondary", None ; if target is ConceptRef 
 set_name ( name_text,
            name_lang = None )
 
-set_modifier ( modifier_text,
-              modifier_lang = None,
-              modifier_nonfiling = 0 )
+add_note ( content_text,
+           content_lang = None,
+           type = None,  # transcription, annotation, documentation, description
+           link_title = None,
+           href_URI = None,
+           set_URI = None )
 
 set_enumeration ( enumeration )  # StringRef
 

@@ -5,6 +5,7 @@ from .common import *
 from .Time import TimeRef, DurationRef
 from .Organization import OrganizationRef
 from .Work import WorkRef
+from .Relationship import Relationship
 
 from lxml.builder import ElementMaker
 E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",

@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from .common import Component, GenericContent, RefElement
+from .common import Component, GenericContent, RefElement, OptNoteList
 from .Time import TimeRef, DurationRef
+from .Concept import ConceptRef
+from .String import StringRef
 
 from lxml.builder import ElementMaker
 E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",
@@ -107,24 +109,25 @@ class RelationshipName(Component):
             attribute nonfiling { xsd:positiveInteger }?,
             genericContent
         }?
+    relationshipName |=
+        element xobis:name { genericContent },
+        optNoteList
     """
-    def __init__(self, name_content, modifier_nonfiling=0, modifier_content=None):
+    def __init__(self, name_content, opt_note_list=OptNoteList()):
         assert isinstance(name_content, GenericContent)
         self.name_content = name_content
-        assert isinstance(modifier_nonfiling, int) and modifier_nonfiling >= 0
-        self.modifier_nonfiling = modifier_nonfiling
-        if modifier_content: assert isinstance(modifier_content, GenericContent)
-        self.modifier_content = modifier_content
+        assert isinstance(opt_note_list, OptNoteList)
+        self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns a list of one or two Elements.
         elements = []
+        # name
         name_content_text, name_content_attrs = self.name_content.serialize_xml()
         name_e = E('name', **name_content_attrs)
         name_e.text = name_content_text
         elements.append(name_e)
-        if self.modifier_content:
-            modifier_content_elements, modifier_content_attrs = self.modifier_content.serialize_xml()
-            modifier_e = E('modifier', **modifier_content_attrs)
-            modifier_e.extend(modifier_content_elements)
-            elements.append(modifier_e)
+        # note list
+        opt_note_list_e = self.opt_note_list.serialize_xml()
+        if opt_note_list_e is not None:
+            elements.append(opt_note_list_e)
         return elements
