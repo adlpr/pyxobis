@@ -493,7 +493,7 @@ class NameParser:
         """
         Parse a X30 field containing a Work aut name into:
         - a list of either names as kwarg dicts or qualifiers as RefElement objects,
-        to pass into a Builder.
+        to pass into a WorkBuilder.
         """
         field_lang, field_script = field['3'], field['4']
         nonfiling = int(field.indicator2) if field.indicator2.isdigit() else 0
@@ -564,7 +564,7 @@ class NameParser:
         """
         Parse a 149 field containing a Work inst main entry name into:
         - a list of either names as kwarg dicts or qualifiers as RefElement objects,
-        to pass into a Builder.
+        to pass into a WorkBuilder.
         """
         field_lang, field_script = field['3'], field['4']
         # ^1  Nonfiling characters (articles, punct., etc. excluded from filing) (NR)

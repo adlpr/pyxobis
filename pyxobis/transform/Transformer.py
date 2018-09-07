@@ -113,7 +113,8 @@ class Transformer:
         # Fix 149 ^1 on bib records if necessary
         record = self.__reconstruct_149_subf_1(record)
 
-        if element_type != HOLDINGS:
+        # if element_type != HOLDINGS:
+        if element_type not in (HOLDINGS, OBJECT):
 
             init_builder, parse_name = {
                 WORK_INST    : (self.init_work_instance_builder, self.np.parse_work_instance_main_name),
@@ -721,6 +722,12 @@ class Transformer:
         orb.add_name(name)
         return orb.build()
 
+    def build_simple_place_ref(self, name):
+        prb = PlaceRefBuilder()
+        prb.set_link(name, self.ix.simple_lookup(name, PLACE))
+        prb.add_name(name)
+        return prb.build()
+
     def build_simple_work_inst_ref(self, name):
         wrb = WorkRefBuilder()
         wrb.set_link(name, self.ix.simple_lookup(name, WORK_INST))
@@ -870,7 +877,7 @@ class Transformer:
                         id_desc = self.build_simple_org_ref("Stanford University")
                     elif val_lower.startswith("(ssn)"):
                         orb = OrganizationRefBuilder()
-                        orb.add_prequalifier("United States")
+                        orb.add_prequalifier(self.build_simple_place_ref("United States"))
                         # warning: hardcoded id!
                         orb.set_link("Social Security Administration", "Z32655")
                         orb.add_name("Social Security Administration")

@@ -62,7 +62,7 @@ class Indexer:
         index, index_variants = {}, {}
         conflicts, conflicts_variants = set(), set()
         # reverse index (ctrl number --> authorized form string)
-        index_reverse = { UNVERIFIED: None, CONFLICT: None }
+        index_reverse = { self.UNVERIFIED: None, self.CONFLICT: None }
         # relationship type index (relationship name --> list of types)
         index_rel_type = {}
         all_rel_types = set(["Subordinate", "Superordinate", "Preordinate",

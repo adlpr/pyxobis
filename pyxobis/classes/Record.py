@@ -9,7 +9,7 @@ from .Relationship import Relationship
 
 from lxml.builder import ElementMaker
 E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",
-                 nsmap={'xobis':"http://www.xobis.info/ns/2.0/"})
+                 nsmap={None:"http://www.xobis.info/ns/2.0/"})
 
 
 class Record(Component):

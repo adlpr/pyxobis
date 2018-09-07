@@ -6,7 +6,7 @@ from .common import *
 from lxml.builder import ElementMaker
 from lxml.etree import _Element
 NSMAP = {'xsi':"http://www.w3.org/2001/XMLSchema-instance",
-         'xobis':"http://www.xobis.info/ns/2.0/"}
+         None:"http://www.xobis.info/ns/2.0/"}
 E = ElementMaker(namespace="",
                  nsmap=NSMAP)
 

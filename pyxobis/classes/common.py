@@ -2,9 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 from lxml.builder import ElementMaker
-nsmap={'xobis':"http://www.xobis.info/ns/2.0/"}
 E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",
-                 nsmap=nsmap)
+                 nsmap={None:"http://www.xobis.info/ns/2.0/"})
 
 class Component:
     """
