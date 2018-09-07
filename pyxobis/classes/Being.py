@@ -6,8 +6,7 @@ from .Time import TimeRef, DurationRef
 
 from lxml.builder import ElementMaker
 E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",
-                 nsmap={'xobis':"http://www.xobis.info/ns/2.0/",
-                        'xlink':"https://www.w3.org/1999/xlink"})
+                 nsmap={'xobis':"http://www.xobis.info/ns/2.0/"})
 
 
 class Being(PrincipalElement):

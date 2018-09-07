@@ -509,8 +509,8 @@ class Transformer:
         for val in id_field.get_subfields('g'):
             sb.add_pos( pos_text    = val,
                         pos_lang    = field_lang,
-                        xlink_title = None,  # we don't have these established yet
-                        xlink_href  = None )
+                        title = None,  # we don't have these established yet
+                        href  = None )
 
         # ENTRY GROUP
         # ---
@@ -1070,6 +1070,6 @@ class Transformer:
         else:
             # heading should exist in reverse index, look it up
             id_subfs = self.ix.reverse_lookup(ctrlno)
-        # this part could be altered to use ISBD punctuation?
+        # @@@ this part could be altered to use ISBD punctuation?
         id_repr = ' '.join(filter(None, id_subfs[1::2]))
         return id_repr, ctrlno

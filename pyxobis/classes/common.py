@@ -2,8 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from lxml.builder import ElementMaker
-nsmap={'xobis':"http://www.xobis.info/ns/2.0/",
-       'xlink':"https://www.w3.org/1999/xlink"}
+nsmap={'xobis':"http://www.xobis.info/ns/2.0/"}
 E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",
                  nsmap=nsmap)
 
@@ -213,21 +212,21 @@ class GenericType(Component):
 class LinkAttributes(Component):
     """
     linkAttributes |=
-        attribute xlink:href { xsd:anyURI }?,
-        attribute xlink:title { text }
+        attribute href { xsd:anyURI }?,
+        attribute title { text }
     """
-    def __init__(self, xlink_title, xlink_href=None):
-        if xlink_href:
-            assert isinstance(xlink_href, XSDAnyURI)
-        self.xlink_href = xlink_href
-        self.xlink_title = xlink_title
+    def __init__(self, title, href=None):
+        if href:
+            assert isinstance(href, XSDAnyURI)
+        self.href = href
+        self.title = title
     def serialize_xml(self):
         # Returns a dict of parent attributes.
         attrs = {}
-        if self.xlink_href:
-            xlink_href_text = self.xlink_href.serialize_xml()
-            attrs['{%s}href' % nsmap['xlink']] = xlink_href_text
-        attrs['{%s}title' % nsmap['xlink']] = self.xlink_title
+        if self.href:
+            href_text = self.href.serialize_xml()
+            attrs['href'] = href_text
+        attrs['title'] = self.title
         return attrs
 
 

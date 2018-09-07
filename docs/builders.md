@@ -90,15 +90,15 @@ add_id_alternate_note ( content_text,
 add_id_alternate ( *args )  # if args, equivalent to set_id_alternate(*args); add_id_alternate()
 
 # Type of record (e.g. original, derivative, suppressed?)
-add_type ( xlink_title = None,  # str
-           xlink_href = None,   # URI
+add_type ( title = None,  # str
+           href = None,   # URI
            set_ref = None )  # URI  [Subset(?)]
 
 set_principal_element ( principal_element )  # PrincipalElement
 
 add_action ( time_or_duration_ref,  # TimeRef or DurationRef
-             xlink_title = None,    # str
-             xlink_href = None,     # str (URI)
+             title = None,    # str
+             href = None,     # str (URI)
              set_ref = None )    # str (URI)  [*Action Type(?)]
 
 add_relationship ( relationship )   # Relationship
@@ -715,8 +715,8 @@ add_name ( name_text,
 
 add_pos ( pos_text,
           pos_lang = None,
-          xlink_title = None,
-          xlink_href = None )
+          title = None,
+          href = None )
 
 add_qualifier ( qualifier )  # RefElement
 
@@ -753,8 +753,8 @@ add_name ( name_text,
 
 add_pos ( pos_text,
           pos_lang = None,
-          xlink_title = None,
-          xlink_href = None )
+          title = None,
+          href = None )
 
 add_qualifier ( qualifier )  # RefElement
 
@@ -778,8 +778,8 @@ add_name ( name_text,
 
 add_pos ( pos_text,
           pos_lang = None,
-          xlink_title = None,
-          xlink_href = None )
+          title = None,
+          href = None )
 
 add_qualifier ( qualifier )  # RefElement
 ```

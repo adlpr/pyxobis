@@ -25,7 +25,7 @@ class BeingBuilder(PrincipalElementBuilder):
         self.entry_type = GenericType(
                               LinkAttributes(
                                   link_title,
-                                  xlink_href = XSDAnyURI( href_URI ) \
+                                  href = XSDAnyURI( href_URI ) \
                                                if href_URI else None
                               ),
                               set_ref = XSDAnyURI( set_URI ) \

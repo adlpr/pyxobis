@@ -33,7 +33,7 @@ class ObjectBuilder(PrincipalElementBuilder):
                        else self.name_content
         organization_link_attributes = LinkAttributes(
                         self.organization_link_title,
-                        xlink_href = XSDAnyURI(self.organization_link_href) \
+                        href = XSDAnyURI(self.organization_link_href) \
                                      if self.organization_link_href else None
             ) if self.organization_link_title else None
         organization_id_content = GenericContent(

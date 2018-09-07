@@ -67,22 +67,22 @@ class RecordBuilder:
             self.current_id_alternate_value = None
             self.current_id_alternate_status = None
             self.current_id_alternate_notes = []
-    def add_type(self, xlink_title=None, xlink_href=None, set_ref=None):
+    def add_type(self, title=None, href=None, set_ref=None):
         self.types.append(
-            GenericType( LinkAttributes(xlink_title, XSDAnyURI(xlink_href)  \
-                                                  if xlink_href else None)  \
-                      if xlink_title else None,
+            GenericType( LinkAttributes(title, XSDAnyURI(href)  \
+                                                  if href else None)  \
+                      if title else None,
                   XSDAnyURI(set_ref) if set_ref else None )
         )
     def set_principal_element(self, principal_element):
         # assert isinstance(principal_element, RefElement)
         self.principal_element = principal_element
-    def add_action(self, time_or_duration_ref, xlink_title=None, xlink_href=None, set_ref=None):
+    def add_action(self, time_or_duration_ref, title=None, href=None, set_ref=None):
         self.actions.append(
             ControlDataAction(
-                GenericType( LinkAttributes(xlink_title, XSDAnyURI(xlink_href)  \
-                                                      if xlink_href else None)  \
-                          if xlink_title else None,
+                GenericType( LinkAttributes(title, XSDAnyURI(href)  \
+                                                      if href else None)  \
+                          if title else None,
                       XSDAnyURI(set_ref) if set_ref else None ),
                 time_or_duration_ref
             )

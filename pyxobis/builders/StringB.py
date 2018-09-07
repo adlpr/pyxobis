@@ -21,11 +21,11 @@ class StringBuilder(PrincipalElementBuilder):
         raise AttributeError("String element does not have property 'scheme'")
     def set_usage(self, *args, **kwargs):
         raise AttributeError("String element does not have property 'usage'")
-    def add_pos(self, pos_text, pos_lang=None, xlink_title=None, xlink_href=None):
+    def add_pos(self, pos_text, pos_lang=None, title=None, href=None):
         self.parts_of_speech.append(
             PartOfSpeech(
                 GenericContent(pos_text, pos_lang),
-                LinkAttributes(xlink_title, xlink_href) if xlink_title else None
+                LinkAttributes(title, href) if title else None
             )
         )
     def build(self):
@@ -58,11 +58,11 @@ class StringVariantBuilder(PrincipalElementVariantBuilder):
         self.parts_of_speech = []
     def set_scheme(self, *args, **kwargs):
         raise AttributeError("StringVariant element does not have property 'scheme'")
-    def add_pos(self, pos_text, pos_lang=None, xlink_title=None, xlink_href=None):
+    def add_pos(self, pos_text, pos_lang=None, title=None, href=None):
         self.parts_of_speech.append(
             PartOfSpeech(
                 GenericContent(pos_text, pos_lang),
-                LinkAttributes(xlink_title, xlink_href) if xlink_title else None
+                LinkAttributes(title, href) if title else None
             )
         )
     def build(self):
@@ -96,11 +96,11 @@ class StringRefBuilder(PrincipalElementRefBuilder):
         self.parts_of_speech = []
     def add_subdivision_link(self, *args, **kwargs):
         raise AttributeError("String element ref does not have subdivisions")
-    def add_pos(self, pos_text, pos_lang=None, xlink_title=None, xlink_href=None):
+    def add_pos(self, pos_text, pos_lang=None, title=None, href=None):
         self.parts_of_speech.append(
             PartOfSpeech(
                 GenericContent(pos_text, pos_lang),
-                LinkAttributes(xlink_title, xlink_href) if xlink_title else None
+                LinkAttributes(title, href) if title else None
             )
         )
     def build(self):

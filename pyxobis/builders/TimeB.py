@@ -38,7 +38,7 @@ class TimeContentSingleBuilder:
         self.type = GenericType(
                         LinkAttributes(
                             link_title,
-                            xlink_href = XSDAnyURI( href_URI ) \
+                            href = XSDAnyURI( href_URI ) \
                                          if href_URI else None
                         ),
                         set_ref = XSDAnyURI( set_URI ) \
@@ -89,7 +89,7 @@ class TimeBuilder(PrincipalElementBuilder):
         self.calendar = Calendar(
                             LinkAttributes(
                                 link_title,
-                                xlink_href = XSDAnyURI( href_URI ) \
+                                href = XSDAnyURI( href_URI ) \
                                              if href_URI else None
                             ),
                             set_ref = XSDAnyURI( set_URI )
@@ -150,7 +150,7 @@ class DurationBuilder(PrincipalElementBuilder):
         self.calendar1 = Calendar(
                              LinkAttributes(
                                  link_title,
-                                 xlink_href = XSDAnyURI( href_URI ) \
+                                 href = XSDAnyURI( href_URI ) \
                                               if href_URI else None
                              ),
                              set_ref = XSDAnyURI( set_URI )
@@ -159,7 +159,7 @@ class DurationBuilder(PrincipalElementBuilder):
         self.calendar2 = Calendar(
                              LinkAttributes(
                                  link_title,
-                                 xlink_href = XSDAnyURI( href_URI ) \
+                                 href = XSDAnyURI( href_URI ) \
                                               if href_URI else None
                              ),
                              set_ref = XSDAnyURI( set_URI )
@@ -213,7 +213,7 @@ class TimeVariantBuilder(PrincipalElementVariantBuilder):
         self.calendar = Calendar(
                             LinkAttributes(
                                 link_title,
-                                xlink_href = XSDAnyURI( href_URI ) \
+                                href = XSDAnyURI( href_URI ) \
                                              if href_URI else None
                             ),
                             set_ref = XSDAnyURI( set_URI )
@@ -291,7 +291,7 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
         self.calendar1 = Calendar(
                              LinkAttributes(
                                  link_title,
-                                 xlink_href = XSDAnyURI( href_URI ) \
+                                 href = XSDAnyURI( href_URI ) \
                                               if href_URI else None
                              ),
                              set_ref = XSDAnyURI( set_URI )
@@ -300,7 +300,7 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
         self.calendar2 = Calendar(
                              LinkAttributes(
                                  link_title,
-                                 xlink_href = XSDAnyURI( href_URI ) \
+                                 href = XSDAnyURI( href_URI ) \
                                               if href_URI else None
                              ),
                              set_ref = XSDAnyURI( set_URI )
@@ -356,7 +356,7 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
         self.calendar = Calendar(
                             LinkAttributes(
                                 link_title,
-                                xlink_href = XSDAnyURI( href_URI ) \
+                                href = XSDAnyURI( href_URI ) \
                                              if href_URI else None
                             ),
                             set_ref = XSDAnyURI( set_URI )
@@ -418,7 +418,7 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
         self.calendar1 = Calendar(
                              LinkAttributes(
                                  link_title,
-                                 xlink_href = XSDAnyURI( href_URI ) \
+                                 href = XSDAnyURI( href_URI ) \
                                               if href_URI else None
                              ),
                              set_ref = XSDAnyURI( set_URI )
@@ -427,7 +427,7 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
         self.calendar2 = Calendar(
                              LinkAttributes(
                                  link_title,
-                                 xlink_href = XSDAnyURI( href_URI ) \
+                                 href = XSDAnyURI( href_URI ) \
                                               if href_URI else None
                              ),
                              set_ref = XSDAnyURI( set_URI )
