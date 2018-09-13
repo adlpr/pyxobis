@@ -19,10 +19,10 @@ class Transformer:
         self.ix = Indexer()
         self.dp = DateTimeParser()
         self.np = NameParser()
-        self.lane_org_ref = self.build_simple_org_ref("Lane Medical Library")
-        self.lc_org_ref   = self.build_simple_org_ref("Library of Congress")
-        self.nlm_org_ref  = self.build_simple_org_ref("National Library of Medicine (U.S.)")
-        self.oclc_org_ref = self.build_simple_org_ref("OCLC")
+        self.lane_org_ref = self.build_simple_ref("Lane Medical Library", ORGANIZATION)
+        self.lc_org_ref   = self.build_simple_ref("Library of Congress", ORGANIZATION)
+        self.nlm_org_ref  = self.build_simple_ref("National Library of Medicine (U.S.)", ORGANIZATION)
+        self.oclc_org_ref = self.build_simple_ref("OCLC", ORGANIZATION)
 
     def transform(self, record):
         record.__class__ = LaneMARCRecord
@@ -585,7 +585,6 @@ class Transformer:
 
         # ROLE
         # ---
-        # (authority)
         wb.set_role('authority')
 
         # CLASS
@@ -608,6 +607,10 @@ class Transformer:
 
 
     def init_work_instance_builder(self, record):
+        # if 149 I2=9, add a temporary ^i to 245 to mark it as a "Descriptive title"
+        if '149' in record and record['149'].indicator2 == '9':
+            record['245']['i'] = "Descriptive title"
+
         wb = WorkBuilder()
 
         # TYPE
@@ -621,7 +624,6 @@ class Transformer:
 
         # ROLE
         # ---
-        # (instance)
         wb.set_role('instance')
 
         # CLASS
@@ -655,13 +657,12 @@ class Transformer:
 
         # ROLE
         # ---
-        # (instance)
         ob.set_role('instance')
 
         # CLASS
         # ---
         # individual, collective, [referential: aut only]
-        ob.set_role('individual')
+        ob.set_class('individual')
 
         # TYPE
         # ---
@@ -714,31 +715,27 @@ class Transformer:
     transform_relationships_bib = transform_relationships_bib
 
 
-    # should unite this repeated code into a single method
+    REF_BUILDERS = {
+        WORK_INST    : WorkRefBuilder,
+        WORK_AUT     : WorkRefBuilder,
+        BEING        : BeingRefBuilder,
+        CONCEPT      : ConceptRefBuilder,
+        RELATIONSHIP : ConceptRefBuilder,
+        EVENT        : EventRefBuilder,
+        LANGUAGE     : LanguageRefBuilder,
+        OBJECT       : ObjectRefBuilder,
+        ORGANIZATION : OrganizationRefBuilder,
+        PLACE        : PlaceRefBuilder,
+        STRING       : StringRefBuilder
+    }
 
-    def build_simple_org_ref(self, name):
-        orb = OrganizationRefBuilder()
-        orb.set_link(name, self.ix.simple_lookup(name, ORGANIZATION))
-        orb.add_name(name)
-        return orb.build()
-
-    def build_simple_place_ref(self, name):
-        prb = PlaceRefBuilder()
-        prb.set_link(name, self.ix.simple_lookup(name, PLACE))
-        prb.add_name(name)
-        return prb.build()
-
-    def build_simple_work_inst_ref(self, name):
-        wrb = WorkRefBuilder()
-        wrb.set_link(name, self.ix.simple_lookup(name, WORK_INST))
-        wrb.add_name(name)
-        return wrb.build()
-
-    def build_simple_string_ref(self, val):
-        srb = StringRefBuilder()
-        srb.set_link(val, self.ix.simple_lookup(val, STRING))
-        srb.add_name(val)
-        return srb.build()
+    def build_simple_ref(self, name, element_type):
+        rb_class = self.REF_BUILDERS.get(element_type)
+        assert rb_class
+        rb = rb_class()
+        rb.set_link(name, self.ix.simple_lookup(name, element_type))
+        rb.add_name(name)
+        return rb.build()
 
 
     def process_id_alternates(self, record, rb):
@@ -792,7 +789,7 @@ class Transformer:
             if field.indicator1 == '7':
                 id_source = field['2'] if '2' in field else 'unknown'
                 if id_source.strip().lower() == 'doi':
-                    id_description = self.build_simple_org_ref("International DOI Foundation")
+                    id_description = self.build_simple_ref("International DOI Foundation", ORGANIZATION)
                 else:
                     id_description = "Standard identifier; source: {}".format(id_source)
             else:
@@ -870,22 +867,22 @@ class Transformer:
                     elif val_lower.startswith("(ocolc)"):
                         id_desc = self.oclc_org_ref
                     elif val_lower.startswith("(pmid)"):
-                        id_desc = self.build_simple_work_inst_ref("PubMed")
+                        id_desc = self.build_simple_ref("PubMed", WORK_INST)
                     elif val_lower.startswith("(orcid)"):
-                        id_desc = self.build_simple_org_ref("ORCID Initiative")
+                        id_desc = self.build_simple_ref("ORCID Initiative", ORGANIZATION)
                     elif val_lower.startswith("(stanf)"):
-                        id_desc = self.build_simple_org_ref("Stanford University")
+                        id_desc = self.build_simple_ref("Stanford University", ORGANIZATION)
                     elif val_lower.startswith("(ssn)"):
                         orb = OrganizationRefBuilder()
-                        orb.add_prequalifier(self.build_simple_place_ref("United States"))
+                        orb.add_prequalifier(self.build_simple_ref("United States", PLACE))
                         # warning: hardcoded id!
                         orb.set_link("Social Security Administration", "Z32655")
                         orb.add_name("Social Security Administration")
                         id_desc = orb.build()
                     elif val_lower.startswith("(laneconnex)"):
-                        id_desc = self.build_simple_work_inst_ref("LaneConnex")
+                        id_desc = self.build_simple_ref("LaneConnex", WORK_INST)
                     elif val_lower.startswith("(bassett)"):
-                        id_desc = self.build_simple_work_inst_ref("Bassett collection of stereoscopic images of human anatomy")
+                        id_desc = self.build_simple_ref("Bassett collection of stereoscopic images of human anatomy", WORK_INST)
                     elif val_lower.startswith("(geonameid)"):
                         id_desc = "GeoNames"
                     elif val_lower.startswith("(isni)"):
@@ -960,7 +957,7 @@ class Transformer:
         # Entry Type
         entry_type = None
 
-        # 246 ^i
+        # 246 (or temp 245) ^i
         if 'i' in field:
             entry_type = field['i'].strip()
 
@@ -969,26 +966,20 @@ class Transformer:
             if field.tag == '210':
                 entry_type = "Abbreviated title"
             elif field.tag == '245':
-                entry_type = "Descriptive title"
+                # if 149 #8
+                entry_type = "Transcribed title"
+                # if 149 #9 should be "Descriptive title"
             elif field.tag == '246':
-                if field.indicator2 == '0':
-                    entry_type = "Portion of title"
-                elif field.indicator2 == '1':
-                    entry_type = "Parallel title"
-                elif field.indicator2 == '2':
-                    entry_type = "Distinctive title"
-                elif field.indicator2 == '4':
-                    entry_type = "Cover title"
-                elif field.indicator2 == '5':
-                    entry_type = "Added title page title"
-                elif field.indicator2 == '6':
-                    entry_type = "Caption title"
-                elif field.indicator2 == '7':
-                    entry_type = "Running title"
-                elif field.indicator2 == '8':
-                    entry_type = "Spine title"
-                else:
-                    entry_type = "Other title"
+                entry_type = {
+                    '0': "Portion of title",
+                    '1': "Parallel title",
+                    '2': "Distinctive title",
+                    '4': "Cover title",
+                    '5': "Added title page title",
+                    '6': "Caption title",
+                    '7': "Running title",
+                    '8': "Spine title"
+                }.get(field.indicator2, "Other title")
             elif field.tag == '247':
                 entry_type = "Former title"
             elif field.tag == '249':

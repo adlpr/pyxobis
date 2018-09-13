@@ -60,7 +60,7 @@ def transform_relationships_bib(self, record):
                 enum = str(int(''.join(d for d in field['1'] if d.isdigit())))
             else:
                 enum = '1'
-            rb.set_enumeration(self.build_simple_string_ref(enum))
+            rb.set_enumeration(self.build_simple_ref(enum, STRING))
 
             # Chronology: n/a
 
@@ -109,7 +109,7 @@ def transform_relationships_bib(self, record):
                 enum = str(int(''.join(d for d in field['1'] if d.isdigit())))
             else:
                 enum = '1'
-            rb.set_enumeration(self.build_simple_string_ref(enum))
+            rb.set_enumeration(self.build_simple_ref(enum, STRING))
 
             # Chronology: n/a
 
@@ -156,10 +156,10 @@ def transform_relationships_bib(self, record):
             # Enumeration
             if '1' in field:
                 enum = str(int(''.join(d for d in field['1'] if d.isdigit())))
-                rb.set_enumeration(self.build_simple_string_ref(enum))
+                rb.set_enumeration(self.build_simple_ref(enum, STRING))
             elif field.tag == '111':
                 enum = '1'
-                rb.set_enumeration(self.build_simple_string_ref(enum))
+                rb.set_enumeration(self.build_simple_ref(enum, STRING))
 
             # Chronology: n/a
 

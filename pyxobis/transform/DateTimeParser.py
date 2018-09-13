@@ -167,9 +167,11 @@ class DateTimeParser:
             trb.set_time_content(time_content1, time_content2)
 
             # LINK
-            if time_content2 is None:
-                time_content_str = str(time_content1)
-                trb.set_link(time_content_str, self.ix.simple_lookup(time_content_str, TIME))
+            time_content1_str = str(time_content1)
+            trb.set_time_content_part1_link(time_content1_str, self.ix.simple_lookup(time_content1_str, TIME))
+            if time_content2 is not None:
+                time_content2_str = str(time_content2)
+                trb.set_time_content_part2_link(time_content2_str, self.ix.simple_lookup(time_content2_str, TIME))
 
             return trb.build()
 
@@ -182,7 +184,7 @@ class DateTimeParser:
             # CALENDAR(S)
             calendar_kwargs1, date1 = self.extract_calendar(date1)
             if calendar_kwargs1:
-                trb.set_calendar1(**calendar_kwargs1)
+                drb.set_calendar1(**calendar_kwargs1)
             calendar_kwargs2, date2 = self.extract_calendar(date2)
             if calendar_kwargs2:
                 drb.set_calendar2(**calendar_kwargs2)
@@ -214,16 +216,17 @@ class DateTimeParser:
             drb.set_time_content2(time_content_single_e1, time_content_single_e2)
 
             # LINKS
-            # Main Duration link only makes sense for a named Duration
-            # (decades centuries etc.?? wouldnt that just be a Time??);
-            # wouldn't be used here, but individual TimeContents can have links
+            time_content_single_s1_str = str(time_content_single_s1)
+            drb.set_time_content1_part1_link(time_content_single_s1_str, self.ix.simple_lookup(time_content_single_s1_str, TIME))
+            if time_content_single_s2 is not None:
+                time_content_single_s2_str = str(time_content_single_s2)
+                drb.set_time_content1_part2_link(time_content_single_s2_str, self.ix.simple_lookup(time_content_single_s2_str, TIME))
 
-            if time_content_single_s2 is None:
-                time_content_single_s1_str = str(time_content_single_s1)
-                drb.set_time_content1_link(time_content_single_s1_str, self.ix.simple_lookup(time_content_single_s1_str, TIME))
-            if time_content_single_e2 is None:
-                time_content_single_e1_str = str(time_content_single_e1)
-                drb.set_time_content2_link(time_content_single_e1_str, self.ix.simple_lookup(time_content_single_e1_str, TIME))
+            time_content_single_e1_str = str(time_content_single_e1)
+            drb.set_time_content2_part1_link(time_content_single_e1_str, self.ix.simple_lookup(time_content_single_e1_str, TIME))
+            if time_content_single_e2 is not None:
+                time_content_single_e2_str = str(time_content_single_e2)
+                drb.set_time_content2_part2_link(time_content_single_e2_str, self.ix.simple_lookup(time_content_single_e2_str, TIME))
 
             return drb.build()
 

@@ -116,14 +116,24 @@ class DurationBuilder(PrincipalElementBuilder):
     #  METHODS DEVIATION FROM SUPER
     #  ALTERNATE: set_scheme
     #    MISSING: add_name, add_qualifier, set_type, set_role
-    # ADDITIONAL: set_time_content1, set_time_content2,
+    # ADDITIONAL: set_time_content1*, set_time_content2*,
     #             set_calendar, set_calendar1, set_calendar2
     def __init__(self):
         super().__init__()
-        self.time_content1 = None
+        self.time_content1_single1 = None
+        self.time_content1_part1_link_attributes = None
+        self.time_content1_part1_substitute = None
+        self.time_content1_single2 = None
+        self.time_content1_part2_link_attributes = None
+        self.time_content1_part2_substitute = None
         self.scheme1 = None
         self.calendar1 = None
-        self.time_content2 = None
+        self.time_content2_single1 = None
+        self.time_content2_part1_link_attributes = None
+        self.time_content2_part1_substitute = None
+        self.time_content2_single2 = None
+        self.time_content2_part2_link_attributes = None
+        self.time_content2_part2_substitute = None
         self.scheme2 = None
         self.calendar2 = None
     def add_name(self, *args, **kwargs):
@@ -135,9 +145,39 @@ class DurationBuilder(PrincipalElementBuilder):
     def set_role(self, *args, **kwargs):
         raise AttributeError("Time element does not have property 'role'")
     def set_time_content1(self, time_content_single1, time_content_single2=None):
-        self.time_content1 = TimeContent(time_content_single1, time_content_single2)
+        self.time_content1_single1 = time_content_single1
+        self.time_content1_single2 = time_content_single2
+    def set_time_content1_part1_link(self, link_title, href_URI=None):
+        self.time_content1_part1_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content1_part1_substitute(self, substitute_attribute):
+        self.time_content1_part1_substitute = substitute_attribute
+    def set_time_content1_part2_link(self, link_title, href_URI=None):
+        self.time_content1_part2_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content1_part2_substitute(self, substitute_attribute):
+        self.time_content1_part2_substitute = substitute_attribute
     def set_time_content2(self, time_content_single1, time_content_single2=None):
-        self.time_content2 = TimeContent(time_content_single1, time_content_single2)
+        self.time_content2_single1 = time_content_single1
+        self.time_content2_single2 = time_content_single2
+    def set_time_content2_part1_link(self, link_title, href_URI=None):
+        self.time_content2_part1_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content2_part1_substitute(self, substitute_attribute):
+        self.time_content2_part1_substitute = substitute_attribute
+    def set_time_content2_part2_link(self, link_title, href_URI=None):
+        self.time_content2_part2_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content2_part2_substitute(self, substitute_attribute):
+        self.time_content2_part2_substitute = substitute_attribute
     def set_scheme(self, scheme1, scheme2=""):
         if scheme2 == "":  # use None for no scheme on entry part 2
             scheme2 = scheme1
@@ -168,21 +208,43 @@ class DurationBuilder(PrincipalElementBuilder):
         return Time(
                    DurationEntry(
                        DurationEntryPart(
-                           self.time_content1,
-                           opt_scheme = OptScheme(self.scheme1),
-                           calendar = self.calendar1
+                           TimeContent(
+                               TimeContentPart(
+                                   self.time_content1_single1,
+                                   self.time_content1_part1_link_attributes,
+                                   OptSubstituteAttribute(self.time_content1_part1_substitute)
+                               ),
+                               TimeContentPart(
+                                   self.time_content1_single2,
+                                   self.time_content1_part2_link_attributes,
+                                   OptSubstituteAttribute(self.time_content1_part2_substitute)
+                               ) if self.time_content1_single2 is not None else None
+                           ),
+                           OptScheme(self.scheme1),
+                           self.calendar1
                        ),
                        DurationEntryPart(
-                           self.time_content2,
-                           opt_scheme = OptScheme(self.scheme2),
-                           calendar = self.calendar2
+                           TimeContent(
+                               TimeContentPart(
+                                   self.time_content2_single1,
+                                   self.time_content2_part1_link_attributes,
+                                   OptSubstituteAttribute(self.time_content2_part1_substitute)
+                               ),
+                               TimeContentPart(
+                                   self.time_content2_single2,
+                                   self.time_content2_part2_link_attributes,
+                                   OptSubstituteAttribute(self.time_content2_part2_substitute)
+                               ) if self.time_content2_single2 is not None else None
+                           ),
+                           OptScheme(self.scheme2),
+                           self.calendar2
                        ),
-                       opt_entry_group_attributes = self.opt_entry_group_attributes
+                       self.opt_entry_group_attributes
                    ),
-                   opt_class = OptClass(self.class_),
-                   usage     = self.usage,
-                   variants  = self.variants,
-                   opt_note_list = OptNoteList(self.note_list)
+                   OptClass(self.class_),
+                   self.usage,
+                   self.variants,
+                   OptNoteList(self.note_list)
                )
 
 
@@ -240,19 +302,24 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
     #  ALTERNATE: set_scheme
     #    MISSING: add_name, add_qualifier, set_time_or_duration_ref,
     #             set_substitute_attribute, add_note
-    # ADDITIONAL: set_time_content1, set_time_content1_link,
-    #             set_time_content2, set_time_content2_link,
+    # ADDITIONAL: set_time_content1*, set_time_content2*,
     #             set_calendar, set_calendar1, set_calendar2
     def __init__(self):
         super().__init__()
         self.time_content1_single1 = None
+        self.time_content1_part1_link_attributes = None
+        self.time_content1_part1_substitute = None
         self.time_content1_single2 = None
-        self.time_content1_link_attributes = None
+        self.time_content1_part2_link_attributes = None
+        self.time_content1_part2_substitute = None
         self.scheme1 = None
         self.calendar1 = None
         self.time_content2_single1 = None
+        self.time_content2_part1_link_attributes = None
+        self.time_content2_part1_substitute = None
         self.time_content2_single2 = None
-        self.time_content2_link_attributes = None
+        self.time_content2_part2_link_attributes = None
+        self.time_content2_part2_substitute = None
         self.scheme2 = None
         self.calendar2 = None
     def add_name(self, *args, **kwargs):
@@ -266,19 +333,37 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
     def set_time_content1(self, time_content_single1, time_content_single2=None):
         self.time_content1_single1 = time_content_single1
         self.time_content1_single2 = time_content_single2
-    def set_time_content1_link(self, link_title, href_URI=None):
-        self.time_content1_link_attributes = LinkAttributes(
+    def set_time_content1_part1_link(self, link_title, href_URI=None):
+        self.time_content1_part1_link_attributes = LinkAttributes(
                                    link_title,
                                    XSDAnyURI(href_URI) if href_URI else None
                                )
+    def set_time_content1_part1_substitute(self, substitute_attribute):
+        self.time_content1_part1_substitute = substitute_attribute
+    def set_time_content1_part2_link(self, link_title, href_URI=None):
+        self.time_content1_part2_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content1_part2_substitute(self, substitute_attribute):
+        self.time_content1_part2_substitute = substitute_attribute
     def set_time_content2(self, time_content_single1, time_content_single2=None):
         self.time_content2_single1 = time_content_single1
         self.time_content2_single2 = time_content_single2
-    def set_time_content2_link(self, link_title, href_URI=None):
-        self.time_content2_link_attributes = LinkAttributes(
+    def set_time_content2_part1_link(self, link_title, href_URI=None):
+        self.time_content2_part1_link_attributes = LinkAttributes(
                                    link_title,
                                    XSDAnyURI(href_URI) if href_URI else None
                                )
+    def set_time_content2_part1_substitute(self, substitute_attribute):
+        self.time_content2_part1_substitute = substitute_attribute
+    def set_time_content2_part2_link(self, link_title, href_URI=None):
+        self.time_content2_part2_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content2_part2_substitute(self, substitute_attribute):
+        self.time_content2_part2_substitute = substitute_attribute
     def set_scheme(self, scheme1, scheme2=""):
         if scheme2 == "":      # use None for no scheme on entry part 2
             scheme2 = scheme1
@@ -309,24 +394,42 @@ class DurationVariantBuilder(PrincipalElementVariantBuilder):
         return DurationVariant(
                    DurationEntry(
                        DurationEntryPart(
-                           TimeContent(self.time_content1_single1,
-                                       self.time_content1_single2,
-                                       self.time_content1_link_attributes),
-                           opt_scheme = OptScheme(self.scheme1),
-                           calendar = self.calendar1
+                           TimeContent(
+                               TimeContentPart(
+                                   self.time_content1_single1,
+                                   self.time_content1_part1_link_attributes,
+                                   OptSubstituteAttribute(self.time_content1_part1_substitute)
+                               ),
+                               TimeContentPart(
+                                   self.time_content1_single2,
+                                   self.time_content1_part2_link_attributes,
+                                   OptSubstituteAttribute(self.time_content1_part2_substitute)
+                               ) if self.time_content1_single2 is not None else None
+                           ),
+                           OptScheme(self.scheme1),
+                           self.calendar1
                        ),
                        DurationEntryPart(
-                           TimeContent(self.time_content2_single1,
-                                       self.time_content2_single2,
-                                       self.time_content2_link_attributes),
-                           opt_scheme = OptScheme(self.scheme2),
-                           calendar = self.calendar2
+                           TimeContent(
+                               TimeContentPart(
+                                   self.time_content2_single1,
+                                   self.time_content2_part1_link_attributes,
+                                   OptSubstituteAttribute(self.time_content2_part1_substitute)
+                               ),
+                               TimeContentPart(
+                                   self.time_content2_single2,
+                                   self.time_content2_part2_link_attributes,
+                                   OptSubstituteAttribute(self.time_content2_part2_substitute)
+                               ) if self.time_content2_single2 is not None else None
+                           ),
+                           OptScheme(self.scheme2),
+                           self.calendar2
                        ),
-                       opt_entry_group_attributes = self.opt_entry_group_attributes
+                       self.opt_entry_group_attributes
                    ),
-                   opt_variant_attributes = self.opt_variant_attributes,
-                   type_ = self.type,
-                   opt_note_list = OptNoteList(self.note_list)
+                   self.opt_variant_attributes,
+                   self.type,
+                   OptNoteList(self.note_list)
                )
 
 
@@ -337,11 +440,15 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: add_name, add_qualifier, add_subdivision_link
-    # ADDITIONAL: set_time_content, set_calendar
+    # ADDITIONAL: set_time_content*, set_calendar
     def __init__(self):
         super().__init__()
         self.time_content_single1 = None
+        self.time_content_part1_link_attributes = None
+        self.time_content_part1_substitute = None
         self.time_content_single2 = None
+        self.time_content_part2_link_attributes = None
+        self.time_content_part2_substitute = None
         self.calendar = None
     def add_name(self, *args, **kwargs):
         raise AttributeError("TimeRef element does not have names")
@@ -352,6 +459,20 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
     def set_time_content(self, time_content_single1, time_content_single2=None):
         self.time_content_single1 = time_content_single1
         self.time_content_single2 = time_content_single2
+    def set_time_content_part1_link(self, link_title, href_URI=None):
+        self.time_content_part1_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content_part1_substitute(self, substitute_attribute):
+        self.time_content_part1_substitute = substitute_attribute
+    def set_time_content_part2_link(self, link_title, href_URI=None):
+        self.time_content_part2_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content_part2_substitute(self, substitute_attribute):
+        self.time_content_part2_substitute = substitute_attribute
     def set_calendar(self, link_title, set_URI, href_URI=None):
         self.calendar = Calendar(
                             LinkAttributes(
@@ -363,10 +484,19 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
                         )
     def build(self):
         return TimeRef(
-                   TimeContent(self.time_content_single1,
-                               self.time_content_single2,
-                               self.link_attributes),
-                   calendar = self.calendar
+                   TimeContent(
+                       TimeContentPart(
+                            self.time_content_single1,
+                            self.time_content_part1_link_attributes,
+                            OptSubstituteAttribute(self.time_content_part1_substitute)
+                        ),
+                        TimeContentPart(
+                            self.time_content_single2,
+                            self.time_content_part2_link_attributes,
+                            OptSubstituteAttribute(self.time_content_part2_substitute)
+                        ) if self.time_content_single2 is not None else None
+                   ),
+                   self.calendar
                )
 
 
@@ -376,17 +506,22 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: add_name, add_qualifier, add_subdivision_link
-    # ADDITIONAL: set_time_content1, set_time_content1_link,
-    #             set_time_content2, set_time_content2_link, set_calendar
+    # ADDITIONAL: set_time_content1*, set_time_content2*, set_time_content2_link, set_calendar
     def __init__(self):
         super().__init__()
         self.time_content1_single1 = None
+        self.time_content1_part1_link_attributes = None
+        self.time_content1_part1_substitute = None
         self.time_content1_single2 = None
-        self.time_content1_link_attributes = None
+        self.time_content1_part2_link_attributes = None
+        self.time_content1_part2_substitute = None
         self.calendar1 = None
         self.time_content2_single1 = None
+        self.time_content2_part1_link_attributes = None
+        self.time_content2_part1_substitute = None
         self.time_content2_single2 = None
-        self.time_content2_link_attributes = None
+        self.time_content2_part2_link_attributes = None
+        self.time_content2_part2_substitute = None
         self.calendar2 = None
     def add_name(self, *args, **kwargs):
         raise AttributeError("DurationRef element does not have names")
@@ -397,19 +532,37 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
     def set_time_content1(self, time_content_single1, time_content_single2=None):
         self.time_content1_single1 = time_content_single1
         self.time_content1_single2 = time_content_single2
-    def set_time_content1_link(self, link_title, href_URI=None):
-        self.time_content1_link_attributes = LinkAttributes(
+    def set_time_content1_part1_link(self, link_title, href_URI=None):
+        self.time_content1_part1_link_attributes = LinkAttributes(
                                    link_title,
                                    XSDAnyURI(href_URI) if href_URI else None
                                )
+    def set_time_content1_part1_substitute(self, substitute_attribute):
+        self.time_content1_part1_substitute = substitute_attribute
+    def set_time_content1_part2_link(self, link_title, href_URI=None):
+        self.time_content1_part2_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content1_part2_substitute(self, substitute_attribute):
+        self.time_content1_part2_substitute = substitute_attribute
     def set_time_content2(self, time_content_single1, time_content_single2=None):
         self.time_content2_single1 = time_content_single1
         self.time_content2_single2 = time_content_single2
-    def set_time_content2_link(self, link_title, href_URI=None):
-        self.time_content2_link_attributes = LinkAttributes(
+    def set_time_content2_part1_link(self, link_title, href_URI=None):
+        self.time_content2_part1_link_attributes = LinkAttributes(
                                    link_title,
                                    XSDAnyURI(href_URI) if href_URI else None
                                )
+    def set_time_content2_part1_substitute(self, substitute_attribute):
+        self.time_content2_part1_substitute = substitute_attribute
+    def set_time_content2_part2_link(self, link_title, href_URI=None):
+        self.time_content2_part2_link_attributes = LinkAttributes(
+                                   link_title,
+                                   XSDAnyURI(href_URI) if href_URI else None
+                               )
+    def set_time_content2_part2_substitute(self, substitute_attribute):
+        self.time_content2_part2_substitute = substitute_attribute
     def set_calendar(self, link_title, set_URI, href_URI=None):
         # Shorthand to set calendars 1 and 2 simultaneously
         self.set_calendar1(link_title, set_URI, href_URI)
@@ -434,13 +587,30 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
                          )
     def build(self):
         return DurationRef(
-                   time_content1 = TimeContent(self.time_content1_single1,
-                                               self.time_content1_single2,
-                                               self.time_content1_link_attributes),
-                   calendar1   = self.calendar1,
-                   time_content2 = TimeContent(self.time_content2_single1,
-                                               self.time_content2_single2,
-                                               self.time_content2_link_attributes),
-                   calendar2   = self.calendar2,
-                   link_attributes = self.link_attributes
+                   TimeContent(
+                       TimeContentPart(
+                           self.time_content1_single1,
+                           self.time_content1_part1_link_attributes,
+                           OptSubstituteAttribute(self.time_content1_part1_substitute)
+                       ),
+                       TimeContentPart(
+                           self.time_content1_single2,
+                           self.time_content1_part2_link_attributes,
+                           OptSubstituteAttribute(self.time_content1_part2_substitute)
+                       ) if self.time_content1_single2 is not None else None
+                   ),
+                   TimeContent(
+                       TimeContentPart(
+                           self.time_content2_single1,
+                           self.time_content2_part1_link_attributes,
+                           OptSubstituteAttribute(self.time_content2_part1_substitute)
+                       ),
+                       TimeContentPart(
+                           self.time_content2_single2,
+                           self.time_content2_part2_link_attributes,
+                           OptSubstituteAttribute(self.time_content2_part2_substitute)
+                       ) if self.time_content2_single2 is not None else None
+                   ),
+                   self.calendar1,
+                   self.calendar2
                )

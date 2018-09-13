@@ -868,8 +868,28 @@ set_calendar2 ( link_title,
 set_time_content1 ( time_content_single1,
                     time_content_single2 = None)
 
+set_time_content1_part1_link ( link_title,
+                               href_URI = None )
+
+set_time_content1_part1_substitute ( substitute_attribute )
+
+set_time_content1_part2_link ( link_title,
+                               href_URI = None )
+
+set_time_content1_part2_substitute ( substitute_attribute )
+
 set_time_content2 ( time_content_single1,
                     time_content_single2 = None)
+
+set_time_content2_part1_link ( link_title,
+                               href_URI = None )
+
+set_time_content2_part1_substitute ( substitute_attribute )
+
+set_time_content2_part2_link ( link_title,
+                               href_URI = None )
+
+set_time_content2_part2_substitute ( substitute_attribute )
 
 add_variant ( variant )
 
@@ -932,16 +952,30 @@ set_calendar2 ( link_title,
                 href_URI = None )
 
 set_time_content1 ( time_content_single1,
-                  time_content_single2 = None )
+    time_content_single2 = None)
 
-set_time_content1_link ( link_title,
-                         href_URI = None )
+set_time_content1_part1_link ( link_title,
+                               href_URI = None )
+
+set_time_content1_part1_substitute ( substitute_attribute )
+
+set_time_content1_part2_link ( link_title,
+                               href_URI = None )
+
+set_time_content1_part2_substitute ( substitute_attribute )
 
 set_time_content2 ( time_content_single1,
-                  time_content_single2 = None )
+                    time_content_single2 = None)
 
-set_time_content2_link ( link_title,
-                         href_URI = None )
+set_time_content2_part1_link ( link_title,
+                               href_URI = None )
+
+set_time_content2_part1_substitute ( substitute_attribute )
+
+set_time_content2_part2_link ( link_title,
+                               href_URI = None )
+
+set_time_content2_part2_substitute ( substitute_attribute )
 ```
 
 ### TimeRefBuilder
@@ -955,6 +989,16 @@ set_link ( link_title,
 
 set_time_content ( time_content_single1,
                    time_content_single2 = None )
+
+set_time_content_part1_link ( link_title,
+                              href_URI = None )
+
+set_time_content_part1_substitute ( substitute_attribute )
+
+set_time_content_part2_link ( link_title,
+                              href_URI = None )
+
+set_time_content_part2_substitute ( substitute_attribute )
 ```
 
 ### DurationRefBuilder
@@ -975,16 +1019,30 @@ set_link ( link_title,
            href_URI = None )
 
 set_time_content1 ( time_content_single1,
-                    time_content_single2 = None )
+                    time_content_single2 = None)
 
-set_time_content1_link ( link_title,
-                       href_URI = None )
+set_time_content1_part1_link ( link_title,
+                               href_URI = None )
+
+set_time_content1_part1_substitute ( substitute_attribute )
+
+set_time_content1_part2_link ( link_title,
+                               href_URI = None )
+
+set_time_content1_part2_substitute ( substitute_attribute )
 
 set_time_content2 ( time_content_single1,
-                    time_content_single2 = None )
+                    time_content_single2 = None)
 
-set_time_content2_link ( link_title,
-                       href_URI = None )
+set_time_content2_part1_link ( link_title,
+                               href_URI = None )
+
+set_time_content2_part1_substitute ( substitute_attribute )
+
+set_time_content2_part2_link ( link_title,
+                               href_URI = None )
+
+set_time_content2_part2_substitute ( substitute_attribute )
 ```
 
 ## Work
