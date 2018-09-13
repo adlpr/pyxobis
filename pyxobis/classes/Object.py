@@ -88,7 +88,7 @@ class ObjectContent(Component):
                        opt_entry_group_attributes=OptEntryGroupAttributes(), \
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
-        self.is_manufactured = not organization_link_attributes
+        self.is_manufactured = org_ref is not None
         if self.is_manufactured:
             assert type_ in ObjectContent.TYPES_2, \
                 "manufactured (no Org ID) Object type ({}) must be in: {}".format(type_, str(ObjectContent.TYPES_2))

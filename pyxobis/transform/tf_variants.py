@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import regex as re
-from pymarc import Field
+# from pymarc import Field
 from pyxobis.builders import *
 from .tf_common import *
 
@@ -32,7 +32,7 @@ def transform_variants(self, record):
 
         transform_variant = {
             WORK_INST    : self.transform_variant_work_instance,
-            # OBJECT       : self.transform_variant_object,
+            OBJECT       : self.transform_variant_object,
             WORK_AUT     : self.transform_variant_work_authority,
             BEING        : self.transform_variant_being,
             CONCEPT      : self.transform_variant_concept,
@@ -594,7 +594,25 @@ def transform_variant_work_instance(self, field):
     Input:  PyMARC 210/245/246/247/249 field
     Output: WorkVariantEntry object
     """
-    wvb = WorkVariantBuilder()
+    return self.transform_variant_work_instance_or_object(field, WORK_INST)
+
+
+def transform_variant_object(self, field):
+    """
+    Input:  PyMARC 210/245/246/247/249 field
+    Output: ObjectVariantEntry object
+    """
+    return self.transform_variant_work_instance_or_object(field, OBJECT)
+
+
+def transform_variant_work_instance_or_object(self, field, element_type):
+
+    if element_type == WORK_INST:
+        vb = WorkVariantBuilder()
+        name_parser = self.np.parse_work_instance_variant_name
+    else:
+        vb = ObjectVariantBuilder()
+        name_parser = self.np.parse_object_variant_name
 
     # Included
     # ---
@@ -609,9 +627,9 @@ def transform_variant_work_instance(self, field):
     # Type depends on field tag and indicators.
     type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_title_field(field)
     if type_kwargs:
-        wvb.set_type(**type_kwargs)
+        vb.set_type(**type_kwargs)
     if type_time_or_duration_ref is not None:
-        wvb.set_time_or_duration_ref(type_time_or_duration_ref)
+        vb.set_time_or_duration_ref(type_time_or_duration_ref)
 
     # Substitute
     # ---
@@ -622,25 +640,25 @@ def transform_variant_work_instance(self, field):
     # 210 abbreviation schemes
     if field.tag == '210':
         if field.indicator2 == '0':
-            wvb.set_scheme('ISSN')
+            vb.set_scheme('ISSN')
         elif field.indicator2 == '5':
-            wvb.set_scheme('NLM')  # ??
+            vb.set_scheme('NLM')  # ??
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names_and_qualifiers = self.np.parse_work_instance_variant_name(field)
+    variant_names_and_qualifiers = name_parser(field)
     for variant_name_or_qualifier in variant_names_and_qualifiers:
         if isinstance(variant_name_or_qualifier, dict):
-            wvb.add_name(**variant_name_or_qualifier)
+            vb.add_name(**variant_name_or_qualifier)
         else:
-            wvb.add_qualifier(variant_name_or_qualifier)
+            vb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---
     # 247 ^b = Remainder of title
     if field.tag == '247':
         for note_text in field.get_subfields('b'):
-            wvb.add_note( content_text = note_text,
+            vb.add_note( content_text = note_text,
                           content_lang = field['3'],
                           type = "transcription",
                           link_title = None,
@@ -649,103 +667,14 @@ def transform_variant_work_instance(self, field):
     # 246/7 ^f = Designation of volume and issue number and/or date of a work
     #       ^g = Miscellaneous information
     #         (^f/^g may be pre-parsed out as Entry Type Time/DurationRefs by
-    #            parse_work_instance_variant_name)
+    #            parse_work_instance_or_object_variant_name)
     if field.tag in ('246','247'):
         for note_text in field.get_subfields('f','g'):
-            wvb.add_note( content_text = note_text,
+            vb.add_note( content_text = note_text,
                           content_lang = field['3'],
                           type = "transcription",
                           link_title = None,
                           href_URI = None,
                           set_URI  = None )
 
-    return wvb.build()
-
-    """
-	210  Abbreviated Title (R)
-		Ind1
-			0  No title added entry (abbrev same as title)
-			1  Title added entry
-		Ind2
-			0  Standard abbrev of 245 title (Lane doesn't use key title)
-			5  NLM abbrev (Only when different from standard)
-			9  Other abbrev
-		a  Abbreviated title (NR)
-		b  Qualifying information (NR)
-		h  Medium (Lane) (NR)
-	245  Title Statement (NR)
-		Ind1
-			0  No title added entry
-			1  Title added entry
-		Ind2
-			0  nonfiling character
-			1  nonfiling character
-			2  nonfiling characters
-			3  nonfiling characters
-			4  nonfiling characters
-			5  nonfiling characters
-			6  nonfiling characters
-			7  nonfiling characters
-			8  nonfiling characters
-			9  nonfiling characters
-		3  Language of entry (Lane) (except English) (R)
-		4  Romanization scheme (Lane) (NR)
-		a  Title (NR)
-		b  Remainder of title (NR)
-		c  Remainder of title page transcription/statement of responsibility (NR)
-		f  Inclusive dates (NR)
-		g  Bulk dates (NR)
-		h  Medium (NR)
-		k  Form (R)
-		n  Number of part/section of a work (R)
-		p  Name of part/section of a work (R)
-		q  Qualifier (Lane) (NR)
-		s  Version (NR)
-	246  Variant Title (R)
-		Ind1
-			0  No title added entry
-			1  Title added entry
-			2  No note, no title added entry
-			3  No note, title added entry
-		3  Language of entry (Lane) (except English) (R)
-		4  Romanization scheme (Lane) (NR)
-		a  Title proper/short title (NR)
-		f  Designation of volume and issue number and/or date of a work (NR)
-		g  Miscellaneous information (NR)
-		h  Medium (NR)
-		i  Display text (NR)
-		n  Number of part/section of a work (R)
-		p  Name of part/section of a work (R)
-		q  Qualifier (Lane) (NR)
-		s  Version (Lane) (NR)
-	247  Former Title or Title Variations (R)
-		Ind1
-			0  No title added entry
-			1  Title added entry
-		Ind2
-			0  Display note
-			1  Do not display note
-		3  Language of entry (Lane) (except English) (R)
-		4  Romanization scheme (Lane) (NR)
-		a  Title proper/short title (NR)
-		b  Remainder of title (NR)
-		f  Designation of volume and issue number and/or date of a work (NR)
-		g  Miscellaneous information (NR)
-		h  Medium (NR)
-		n  Number of part/section of a work (R)
-		p  Name of part/section of a work (R)
-		q  Qualifier (Lane) (NR)
-		s  Version (Lane) (NR)
-	249  Added Title for Website (Lane) (R)
-		a  Added title for website (Lane) (NR)
-    """
-
-
-def transform_variant_object(self, field):
-    """
-    Input:  PyMARC 245/246 field
-    Output: ObjectVariantEntry object
-    """
-    ...
-    ...
-    ...
+    return vb.build()

@@ -31,15 +31,6 @@ class ObjectBuilder(PrincipalElementBuilder):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \
                        else self.name_content
-        organization_link_attributes = LinkAttributes(
-                        self.organization_link_title,
-                        href = XSDAnyURI(self.organization_link_href) \
-                                     if self.organization_link_href else None
-            ) if self.organization_link_title else None
-        organization_id_content = GenericContent(
-                self.organization_id_content,
-                lang = self.organization_id_content_lang,
-            ) if self.organization_id_content else None
         return Object(
                    ObjectContent(
                        ObjectEntryContent(

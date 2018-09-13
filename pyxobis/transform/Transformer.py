@@ -113,8 +113,7 @@ class Transformer:
         # Fix 149 ^1 on bib records if necessary
         record = self.__reconstruct_149_subf_1(record)
 
-        # if element_type != HOLDINGS:
-        if element_type not in (HOLDINGS, OBJECT):
+        if element_type != HOLDINGS:
 
             init_builder, parse_name = {
                 WORK_INST    : (self.init_work_instance_builder, self.np.parse_work_instance_main_name),
@@ -136,7 +135,7 @@ class Transformer:
 
             # ENTRY NAME(S) AND QUALIFIERS
             # -------
-            if element_type in (WORK_INST, WORK_AUT):
+            if element_type in (WORK_INST, WORK_AUT, OBJECT):
                 # works require order preservation
                 entry_names_and_qualifiers = parse_name(record.get_id_field())
                 for entry_name_or_qualifier in entry_names_and_qualifiers:
@@ -708,6 +707,7 @@ class Transformer:
     transform_variant_work_instance = transform_variant_work_instance
     transform_variant_work_authority = transform_variant_work_authority
     transform_variant_object = transform_variant_object
+    transform_variant_work_instance_or_object = transform_variant_work_instance_or_object
 
     transform_notes = transform_notes
 

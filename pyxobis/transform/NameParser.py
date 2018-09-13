@@ -560,9 +560,9 @@ class NameParser:
         return work_aut_names_and_qualifiers
 
 
-    def parse_work_instance_main_name(self, field):
+    def parse_work_instance_or_object_main_name(self, field, element_type):
         """
-        Parse a 149 field containing a Work inst main entry name into:
+        Parse a 149 field containing a Work inst/Object main entry name into:
         - a list of either names as kwarg dicts or qualifiers as RefElement objects,
         to pass into a WorkBuilder.
         """
@@ -576,21 +576,22 @@ class NameParser:
 
         # NAME(S) & QUALIFIER(S)
         # ---
-        work_inst_main_names_and_qualifiers = []
+        work_inst_or_object_main_names_and_qualifiers = []
         for code, val in field.get_subfields('a','p','d','l','q','n','k','s', with_codes=True):
             if code in 'ap':
                 # ^a  Uniform title (NR)                    --> `generic` title
                 # ^p  Name of part/section of a work (R)    --> `section` title
                 val = self.__strip_ending_punctuation(val)
-                work_inst_main_names_and_qualifiers.append(
-                    { 'name_text': val,
-                      'type_'    : 'generic' if code == 'a' else 'section',
-                      'lang'     : field_lang,
-                      'script'   : field_script,
-                      'nonfiling' : nonfiling if code == 'a' else 0 } )
+                name_kwargs = { 'name_text': val,
+                                'lang'     : field_lang,
+                                'script'   : field_script,
+                                'nonfiling' : nonfiling if code == 'a' else 0 }
+                if element_type == WORK_INST:
+                    name_kwargs['type_'] = 'generic' if code == 'a' else 'section'
+                work_inst_or_object_main_names_and_qualifiers.append(name_kwargs)
             elif code == 'd':
                 # ^d  Date of a work (NR)        --> Time/DurationRef
-                work_inst_main_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_AUT))
+                work_inst_or_object_main_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_AUT))
             elif code == 'k':
                 # ^k  Form subheading (R)        --> ConceptRef
                 val = self.__strip_ending_punctuation(val)
@@ -601,7 +602,7 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                work_inst_main_names_and_qualifiers.append(crb.build())
+                work_inst_or_object_main_names_and_qualifiers.append(crb.build())
             elif code == 'l':
                 # ^l  Language of a work (NR)    --> LanguageRef
                 val = self.__strip_ending_punctuation(val)
@@ -612,11 +613,11 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                work_inst_main_names_and_qualifiers.append(lrb.build())
+                work_inst_or_object_main_names_and_qualifiers.append(lrb.build())
             elif code == 'q':
                 # ^q  Qualifier (NR)   --> parse
                 parsed = self.parse_generic_qualifier(val, field_lang, field_script)
-                work_inst_main_names_and_qualifiers.extend(parsed)
+                work_inst_or_object_main_names_and_qualifiers.extend(parsed)
             else:
                 # ^n  Number of part/section of a work (R)  --> StringRef
                 # ^s  Version/edition (NR)                  --> StringRef
@@ -628,15 +629,16 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                work_inst_main_names_and_qualifiers.append(srb.build())
+                work_inst_or_object_main_names_and_qualifiers.append(srb.build())
 
         # ^h  Medium (NR)  --> SHOULD GO TO HOLDINGS
 
-        return work_inst_main_names_and_qualifiers
+        return work_inst_or_object_main_names_and_qualifiers
 
-    def parse_work_instance_variant_name(self, field):
+    def parse_work_instance_or_object_variant_name(self, field, element_type):
         """
-        Parse a 210/245/246/247/249 field containing a Work inst variant entry name into:
+        Parse a 210/245/246/247/249 field containing a
+        Work inst/Object variant entry name into:
         - a list of either names as kwarg dicts or qualifiers as RefElement objects,
         to pass into a Builder.
         """
@@ -650,28 +652,29 @@ class NameParser:
         # ---
         # other ^b  Remainder of title (NR)     --> Main Note
         # ^c  Remainder of title page transcription/statement of responsibility (NR)  --> Main Note
-        work_inst_variant_names_and_qualifiers = []
+        work_inst_or_object_variant_names_and_qualifiers = []
         for code, val in field.get_subfields('a','p','b','f','g','k','q','n','s', with_codes=True):
             if code in 'ap':
                 # ^a  * title (NR)                        --> `generic` title
                 # ^p  Name of part/section of a work (R)  --> `section` title
                 val = self.__strip_ending_punctuation(val)
-                work_inst_variant_names_and_qualifiers.append(
-                    { 'name_text': val,
-                      'type_'    : 'generic' if code == 'a' else 'section',
-                      'lang'     : field_lang,
-                      'script'   : field_script,
-                      'nonfiling' : nonfiling if code == 'a' else 0 } )
+                name_kwargs = { 'name_text': val,
+                                'lang'     : field_lang,
+                                'script'   : field_script,
+                                'nonfiling' : nonfiling if code == 'a' else 0 }
+                if element_type == WORK_INST:
+                    name_kwargs['type_'] = 'generic' if code == 'a' else 'section'
+                work_inst_or_object_variant_names_and_qualifiers.append(name_kwargs)
             elif code == 'b':
                 if field.tag == '210':
                     # 210 ^b    Qualifying information (NR) --> parse
                     parsed = self.parse_generic_qualifier(val, field_lang, field_script)
-                    work_inst_variant_names_and_qualifiers.extend(parsed)
+                    work_inst_or_object_variant_names_and_qualifiers.extend(parsed)
             elif code in 'fg':
                 if field.tag == '245':
                     # 245 ^f    Inclusive dates (NR)        --> Time/DurationRef
                     # 245 ^g    Bulk dates (NR)             --> Time/DurationRef
-                    work_inst_variant_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
+                    work_inst_or_object_variant_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
             elif code == 'k':
                 # ^k  Form (R)             --> ConceptRef
                 val = self.__strip_ending_punctuation(val)
@@ -682,11 +685,11 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                work_inst_variant_names_and_qualifiers.append(crb.build())
+                work_inst_or_object_variant_names_and_qualifiers.append(crb.build())
             elif code == 'q':
                 # ^q  Qualifier (Lane) (NR)  --> parse
                 parsed = self.parse_generic_qualifier(val, field_lang, field_script)
-                work_inst_variant_names_and_qualifiers.extend(parsed)
+                work_inst_or_object_variant_names_and_qualifiers.extend(parsed)
             else:
                 # ^n  Number of part/section of a work (R)   --> StringRef
                 # ^s  Version (Lane) (NR)   --> StringRef
@@ -698,22 +701,22 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                work_inst_variant_names_and_qualifiers.append(srb.build())
+                work_inst_or_object_variant_names_and_qualifiers.append(srb.build())
 
-        return work_inst_variant_names_and_qualifiers
+        return work_inst_or_object_variant_names_and_qualifiers
 
 
+    def parse_work_instance_main_name(self, field):
+        return self.parse_work_instance_or_object_main_name(field, WORK_INST)
 
     def parse_object_main_name(self, field):
-        ...
-        ...
-        ...
+        return self.parse_work_instance_or_object_main_name(field, OBJECT)
+
+    def parse_work_instance_variant_name(self, field):
+        return self.parse_work_instance_or_object_variant_name(field, WORK_INST)
 
     def parse_object_variant_name(self, field):
-        ...
-        ...
-        ...
-
+        return self.parse_work_instance_or_object_variant_name(field, OBJECT)
 
 
     def parse_generic_qualifier(self, val, lang, script):

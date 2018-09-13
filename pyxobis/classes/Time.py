@@ -538,25 +538,31 @@ class Milliseconds(TimePart):
     def __init__(self, value):
         super().__init__(value, zf=0)
     def serialize_xml(self):
-        return super().serialize_xml('millisecs')
+        return super().serialize_xml('millisecond')
 
 
-class TimeZonePart(Component):
-    def __init__(self, value, zf=2):
+class TZHour(Component):
+    def __init__(self, value, is_negative=None, zf=2):
         assert isinstance(value, int) or value.isdigit()
-        self.is_negative = int(value) != abs(int(value))
+        if is_negative is not None:
+            # can have +0 and -0
+            self.is_negative = is_negative
+        else:
+            self.is_negative = int(value) != abs(int(value))
         self.value  = '-' if self.is_negative else ''
         self.value += str(abs(int(value))).zfill(zf)
-    def serialize_xml(self, tag):
+    def serialize_xml(self):
         # Returns an Element.
-        e = E(tag)
+        e = E('tzHour')
         e.text = self.value
         return e
 
-class TZHour(TimeZonePart):
+class TZMinute(Component):
+    def __init__(self, value, zf=2):
+        assert isinstance(value, int) or value.isdigit()
+        self.value = str(abs(int(value))).zfill(zf)
     def serialize_xml(self):
-        return super().serialize_xml('tzHour')
-
-class TZMinute(TimeZonePart):
-    def serialize_xml(self):
-        return super().serialize_xml('tzMinute')
+        # Returns an Element.
+        e = E('tzMinute')
+        e.text = self.value
+        return e
