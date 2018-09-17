@@ -107,7 +107,7 @@ class LaneMARCRecord(Record):
                     else:
                         # 155s derived from 150 Categories for validation purposes only
                         return None
-            elif tag.endswith('80'): return CONCEPT
+            elif tag.endswith('80') or tag == '072': return CONCEPT
             elif tag.endswith('82'): return STRING
         # ~~~~~~ HDG ~~~~~~
         elif tag == '852': return HOLDINGS
@@ -158,7 +158,7 @@ class LaneMARCRecord(Record):
         Returns list of fields for variant entries of this record.
         """
         variant_fields = []
-        for field in self.get_fields('150','210','245','246','247','249','400','410','411','430','450','451','455','480','482'):
+        for field in self.get_fields('072','150','210','245','246','247','249','400','410','411','430','450','451','455','480','482'):
             if field.tag == '150' and 'm' in field:
                 # add MeSH "as Topic" version as a variant
                 new_field = Field(field.tag, (field.indicator1, field.indicator2), field.subfields.copy())

@@ -809,7 +809,7 @@ set_time_contents ( year = None,
                     minute = None,
                     tz_minute = None,
                     second = None,
-                    milliseconds = None )
+                    millisecond = None )
 ```
 
 ### TimeBuilder

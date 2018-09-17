@@ -19,7 +19,7 @@ def transform_variants(self, record):
     411 : EVENT
     430 : WORK_AUT
     450 : CONCEPT or TIME or LANGUAGE
-    451 : PLACE
+    043/451 : PLACE
     455 : CONCEPT or RELATIONSHIP
     480 : CONCEPT (subdivision)
     482 : STRING
@@ -112,10 +112,19 @@ def transform_variant_being(self, field):
 
 def transform_variant_concept(self, field):
     """
-    Input:  PyMARC 150[m]/450/455/480 field
+    Input:  PyMARC 072/150[m]/450/455/480 field
     Output: ConceptVariantEntry object
     """
     cvb = ConceptVariantBuilder()
+
+    if field.tag == '072':
+        # MeSH tree top nodes
+        entry_type = "Tree number"
+        cvb.set_type(entry_type,
+                     self.ix.simple_lookup("Equivalence", CONCEPT),
+                     self.ix.simple_lookup(entry_type, RELATIONSHIP))
+        cvb.add_name(field['a'])
+        return cvb.build()
 
     # Included
     # ---

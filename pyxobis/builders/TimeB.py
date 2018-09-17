@@ -27,11 +27,11 @@ class TimeContentSingleBuilder:
         )
     def set_time_contents(self, \
         year=None, month=None, day=None, hour=None, tz_hour=None, \
-        minute=None, tz_minute=None, second=None, milliseconds=None):
+        minute=None, tz_minute=None, second=None, millisecond=None):
         assert not self.name_content, "Time already has named contents"
         for class_, arg in  \
-            zip((Year,Month,Day,Hour,TZHour, Minute,TZMinute, Second,Milliseconds),
-                (year,month,day,hour,tz_hour,minute,tz_minute,second,milliseconds)):
+            zip((Year,Month,Day,Hour,TZHour, Minute,TZMinute, Second,Millisecond),
+                (year,month,day,hour,tz_hour,minute,tz_minute,second,millisecond)):
             if arg is not None:
                 self.time_content.append(class_(arg))
     def set_type(self, link_title, set_URI, href_URI=None):

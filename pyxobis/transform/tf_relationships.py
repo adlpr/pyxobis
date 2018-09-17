@@ -24,9 +24,6 @@ def transform_relationships_bib(self, record):
     For each field describing a relationship in record, build a Relationship.
     Returns a list of zero or more Relationship objects.
     """
-    ...
-    ...
-    ...
 
     relationships = []
 
@@ -176,6 +173,45 @@ def transform_relationships_bib(self, record):
             # Notes: n/a
 
             relationships.append(rb.build())
+
+    # Uniform Title, Main Entry
+    for field in record.get_fields('130'):
+        rb = RelationshipBuilder()
+
+        # @@@@@@@@@@@@@@@
+        ...
+        ...
+        rel_name = "Related"
+        ...
+        ...
+
+        rb.set_name(rel_name)
+
+        # Type
+        rel_types = self.ix.lookup_rel_types(rel_name)
+        if len(rel_types) == 1:
+            rb.set_type(rel_types.pop().lower())
+
+        # Degree: n/a
+
+        # Enumeration: n/a
+
+        # Chronology: n/a
+
+        # Target
+        wrb = WorkRefBuilder()
+        ref_names_and_qualifiers = self.np.parse_work_authority_name(field)
+        for ref_name_or_qualifier in ref_names_and_qualifiers:
+            if isinstance(ref_name_or_qualifier, dict):
+                wrb.add_name(**ref_name_or_qualifier)
+            else:
+                wrb.add_qualifier(ref_name_or_qualifier)
+        wrb.set_link(*self.get_linking_info(field, WORK_AUT))
+        rb.set_target(wrb.build())
+
+        # Notes: n/a
+
+        relationships.append(rb.build())
 
     ...
     ...

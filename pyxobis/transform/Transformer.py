@@ -1055,16 +1055,26 @@ class Transformer:
             record['149']['1'] = record['245']['a'][:int(record['245'].indicator2)]
         return record
 
+    link_field_w = ('130','730','760','762','765','767','770','772','773','775',
+        '776','777','780','785','787','789')
+    link_field_0 = ('100','110','111','500','510','511','550','551','555','580',
+        '582','600','610','611','650','651','653','655','700','710','711','748',
+        '750','751','987')
     def get_linking_info(self, field, element_type):
         """
         Return a string representation of the authorized heading of the record
         the given field refers to, and the record's control number,
         if there is such a record (if not, generate a representation from the field).
         """
-        ctrlno = self.ix.lookup(field, element_type)
+        if field.tag in self.link_field_w and 'w' in field:
+            ctrlno = field['w']
+        elif field.tag in self.link_field_0 and '0' in field:
+            ctrlno = field['0']
+        else:
+            ctrlno = self.ix.lookup(field, element_type)
         if ctrlno in (Indexer.UNVERIFIED, Indexer.CONFLICT):
             # generate heading from given field
-            id_subfs = LaneMARCRecord.get_identity_from_field(field, element_type, normalized=False)
+            id_subfs = LaneMARCRecord.get_identity_from_field(field, element_type, normalized=False).split(LaneMARCRecord.UNNORMALIZED_SEP)
         else:
             # heading should exist in reverse index, look it up
             id_subfs = self.ix.reverse_lookup(ctrlno)

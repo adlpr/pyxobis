@@ -560,7 +560,7 @@ class NameParser:
         return work_aut_names_and_qualifiers
 
 
-    def parse_work_instance_or_object_main_name(self, field, element_type):
+    def __parse_work_instance_or_object_main_name(self, field, element_type):
         """
         Parse a 149 field containing a Work inst/Object main entry name into:
         - a list of either names as kwarg dicts or qualifiers as RefElement objects,
@@ -635,7 +635,7 @@ class NameParser:
 
         return work_inst_or_object_main_names_and_qualifiers
 
-    def parse_work_instance_or_object_variant_name(self, field, element_type):
+    def __parse_work_instance_or_object_variant_name(self, field, element_type):
         """
         Parse a 210/245/246/247/249 field containing a
         Work inst/Object variant entry name into:
@@ -707,16 +707,16 @@ class NameParser:
 
 
     def parse_work_instance_main_name(self, field):
-        return self.parse_work_instance_or_object_main_name(field, WORK_INST)
+        return self.__parse_work_instance_or_object_main_name(field, WORK_INST)
 
     def parse_object_main_name(self, field):
-        return self.parse_work_instance_or_object_main_name(field, OBJECT)
+        return self.__parse_work_instance_or_object_main_name(field, OBJECT)
 
     def parse_work_instance_variant_name(self, field):
-        return self.parse_work_instance_or_object_variant_name(field, WORK_INST)
+        return self.__parse_work_instance_or_object_variant_name(field, WORK_INST)
 
     def parse_object_variant_name(self, field):
-        return self.parse_work_instance_or_object_variant_name(field, OBJECT)
+        return self.__parse_work_instance_or_object_variant_name(field, OBJECT)
 
 
     def parse_generic_qualifier(self, val, lang, script):

@@ -128,7 +128,7 @@ class TimeContentSingle(Component):
         attribute quality {
             timeQuality (~ string " " ~ timeQuality)*
         }?,
-        (year?, month?, day?, hour?, minute?, second?, milliseconds?, tzHour?, tzMinute?
+        (year?, month?, day?, hour?, minute?, second?, millisecond?, tzHour?, tzMinute?
          | genericName)
      _timeQuality |=
          string "before"
@@ -164,11 +164,57 @@ class TimeContentSingle(Component):
         self.minute       = time_content_types.get(Minute)
         self.tz_minute    = time_content_types.get(TZMinute)
         self.second       = time_content_types.get(Second)
-        self.milliseconds = time_content_types.get(Milliseconds)
+        self.millisecond  = time_content_types.get(Millisecond)
         self.generic_name = time_content_types.get(GenericName)
         if self.generic_name:
             assert not any((self.year, self.month, self.day, self.hour, self.tz_hour, \
-                            self.minute, self.tz_minute, self.second, self.milliseconds))
+                            self.minute, self.tz_minute, self.second, self.millisecond))
+    def __str__(self):
+        # Convert to readable standardized-ish string
+        if self.generic_name:
+            if self.generic_name.is_parts:
+                return ' '.join([content.text for content in self.generic_name.name_content])
+            else:
+                return self.generic_name.name_content.text
+        else:
+            # ISO 8601
+            result = ''
+            if self.year:
+                result += self.year.value
+            elif self.month or self.day:
+                result += '-'
+            if self.month:
+                result += '-' + self.month.value
+                if self.day:
+                    result += '-' + self.day.value
+            elif self.day:
+                result += '-' + self.day.value.zfill(3)
+            if self.hour or self.minute or self.second or self.millisecond or self.tz_hour or self.tz_minute:
+                result += 'T'
+                if self.hour:
+                    result += self.hour.value
+                if self.minute or self.second or self.millisecond:
+                    result += ':'
+                    if self.minute:
+                        result += self.minute.value
+                    if self.second or self.millisecond:
+                        result += ':'
+                        if self.second:
+                            result += self.second.value
+                        if self.millisecond:
+                            result += self.millisecond.value.zfill(3)
+                if self.tz_hour and self.tz_minute and int(self.tz_hour.value)==0 and int(self.tz_minute.value)==0:
+                    result += 'Z'
+                else:
+                    if self.tz_hour:
+                        if not self.tz_hour.value.startswith('-'):
+                            result += '+'
+                        result += self.tz_hour.value
+                        if self.tz_minute:
+                            result += ':' + self.tz_minute.value
+                    elif self.tz_minute:
+                        result += ':' + self.tz_minute.value
+            return result
     def serialize_xml(self):
         # Returns a list of one to eleven Elements and a dict of parent attributes.
         attrs = {}
@@ -179,7 +225,7 @@ class TimeContentSingle(Component):
         elements = []
         for prop in (self.type, self.year, self.month, self.day, \
                      self.hour, self.tz_hour, self.minute, self.tz_minute, \
-                     self.second, self.milliseconds, self.generic_name):
+                     self.second, self.millisecond, self.generic_name):
             if prop is not None:
                 prop_e = prop.serialize_xml()
                 if prop_e is not None:
@@ -534,7 +580,7 @@ class Second(TimePart):
     def serialize_xml(self):
         return super().serialize_xml('second')
 
-class Milliseconds(TimePart):
+class Millisecond(TimePart):
     def __init__(self, value):
         super().__init__(value, zf=0)
     def serialize_xml(self):
