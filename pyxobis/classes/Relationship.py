@@ -12,7 +12,12 @@ E = ElementMaker(namespace="http://www.xobis.info/ns/2.0/",
 
 
 class Relationship(Component):
-    def __init__(self, relationship_content):
+    """
+    element xobis:relationship {
+        relationshipContent
+    }
+    """
+    def __init__(self, relationship_content, link_attributes=None):
         assert isinstance(relationship_content, RelationshipContent)
         self.relationship_content = relationship_content
     def serialize_xml(self):
@@ -103,16 +108,13 @@ class RelationshipContent(Component):
 class RelationshipName(Component):
     """
     relationshipName |=
-        element xobis:name { genericContent },
-        element xobis:modifier {
-            attribute nonfiling { xsd:positiveInteger }?,
-            genericContent
-        }?
-    relationshipName |=
-        element xobis:name { genericContent },
+        element xobis:name { linkAttributes?, genericContent },
         optNoteList
     """
-    def __init__(self, name_content, opt_note_list=OptNoteList()):
+    def __init__(self, name_content, link_attributes=None, opt_note_list=OptNoteList()):
+        if link_attributes is not None:
+            assert isinstance(link_attributes, LinkAttributes)
+        self.link_attributes = link_attributes
         assert isinstance(name_content, GenericContent)
         self.name_content = name_content
         assert isinstance(opt_note_list, OptNoteList)
@@ -121,8 +123,13 @@ class RelationshipName(Component):
         # Returns a list of one or two Elements.
         elements = []
         # name
+        attrs = {}
+        if self.link_attributes is not None:
+            link_attributes_attrs = elf.link_attributes.serialize_xml()
+            attrs.update(link_attributes_attrs)
         name_content_text, name_content_attrs = self.name_content.serialize_xml()
-        name_e = E('name', **name_content_attrs)
+        attrs.update(name_content_attrs)
+        name_e = E('name', **attrs)
         name_e.text = name_content_text
         elements.append(name_e)
         # note list

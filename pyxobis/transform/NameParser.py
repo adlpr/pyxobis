@@ -222,11 +222,12 @@ class NameParser:
         for code, val in field.get_subfields('c','d','n', with_codes=True):
             # ^c Location of meeting  --> usually PlaceRef, sometimes OrgRef!
             if code == 'c':
+                val = self.__strip_ending_punctuation(val)
                 if any(val.startswith(org) for org in self.event_subfc_orgs):
                     qualifier_element, rb = ORGANIZATION, OrganizationRefBuilder()
                 else:
                     qualifier_element, rb = PLACE, PlaceRefBuilder()
-                val = self.__strip_ending_punctuation(val)
+                    val = self.pn.normalize(val)
                 rb.set_link( val,
                              href_URI = self.ix.simple_lookup(val, qualifier_element) )
                 rb.add_name( val,
@@ -265,6 +266,7 @@ class NameParser:
             # is ^a Org or Place? ^b are always going to be orgs
             if field.indicator1 == '1':
                 prequalifier_element, rb = PLACE, PlaceRefBuilder()
+                val = self.pn.normalize(val)
             else:
                 prequalifier_element, rb = EVENT, EventRefBuilder()
             # ^a
@@ -387,6 +389,7 @@ class NameParser:
             # is ^a Org or Place? ^b are always going to be orgs
             if field.indicator1 == '1':
                 prequalifier_element, rb = PLACE, PlaceRefBuilder()
+                val = self.pn.normalize(val)
             else:
                 prequalifier_element, rb = ORGANIZATION, OrganizationRefBuilder()
             # ^a
@@ -496,7 +499,12 @@ class NameParser:
         to pass into a WorkBuilder.
         """
         field_lang, field_script = field['3'], field['4']
-        nonfiling = int(field.indicator2) if field.indicator2.isdigit() else 0
+        # for some reason nonfiling is I1 on bibs, I2 on auts
+        nonfiling = 0
+        if field.indicator1.isdigit():
+            nonfiling = int(field.indicator1)
+        elif field.indicator2.isdigit():
+            nonfiling = int(field.indicator2)
 
         # NAME(S) & QUALIFIER(S)
         # ---
@@ -722,7 +730,7 @@ class NameParser:
     def parse_generic_qualifier(self, val, lang, script):
         """
         Use regex and Indexer to try to determine what type of reference to build
-        from an unspecified qualifying element of a title.
+        from an unspecified qualifying element.
 
         Defaults to String if better guess unable to be determined.
 

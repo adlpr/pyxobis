@@ -1138,6 +1138,9 @@ set_degree ( degree )  # "primary", "secondary", None ; if target is ConceptRef 
 set_name ( name_text,
            name_lang = None )
 
+set_link ( link_title,
+           href_URI = None )
+
 add_note ( content_text,
            content_lang = None,
            type = None,  # transcription, annotation, documentation, description
