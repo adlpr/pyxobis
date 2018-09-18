@@ -89,11 +89,12 @@ def transform_variant_being(self, field):
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_being_name(field)
-    for variant_name in variant_names:
-        bvb.add_name(**variant_name)
-    for variant_qualifier in variant_qualifiers:
-        bvb.add_qualifier(variant_qualifier)
+    variant_names_and_qualifiers = self.np.parse_being_name(field)
+    for variant_name_or_qualifier in variant_names_and_qualifiers:
+        if isinstance(variant_name_or_qualifier, dict):
+            bvb.add_name(**variant_name_or_qualifier)
+        else:
+            bvb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---
@@ -170,11 +171,12 @@ def transform_variant_concept(self, field):
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_concept_name(field)
-    for variant_name in variant_names:
-        cvb.add_name(**variant_name)
-    for variant_qualifier in variant_qualifiers:
-        cvb.add_qualifier(variant_qualifier)
+    variant_names_and_qualifiers = self.np.parse_concept_name(field)
+    for variant_name_or_qualifier in variant_names_and_qualifiers:
+        if isinstance(variant_name_or_qualifier, dict):
+            cvb.add_name(**variant_name_or_qualifier)
+        else:
+            cvb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---
@@ -232,11 +234,12 @@ def transform_variant_event(self, field):
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_event_name(field)
-    for variant_name in variant_names:
-        evb.add_name(**variant_name)
-    for variant_qualifier in variant_qualifiers:
-        evb.add_qualifier(variant_qualifier)
+    variant_names_and_qualifiers = self.np.parse_event_name(field)
+    for variant_name_or_qualifier in variant_names_and_qualifiers:
+        if isinstance(variant_name_or_qualifier, dict):
+            evb.add_name(**variant_name_or_qualifier)
+        else:
+            evb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---
@@ -285,11 +288,12 @@ def transform_variant_language(self, field):
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_language_name(field)
-    for variant_name in variant_names:
-        lvb.add_name(**variant_name)
-    for variant_qualifier in variant_qualifiers:
-        lvb.add_qualifier(variant_qualifier)
+    variant_names_and_qualifiers = self.np.parse_language_name(field)
+    for variant_name_or_qualifier in variant_names_and_qualifiers:
+        if isinstance(variant_name_or_qualifier, dict):
+            lvb.add_name(**variant_name_or_qualifier)
+        else:
+            lvb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---
@@ -347,11 +351,12 @@ def transform_variant_organization(self, field):
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_organization_name(field)
-    for variant_name in variant_names:
-        ovb.add_name(**variant_name)
-    for variant_qualifier in variant_qualifiers:
-        ovb.add_qualifier(variant_qualifier)
+    variant_names_and_qualifiers = self.np.parse_organization_name(field)
+    for variant_name_or_qualifier in variant_names_and_qualifiers:
+        if isinstance(variant_name_or_qualifier, dict):
+            ovb.add_name(**variant_name_or_qualifier)
+        else:
+            ovb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---
@@ -404,11 +409,12 @@ def transform_variant_place(self, field):
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_place_name(field)
-    for variant_name in variant_names:
-        pvb.add_name(**variant_name)
-    for variant_qualifier in variant_qualifiers:
-        pvb.add_qualifier(variant_qualifier)
+    variant_names_and_qualifiers = self.np.parse_place_name(field)
+    for variant_name_or_qualifier in variant_names_and_qualifiers:
+        if isinstance(variant_name_or_qualifier, dict):
+            pvb.add_name(**variant_name_or_qualifier)
+        else:
+            pvb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---
@@ -456,11 +462,12 @@ def transform_variant_string(self, field):
 
     # Name(s) & Qualifier(s)
     # ---
-    variant_names, variant_qualifiers = self.np.parse_string_name(field)
-    for variant_name in variant_names:
-        svb.add_name(**variant_name)
-    for variant_qualifier in variant_qualifiers:
-        svb.add_qualifier(variant_qualifier)
+    variant_names_and_qualifiers = self.np.parse_string_name(field)
+    for variant_name_or_qualifier in variant_names_and_qualifiers:
+        if isinstance(variant_name_or_qualifier, dict):
+            svb.add_name(**variant_name_or_qualifier)
+        else:
+            svb.add_qualifier(variant_name_or_qualifier)
 
     # Note(s)
     # ---

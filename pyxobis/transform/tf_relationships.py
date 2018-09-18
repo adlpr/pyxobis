@@ -62,14 +62,16 @@ def transform_relationships_bib(self, record):
             # Chronology: n/a
 
             # Target
-            brb = BeingRefBuilder()
-            ref_names, ref_qualifiers = self.np.parse_being_name(field)
-            for ref_name in ref_names:
-                brb.add_name(**ref_name)
-            for ref_qualifier in ref_qualifiers:
-                brb.add_qualifier(ref_qualifier)
-            brb.set_link(*self.get_linking_info(field, BEING))
-            rb.set_target(brb.build())
+            rb.set_target(build_ref_from_field(field, BEING))
+            # brb = BeingRefBuilder()
+            # ref_names_and_qualifiers = self.np.parse_being_name(field)
+            # for ref_name_or_qualifier in ref_names_and_qualifiers:
+            #     if isinstance(ref_name_or_qualifier, dict):
+            #         brb.add_name(**ref_name_or_qualifier)
+            #     else:
+            #         brb.add_qualifier(ref_name_or_qualifier)
+            # brb.set_link(*self.get_linking_info(field, BEING))
+            # rb.set_target(brb.build())
 
             # Notes
             for code, val in field.get_subfields('u','v','z', with_codes=True):
@@ -111,14 +113,16 @@ def transform_relationships_bib(self, record):
             # Chronology: n/a
 
             # Target
-            orb = OrganizationRefBuilder()
-            ref_names, ref_qualifiers = self.np.parse_organization_name(field)
-            for ref_name in ref_names:
-                orb.add_name(**ref_name)
-            for ref_qualifier in ref_qualifiers:
-                orb.add_qualifier(ref_qualifier)
-            orb.set_link(*self.get_linking_info(field, ORGANIZATION))
-            rb.set_target(orb.build())
+            rb.set_target(build_ref_from_field(field, ORGANIZATION))
+            # orb = OrganizationRefBuilder()
+            # ref_names_and_qualifiers = self.np.parse_organization_name(field)
+            # for ref_name_or_qualifier in ref_names_and_qualifiers:
+            #     if isinstance(ref_name_or_qualifier, dict):
+            #         orb.add_name(**ref_name_or_qualifier)
+            #     else:
+            #         orb.add_qualifier(ref_name_or_qualifier)
+            # orb.set_link(*self.get_linking_info(field, ORGANIZATION))
+            # rb.set_target(orb.build())
 
             # Notes
             for code, val in field.get_subfields('j','u','v','z', with_codes=True):
@@ -161,14 +165,16 @@ def transform_relationships_bib(self, record):
             # Chronology: n/a
 
             # Target
-            erb = EventRefBuilder()
-            ref_names, ref_qualifiers = self.np.parse_event_name(field)
-            for ref_name in ref_names:
-                erb.add_name(**ref_name)
-            for ref_qualifier in ref_qualifiers:
-                erb.add_qualifier(ref_qualifier)
-            erb.set_link(*self.get_linking_info(field, EVENT))
-            rb.set_target(erb.build())
+            rb.set_target(build_ref_from_field(field, EVENT))
+            # erb = EventRefBuilder()
+            # ref_names_and_qualifiers = self.np.parse_event_name(field)
+            # for ref_name_or_qualifier in ref_names_and_qualifiers:
+            #     if isinstance(ref_name_or_qualifier, dict):
+            #         erb.add_name(**ref_name_or_qualifier)
+            #     else:
+            #         erb.add_qualifier(ref_name_or_qualifier)
+            # erb.set_link(*self.get_linking_info(field, EVENT))
+            # rb.set_target(erb.build())
 
             # Notes: n/a
 
@@ -199,15 +205,16 @@ def transform_relationships_bib(self, record):
         # Chronology: n/a
 
         # Target
-        wrb = WorkRefBuilder()
-        ref_names_and_qualifiers = self.np.parse_work_authority_name(field)
-        for ref_name_or_qualifier in ref_names_and_qualifiers:
-            if isinstance(ref_name_or_qualifier, dict):
-                wrb.add_name(**ref_name_or_qualifier)
-            else:
-                wrb.add_qualifier(ref_name_or_qualifier)
-        wrb.set_link(*self.get_linking_info(field, WORK_AUT))
-        rb.set_target(wrb.build())
+        rb.set_target(build_ref_from_field(field, WORK_AUT))
+        # wrb = WorkRefBuilder()
+        # ref_names_and_qualifiers = self.np.parse_work_authority_name(field)
+        # for ref_name_or_qualifier in ref_names_and_qualifiers:
+        #     if isinstance(ref_name_or_qualifier, dict):
+        #         wrb.add_name(**ref_name_or_qualifier)
+        #     else:
+        #         wrb.add_qualifier(ref_name_or_qualifier)
+        # wrb.set_link(*self.get_linking_info(field, WORK_AUT))
+        # rb.set_target(wrb.build())
 
         # Notes: n/a
 
@@ -216,4 +223,48 @@ def transform_relationships_bib(self, record):
     ...
     ...
     ...
+
+    # Personal Name as Subject (R)
+    for field in record.get_fields('600'):
+        # Relationship Name(s)
+        rel_names = field.get_subfields('e')
+        if not rel_names:
+            # Default relator
+            rel_names = ["Subject:"]
+        for rel_name in rel_names:
+            rb = RelationshipBuilder()
+
+            rb.set_name(rel_name)
+
+            # Type
+            rel_types = self.ix.lookup_rel_types(rel_name)
+            if len(rel_types) == 1:
+                rb.set_type(rel_types.pop().lower())
+
+            # Degree: n/a
+
+            # Enumeration: n/a
+
+            # Chronology: n/a
+
+            # Target
+            rb.set_target(build_ref_from_field(field, BEING))
+            # brb = BeingRefBuilder()
+            # ref_names_and_qualifiers = self.np.parse_being_name(field)
+            # for ref_name_or_qualifier in ref_names_and_qualifiers:
+            #     if isinstance(ref_name_or_qualifier, dict):
+            #         brb.add_name(**ref_name_or_qualifier)
+            #     else:
+            #         brb.add_qualifier(ref_name_or_qualifier)
+            # brb.set_link(*self.get_linking_info(field, BEING))
+            # rb.set_target(brb.build())
+
+            # Notes:
+            for val in field.get_subfields('j'):
+                rb.add_note(val,
+                            content_lang = None,
+                            type = "annotation")
+
+            relationships.append(rb.build())
+
     return relationships

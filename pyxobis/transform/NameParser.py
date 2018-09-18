@@ -43,17 +43,17 @@ class NameParser:
         # NAME(S)
         # ---
         # ^a Personal name + ^q Fuller form of name
-        being_names_kwargs = []
+        being_names_and_qualifiers = []
         for code, val in field.get_subfields('a','q', with_codes=True):
 
             # Exception for anomalous "author of" entries: call these generic
             if "author of" in val.lower():
                 name_text = self.__strip_ending_punctuation(val)
-                being_names_kwargs = [{ 'name_text': name_text,
-                                        'type_'    : "generic",
-                                        'lang'     : field_lang,
-                                        'script'   : field_script,
-                                        'nonfiling' : 0 }]
+                being_names_and_qualifiers = [{ 'name_text': name_text,
+                                               'type_'    : "generic",
+                                               'lang'     : field_lang,
+                                               'script'   : field_script,
+                                               'nonfiling' : 0 }]
                 break
 
             # 100 ^a : Personal name
@@ -78,7 +78,7 @@ class NameParser:
                     if field.count('a') > 1 and being_name_part_type == "generic":
                         being_name_part_type = "given"
 
-                    being_names_kwargs.append({ 'name_text': being_name_part_text,
+                    being_names_and_qualifiers.append({ 'name_text': being_name_part_text,
                                                 'type_'    : being_name_part_type,
                                                 'lang'     : field_lang,
                                                 'script'   : field_script,
@@ -87,7 +87,7 @@ class NameParser:
             else:
                 being_name_expansion_text = self.__strip_ending_punctuation(val)
                 being_name_expansion_text = self.__strip_parens(being_name_expansion_text)
-                being_names_kwargs.append({ 'name_text': being_name_expansion_text,
+                being_names_and_qualifiers.append({ 'name_text': being_name_expansion_text,
                                             'type_'    : "expansion",
                                             'lang'     : field_lang,
                                             'script'   : field_script,
@@ -96,7 +96,6 @@ class NameParser:
         # QUALIFIER(S)
         # ---
         # ^b Numeration + ^c Titles and other qualifying words  --> StringRef
-        being_qualifiers = []
         for val in field.get_subfields('b','c'):
             srb = StringRefBuilder()
             val_norm = self.__strip_ending_punctuation(val)
@@ -106,12 +105,12 @@ class NameParser:
                          lang     = field_lang,
                          script   = field_script,
                          nonfiling = 0)
-            being_qualifiers.append(srb.build())
+            being_names_and_qualifiers.append(srb.build())
         # ^d : Qualifying dates  --> Time/DurationRef
         for val in field.get_subfields('d'):
-            being_qualifiers.append(self.dp.parse_as_ref(val, BEING))
+            being_names_and_qualifiers.append(self.dp.parse_as_ref(val, BEING))
 
-        return being_names_kwargs, being_qualifiers
+        return being_names_and_qualifiers
 
     def __parse_being_surname_entry(self, namestring):
         """
@@ -135,9 +134,8 @@ class NameParser:
 
     def parse_concept_name(self, field):
         """
-        Parse a X50/X55/X80 field containing a Concept name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects
+        Parse a X50/X55/X80 field containing a Concept name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a Builder.
         """
         if field.tag[1:] == "55":
@@ -167,16 +165,15 @@ class NameParser:
 
         # NAME(S)
         # ---
-        concept_names_kwargs = []
+        concept_names_and_qualifiers = []
         for val in field.get_subfields(name_code):
-            concept_names_kwargs.append({ 'name_text': val,
+            concept_names_and_qualifiers.append({ 'name_text': val,
                                           'lang'     : field_lang,
                                           'script'   : field_script,
                                           'nonfiling' : 0 })
 
         # QUALIFIER(S)
         # ---
-        concept_qualifiers = []
         if qualifier_code:
             for val in field.get_subfields(qualifier_code):
                 crb = ConceptRefBuilder()
@@ -186,9 +183,9 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                concept_qualifiers.append(crb.build())
+                concept_names_and_qualifiers.append(crb.build())
 
-        return concept_names_kwargs, concept_qualifiers
+        return concept_names_and_qualifiers
 
 
     # known Org rather than Place names used in Event ^c
@@ -196,9 +193,8 @@ class NameParser:
 
     def parse_event_name(self, field):
         """
-        Parse a X11 field containing a Event name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects,
+        Parse a X11 field containing a Event name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -207,18 +203,17 @@ class NameParser:
         # ---
         # ^a Meeting name/jurisdiction name as entry element
         # UNLESS ^e Subordinate unit, in which case ^a is prequalifier
-        event_names_kwargs = []
+        event_names_and_qualifiers = []
         name_code = 'e' if 'e' in field else 'a'
         for val in field.get_subfields(name_code):
             val = self.__strip_ending_punctuation(val)
-            event_names_kwargs.append({ 'name_text': val,
+            event_names_and_qualifiers.append({ 'name_text': val,
                                         'lang'     : field_lang,
                                         'script'   : field_script,
                                         'nonfiling' : 0 })
 
         # QUALIFIER(S)
         # ---
-        event_qualifiers = []
         for code, val in field.get_subfields('c','d','n', with_codes=True):
             # ^c Location of meeting  --> usually PlaceRef, sometimes OrgRef!
             if code == 'c':
@@ -234,10 +229,10 @@ class NameParser:
                              lang   = field_lang,
                              script = field_script,
                              nonfiling = 0 )
-                event_qualifiers.append(rb.build())
+                event_names_and_qualifiers.append(rb.build())
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
-                event_qualifiers.append(self.dp.parse_as_ref(val, EVENT))
+                event_names_and_qualifiers.append(self.dp.parse_as_ref(val, EVENT))
             # ^n Number of part/section/meeting  --> StringRef?
             elif code == 'n':
                 val = self.__strip_ending_punctuation(val).lstrip('( ')
@@ -248,14 +243,13 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                event_qualifiers.append(srb.build())
+                event_names_and_qualifiers.append(srb.build())
 
-        return event_names_kwargs, event_qualifiers
+        return event_names_and_qualifiers
 
     def parse_event_prequalifiers(self, field):
         """
-        Parse a X11 field for
-        - a list of prequalifiers as RefElement objects,
+        Parse a X11 field for a list of prequalifiers (RefElements),
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -266,12 +260,13 @@ class NameParser:
             # is ^a Org or Place? ^b are always going to be orgs
             if field.indicator1 == '1':
                 prequalifier_element, rb = PLACE, PlaceRefBuilder()
-                val = self.pn.normalize(val)
             else:
                 prequalifier_element, rb = EVENT, EventRefBuilder()
             # ^a
             for val in field.get_subfields('a'):
                 val = self.__strip_ending_punctuation(val)
+                if prequalifier_element == PLACE:
+                    val = self.pn.normalize(val)
                 rb.set_link( val,
                              href_URI = self.ix.simple_lookup(val, prequalifier_element) )
                 rb.add_name( val,
@@ -295,35 +290,32 @@ class NameParser:
 
     def parse_language_name(self, field):
         """
-        Parse a X50 field containing a Language name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects,
+        Parse a X50 field containing a Language name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
 
         # NAME(S)
         # ---
-        language_names_kwargs = []
+        language_names_and_qualifiers = []
         for val in field.get_subfields('a'):
-            language_names_kwargs.append({ 'name_text': val,
-                                           'lang'     : field_lang,
-                                           'script'   : field_script,
-                                           'nonfiling' : 0 })
+            language_names_and_qualifiers.append({ 'name_text': val,
+                                                  'lang'     : field_lang,
+                                                  'script'   : field_script,
+                                                  'nonfiling' : 0 })
 
         # QUALIFIER(S)
         # ---
-        # Language X50 fields have no qualifiers.
-        language_qualifiers = []
+        # n/a
 
-        return language_names_kwargs, language_qualifiers
+        return language_names_and_qualifiers
 
 
     def parse_organization_name(self, field):
         """
-        Parse a X10 field containing an Organization name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects,
+        Parse a X10 field containing an Organization name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -333,18 +325,17 @@ class NameParser:
         # ^a Corporate name or jurisdiction name as entry element
         # UNLESS ^b Subordinate unit, in which case ^a is prequalifier
         #   (as well as any ^b except the last).
-        org_names_kwargs = []
+        organization_names_and_qualifiers = []
         subordinates = field.get_subfields('b')
         val = subordinates[-1] if subordinates else field['a']
         val = self.__strip_ending_punctuation(val)
-        org_names_kwargs.append({ 'name_text': val,
-                                  'lang'     : field_lang,
-                                  'script'   : field_script,
-                                  'nonfiling' : 0 })
+        organization_names_and_qualifiers.append({ 'name_text': val,
+                                                  'lang'     : field_lang,
+                                                  'script'   : field_script,
+                                                  'nonfiling' : 0 })
 
         # QUALIFIER(S)
         # ---
-        org_qualifiers = []
         for code, val in field.get_subfields('c','d','n', with_codes=True):
             # ^c Location of meeting  --> PlaceRef
             if code == 'c':
@@ -356,10 +347,10 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                org_qualifiers.append(prb.build())
+                organization_names_and_qualifiers.append(prb.build())
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
-                org_qualifiers.append(self.dp.parse_as_ref(val, ORGANIZATION))
+                organization_names_and_qualifiers.append(self.dp.parse_as_ref(val, ORGANIZATION))
             # ^n Number of part/section/meeting  --> StringRef
             elif code == 'n':
                 val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
@@ -370,9 +361,9 @@ class NameParser:
                               lang   = field_lang,
                               script = field_script,
                               nonfiling = 0 )
-                org_qualifiers.append(srb.build())
+                organization_names_and_qualifiers.append(srb.build())
 
-        return org_names_kwargs, org_qualifiers
+        return organization_names_and_qualifiers
 
     def parse_organization_prequalifiers(self, field):
         """
@@ -389,11 +380,12 @@ class NameParser:
             # is ^a Org or Place? ^b are always going to be orgs
             if field.indicator1 == '1':
                 prequalifier_element, rb = PLACE, PlaceRefBuilder()
-                val = self.pn.normalize(val)
             else:
                 prequalifier_element, rb = ORGANIZATION, OrganizationRefBuilder()
             # ^a
             for val in field.get_subfields('a'):
+                if prequalifier_element == PLACE:
+                    val = self.pn.normalize(val)
                 val = self.__strip_ending_punctuation(val)
                 rb.set_link( val,
                              href_URI = self.ix.simple_lookup(val, prequalifier_element) )
@@ -419,9 +411,8 @@ class NameParser:
 
     def parse_place_name(self, field):
         """
-        Parse a X51 field containing a Place name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects,
+        Parse a X51 field containing a Place name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -429,26 +420,24 @@ class NameParser:
         # NAME(S)
         # ---
         # ^a Geographic descriptor
-        place_names_kwargs = []
+        place_names_and_qualifiers = []
         for val in field.get_subfields('a'):
-            place_names_kwargs.append({ 'name_text': val,
-                                        'lang'     : field_lang,
-                                        'script'   : field_script,
-                                        'nonfiling' : 0 })
+            place_names_and_qualifiers.append({ 'name_text': val,
+                                               'lang'     : field_lang,
+                                               'script'   : field_script,
+                                               'nonfiling' : 0 })
 
         # QUALIFIER(S)
         # ---
-        # none
-        place_qualifiers = []
+        # n/a
 
-        return place_names_kwargs, place_qualifiers
+        return place_names_and_qualifiers
 
 
     def parse_string_name(self, field):
         """
-        Parse a X82 field containing a String name into:
-        - a list of names as kwarg dicts, and
-        - a list of qualifiers as RefElement objects,
+        Parse a X82 field containing a String name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -456,17 +445,16 @@ class NameParser:
         # NAME(S)
         # ---
         # ^y Word/phrase entry
-        string_names_kwargs = []
+        string_names_and_qualifiers = []
         for val in field.get_subfields('y'):
-            string_names_kwargs.append({ 'name_text': val,
-                                         'lang'     : field_lang,
-                                         'script'   : field_script,
-                                         'nonfiling' : 0 })
+            string_names_and_qualifiers.append({ 'name_text': val,
+                                                'lang'     : field_lang,
+                                                'script'   : field_script,
+                                                'nonfiling' : 0 })
 
         # QUALIFIER(S)
         # ---
         # ^q Qualifier  [StringRef]
-        string_qualifiers = []
         for val in field.get_subfields('q'):
             val = self.__strip_parens(val)
             srb = StringRefBuilder()
@@ -476,7 +464,7 @@ class NameParser:
                           lang   = field_lang,
                           script = field_script,
                           nonfiling = 0 )
-            string_qualifiers.append(srb.build())
+            string_names_and_qualifiers.append(srb.build())
         # ^l Language [defunct] / ^3 Language of entry  [LanguageRef]
         for val in field.get_subfields('l','3'):
             val = self.__strip_ending_punctuation(val)
@@ -487,15 +475,15 @@ class NameParser:
                           lang   = field_lang,
                           script = field_script,
                           nonfiling = 0 )
-            string_qualifiers.append(lrb.build())
+            string_names_and_qualifiers.append(lrb.build())
 
-        return string_names_kwargs, string_qualifiers
+        return string_names_and_qualifiers
 
 
     def parse_work_authority_name(self, field):
         """
-        Parse a X30 field containing a Work aut name into:
-        - a list of either names as kwarg dicts or qualifiers as RefElement objects,
+        Parse a X30 field containing a Work aut name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a WorkBuilder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -570,8 +558,8 @@ class NameParser:
 
     def __parse_work_instance_or_object_main_name(self, field, element_type):
         """
-        Parse a 149 field containing a Work inst/Object main entry name into:
-        - a list of either names as kwarg dicts or qualifiers as RefElement objects,
+        Parse a 149 field containing a Work inst/Object main entry name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a WorkBuilder.
         """
         field_lang, field_script = field['3'], field['4']
@@ -646,8 +634,8 @@ class NameParser:
     def __parse_work_instance_or_object_variant_name(self, field, element_type):
         """
         Parse a 210/245/246/247/249 field containing a
-        Work inst/Object variant entry name into:
-        - a list of either names as kwarg dicts or qualifiers as RefElement objects,
+        Work inst/Object variant entry name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a Builder.
         """
         field_lang, field_script = field['3'], field['4']

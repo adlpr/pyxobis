@@ -19,6 +19,34 @@ class Transformer:
         self.ix = Indexer()
         self.dp = DateTimeParser()
         self.np = NameParser()
+        self.init_builder_methods = {
+            WORK_INST    : self.init_work_instance_builder,
+            WORK_AUT     : self.init_work_authority_builder,
+            BEING        : self.init_being_builder,
+            CONCEPT      : self.init_concept_builder,
+            RELATIONSHIP : self.init_concept_builder,
+            EVENT        : self.init_event_builder,
+            LANGUAGE     : self.init_language_builder,
+            OBJECT       : self.init_object_builder,
+            ORGANIZATION : self.init_organization_builder,
+            PLACE        : self.init_place_builder,
+            STRING       : self.init_string_builder,
+            TIME         : self.init_time_builder
+        }
+        self.name_parsers = {
+            WORK_INST    : self.np.parse_work_instance_main_name,
+            WORK_AUT     : self.np.parse_work_authority_name,
+            BEING        : self.np.parse_being_name,
+            CONCEPT      : self.np.parse_concept_name,
+            RELATIONSHIP : self.np.parse_concept_name,
+            EVENT        : self.np.parse_event_name,
+            LANGUAGE     : self.np.parse_language_name,
+            OBJECT       : self.np.parse_object_main_name,
+            ORGANIZATION : self.np.parse_organization_name,
+            PLACE        : self.np.parse_place_name,
+            STRING       : self.np.parse_string_name,
+            TIME         : lambda x: []
+        }
         self.lane_org_ref = self.build_simple_ref("Lane Medical Library", ORGANIZATION)
         self.lc_org_ref   = self.build_simple_ref("Library of Congress", ORGANIZATION)
         self.nlm_org_ref  = self.build_simple_ref("National Library of Medicine (U.S.)", ORGANIZATION)
@@ -115,40 +143,20 @@ class Transformer:
 
         if element_type != HOLDINGS:
 
-            init_builder, parse_name = {
-                WORK_INST    : (self.init_work_instance_builder, self.np.parse_work_instance_main_name),
-                WORK_AUT     : (self.init_work_authority_builder, self.np.parse_work_authority_name),
-                BEING        : (self.init_being_builder, self.np.parse_being_name),
-                CONCEPT      : (self.init_concept_builder, self.np.parse_concept_name),
-                RELATIONSHIP : (self.init_concept_builder, self.np.parse_concept_name),
-                EVENT        : (self.init_event_builder, self.np.parse_event_name),
-                LANGUAGE     : (self.init_language_builder, self.np.parse_language_name),
-                OBJECT       : (self.init_object_builder, self.np.parse_object_main_name),
-                ORGANIZATION : (self.init_organization_builder, self.np.parse_organization_name),
-                PLACE        : (self.init_place_builder, self.np.parse_place_name),
-                STRING       : (self.init_string_builder, self.np.parse_string_name),
-                TIME         : (self.init_time_builder, lambda x: ([],[])),  # first method does the name parsing
-            }.get(element_type)
+            init_builder = self.init_builder_methods.get(element_type)
+            parse_name = self.name_parsers.get(element_type)
 
             # Initialize, perform PE-specific work on, and return Builder object.
             peb = init_builder(record)
 
             # ENTRY NAME(S) AND QUALIFIERS
             # -------
-            if element_type in (WORK_INST, WORK_AUT, OBJECT):
-                # works require order preservation
-                entry_names_and_qualifiers = parse_name(record.get_id_field())
-                for entry_name_or_qualifier in entry_names_and_qualifiers:
-                    if isinstance(entry_name_or_qualifier, dict):
-                        peb.add_name(**entry_name_or_qualifier)
-                    else:
-                        peb.add_qualifier(entry_name_or_qualifier)
-            else:
-                entry_names, entry_qualifiers = parse_name(record.get_id_field())
-                for entry_name in entry_names:
-                    peb.add_name(**entry_name)
-                for entry_qualifier in entry_qualifiers:
-                    peb.add_qualifier(entry_qualifier)
+            entry_names_and_qualifiers = parse_name(record.get_id_field())
+            for entry_name_or_qualifier in entry_names_and_qualifiers:
+                if isinstance(entry_name_or_qualifier, dict):
+                    peb.add_name(**entry_name_or_qualifier)
+                else:
+                    peb.add_qualifier(entry_name_or_qualifier)
 
             # VARIANTS
             # -------
@@ -714,8 +722,7 @@ class Transformer:
     transform_relationships_aut = transform_relationships_aut
     transform_relationships_bib = transform_relationships_bib
 
-
-    REF_BUILDERS = {
+    ref_builders = {
         WORK_INST    : WorkRefBuilder,
         WORK_AUT     : WorkRefBuilder,
         BEING        : BeingRefBuilder,
@@ -730,11 +737,32 @@ class Transformer:
     }
 
     def build_simple_ref(self, name, element_type):
-        rb_class = self.REF_BUILDERS.get(element_type)
-        assert rb_class
+        """
+        Build a ref based on only a single name string and its element type.
+        """
+        rb_class = self.ref_builders.get(element_type)
+        assert rb_class, "invalid element type: {}".format(element_type)
         rb = rb_class()
         rb.set_link(name, self.ix.simple_lookup(name, element_type))
         rb.add_name(name)
+        return rb.build()
+
+
+    def build_ref_from_field(self, field, element_type):
+        """
+        Build a ref based on a parsable field and its element type.
+        Useful to generate targets of Relationships.
+        """
+        rb_class = self.ref_builders.get(element_type)
+        name_parser = self.name_parsers.get(element_type)
+        assert rb_class and name_parser, "invalid element type: {}".format(element_type)
+        rb = rb_class()
+        ref_names_and_qualifiers = name_parser(field)
+        for ref_name in ref_names:
+            rb.add_name(**ref_name)
+        for ref_qualifier in ref_qualifiers:
+            rb.add_qualifier(ref_qualifier)
+        rb.set_link(*self.get_linking_info(field, element_type))
         return rb.build()
 
 
