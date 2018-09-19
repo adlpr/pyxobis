@@ -356,7 +356,7 @@ add_note ( content_text,
 set_link ( link_title,
            href_URI = None )
 
-add_prequalifier ( prequalifier )
+# add_prequalifier ( prequalifier )
 
 add_name ( name_text,
            lang   = None,

@@ -42,13 +42,9 @@ def transform_relationships_bib(self, record):
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
+            # Name/Type
             rb.set_name(rel_name)
-
-            # Type
-            rel_types = self.ix.lookup_rel_types(rel_name)
-            if len(rel_types) == 1:
-                rb.set_type(rel_types.pop().lower())
-            # what to do with multiple types?
+            rb.set_type(self.get_relation_type(rel_name))
 
             # Degree: n/a
 
@@ -62,16 +58,7 @@ def transform_relationships_bib(self, record):
             # Chronology: n/a
 
             # Target
-            rb.set_target(build_ref_from_field(field, BEING))
-            # brb = BeingRefBuilder()
-            # ref_names_and_qualifiers = self.np.parse_being_name(field)
-            # for ref_name_or_qualifier in ref_names_and_qualifiers:
-            #     if isinstance(ref_name_or_qualifier, dict):
-            #         brb.add_name(**ref_name_or_qualifier)
-            #     else:
-            #         brb.add_qualifier(ref_name_or_qualifier)
-            # brb.set_link(*self.get_linking_info(field, BEING))
-            # rb.set_target(brb.build())
+            rb.set_target(self.build_ref_from_field(field, BEING))
 
             # Notes
             for code, val in field.get_subfields('u','v','z', with_codes=True):
@@ -94,12 +81,9 @@ def transform_relationships_bib(self, record):
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
+            # Name/Type
             rb.set_name(rel_name)
-
-            # Type
-            rel_types = self.ix.lookup_rel_types(rel_name)
-            if len(rel_types) == 1:
-                rb.set_type(rel_types.pop().lower())
+            rb.set_type(self.get_relation_type(rel_name))
 
             # Degree: n/a
 
@@ -113,16 +97,7 @@ def transform_relationships_bib(self, record):
             # Chronology: n/a
 
             # Target
-            rb.set_target(build_ref_from_field(field, ORGANIZATION))
-            # orb = OrganizationRefBuilder()
-            # ref_names_and_qualifiers = self.np.parse_organization_name(field)
-            # for ref_name_or_qualifier in ref_names_and_qualifiers:
-            #     if isinstance(ref_name_or_qualifier, dict):
-            #         orb.add_name(**ref_name_or_qualifier)
-            #     else:
-            #         orb.add_qualifier(ref_name_or_qualifier)
-            # orb.set_link(*self.get_linking_info(field, ORGANIZATION))
-            # rb.set_target(orb.build())
+            rb.set_target(self.build_ref_from_field(field, ORGANIZATION))
 
             # Notes
             for code, val in field.get_subfields('j','u','v','z', with_codes=True):
@@ -145,12 +120,9 @@ def transform_relationships_bib(self, record):
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
+            # Name/Type
             rb.set_name(rel_name)
-
-            # Type
-            rel_types = self.ix.lookup_rel_types(rel_name)
-            if len(rel_types) == 1:
-                rb.set_type(rel_types.pop().lower())
+            rb.set_type(self.get_relation_type(rel_name))
 
             # Degree: n/a
 
@@ -165,16 +137,7 @@ def transform_relationships_bib(self, record):
             # Chronology: n/a
 
             # Target
-            rb.set_target(build_ref_from_field(field, EVENT))
-            # erb = EventRefBuilder()
-            # ref_names_and_qualifiers = self.np.parse_event_name(field)
-            # for ref_name_or_qualifier in ref_names_and_qualifiers:
-            #     if isinstance(ref_name_or_qualifier, dict):
-            #         erb.add_name(**ref_name_or_qualifier)
-            #     else:
-            #         erb.add_qualifier(ref_name_or_qualifier)
-            # erb.set_link(*self.get_linking_info(field, EVENT))
-            # rb.set_target(erb.build())
+            rb.set_target(self.build_ref_from_field(field, EVENT))
 
             # Notes: n/a
 
@@ -184,37 +147,23 @@ def transform_relationships_bib(self, record):
     for field in record.get_fields('130'):
         rb = RelationshipBuilder()
 
-        # @@@@@@@@@@@@@@@
+        # relator?
         ...
         ...
         rel_name = "Related"
         ...
         ...
 
+        # Name/Type
         rb.set_name(rel_name)
-
-        # Type
-        rel_types = self.ix.lookup_rel_types(rel_name)
-        if len(rel_types) == 1:
-            rb.set_type(rel_types.pop().lower())
+        rb.set_type(self.get_relation_type(rel_name))
 
         # Degree: n/a
-
         # Enumeration: n/a
-
         # Chronology: n/a
 
         # Target
-        rb.set_target(build_ref_from_field(field, WORK_AUT))
-        # wrb = WorkRefBuilder()
-        # ref_names_and_qualifiers = self.np.parse_work_authority_name(field)
-        # for ref_name_or_qualifier in ref_names_and_qualifiers:
-        #     if isinstance(ref_name_or_qualifier, dict):
-        #         wrb.add_name(**ref_name_or_qualifier)
-        #     else:
-        #         wrb.add_qualifier(ref_name_or_qualifier)
-        # wrb.set_link(*self.get_linking_info(field, WORK_AUT))
-        # rb.set_target(wrb.build())
+        rb.set_target(self.build_ref_from_field(field, WORK_AUT))
 
         # Notes: n/a
 
@@ -227,37 +176,20 @@ def transform_relationships_bib(self, record):
     # Personal Name as Subject (R)
     for field in record.get_fields('600'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('e')
-        if not rel_names:
-            # Default relator
-            rel_names = ["Subject:"]
+        rel_names = field.get_subfields('e') or ["Subject:"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
+            # Name/Type
             rb.set_name(rel_name)
-
-            # Type
-            rel_types = self.ix.lookup_rel_types(rel_name)
-            if len(rel_types) == 1:
-                rb.set_type(rel_types.pop().lower())
+            rb.set_type(self.get_relation_type(rel_name))
 
             # Degree: n/a
-
             # Enumeration: n/a
-
             # Chronology: n/a
 
             # Target
-            rb.set_target(build_ref_from_field(field, BEING))
-            # brb = BeingRefBuilder()
-            # ref_names_and_qualifiers = self.np.parse_being_name(field)
-            # for ref_name_or_qualifier in ref_names_and_qualifiers:
-            #     if isinstance(ref_name_or_qualifier, dict):
-            #         brb.add_name(**ref_name_or_qualifier)
-            #     else:
-            #         brb.add_qualifier(ref_name_or_qualifier)
-            # brb.set_link(*self.get_linking_info(field, BEING))
-            # rb.set_target(brb.build())
+            rb.set_target(self.build_ref_from_field(field, BEING))
 
             # Notes:
             for val in field.get_subfields('j'):
@@ -266,5 +198,121 @@ def transform_relationships_bib(self, record):
                             type = "annotation")
 
             relationships.append(rb.build())
+
+    # Organization Name as Subject (R)
+    for field in record.get_fields('610'):
+        # Relationship Name(s)
+        rel_names = field.get_subfields('e') or ["Subject:"]
+        for rel_name in rel_names:
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+            # Enumeration: n/a
+
+            # Chronology
+            rb.set_time_or_duration_ref(self.get_field_chronology(field))
+
+            # Target
+            rb.set_target(self.build_ref_from_field(field, ORGANIZATION))
+
+            # Notes:
+            for val in field.get_subfields('j'):
+                rb.add_note(val,
+                            content_lang = None,
+                            type = "annotation")
+
+            relationships.append(rb.build())
+
+    # Event Name as Subject (R)
+    for field in record.get_fields('611'):
+        # Relationship Name(s)
+        rel_names = field.get_subfields('j') or ["Subject:"]
+        for rel_name in rel_names:
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+            # Enumeration: n/a
+            # Chronology: n/a
+
+            # Target
+            rb.set_target(self.build_ref_from_field(field, EVENT))
+
+            # Notes: n/a
+
+            relationships.append(rb.build())
+
+    # Title as Subject (R)
+    for field in record.get_fields('630'):
+        # Relationship Name(s)
+        rel_names = field.get_subfields('e') or ["Subject:"]
+        for rel_name in rel_names:
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+            # Enumeration: n/a
+            # Chronology: n/a
+
+            # Target
+            rb.set_target(self.build_ref_from_field(field, WORK_AUT))
+
+            # Notes: n/a
+
+            relationships.append(rb.build())
+
+    # Topical Subject (R)
+    for field in record.get_fields('650'):
+        # Relationship Name(s)
+        rel_names = field.get_subfields('e') or ["Subject:"]
+        for rel_name in rel_names:
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree
+            rb.set_degree({'1': 'primary',
+                           '2': 'secondary',
+                           '3': 'tertiary',
+                           '4': 'broad'}.get(field.indicator1))
+
+            # Enumeration: n/a
+            # Chronology: n/a
+
+            # Target
+            # determine element type
+            target_element_type = {'2': CONCEPT,
+                                   '3': CONCEPT,
+                                   '5': TIME,
+                                   '6': LANGUAGE}.get(field.indicator2)
+            assert target_element_type, "invalid I2 in field: {}".format(field) 
+
+            if target_element_type == TIME:
+                # ^x is the second part of a Duration
+                datetime_subject, end_datetime_subject = field['a'] if 'a' in field else '', field['x']
+                if end_datetime_subject:
+                    datetime_subject = datetime_subject.rstrip('-') + '-' + end_datetime_subject
+                rb.set_target(self.dp.parse_as_ref(datetime_subject, element_type=None))
+            else:
+                rb.set_target(self.build_ref_from_field(field, target_element_type))
+
+            # Notes: n/a
+
+            relationships.append(rb.build())
+    ...
+    ...
+    ...
 
     return relationships

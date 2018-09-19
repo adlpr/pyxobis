@@ -24,7 +24,6 @@ class Builder:
             NameContent(name_text, lang=lang, script=script, nonfiling=nonfiling)
         ))
     def add_qualifier(self, qualifier):
-        # assert isinstance(qualifier, RefElement)
         self.qualifiers.append(qualifier)
 
 
@@ -207,13 +206,13 @@ class PrincipalElementRefBuilder(Builder):
                                )
     def add_subdivision_link(self, content_text, content_lang=None, link_title=None, href_URI=None, substitute=None):
         self.subdivision_link_contents.append(
-            LinkContent(
+            SubdivisionContent(
                 GenericContent(content_text, content_lang),
                 link_attributes = LinkAttributes(
                                       link_title,
                                       XSDAnyURI(href_URI) if href_URI else None
                                   ) if link_title else None,
-                substitute = substitute
+                opt_substitute_attribute = OptSubstituteAttribute(substitute)
             )
         )
 

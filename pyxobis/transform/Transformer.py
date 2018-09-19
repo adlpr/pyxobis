@@ -344,12 +344,6 @@ class Transformer:
                                       group = record['111']['6'],
                                       preferred = None )
 
-        # PREQUALIFIER(S)
-        # ---
-        event_prequalifiers = self.np.parse_event_prequalifiers(record.get_id_field())
-        for prequalifier in event_prequalifiers:
-            eb.add_prequalifier(prequalifier)
-
         return eb
 
 
@@ -416,12 +410,6 @@ class Transformer:
         ob.set_entry_group_attributes(id    = None,
                                       group = record['110']['6'],
                                       preferred = None )
-
-        # PREQUALIFIER(S)
-        # ---
-        org_prequalifiers = self.np.parse_organization_prequalifiers(record.get_id_field())
-        for prequalifier in org_prequalifiers:
-            ob.add_prequalifier(prequalifier)
 
         return ob
 
@@ -751,18 +739,43 @@ class Transformer:
     def build_ref_from_field(self, field, element_type):
         """
         Build a ref based on a parsable field and its element type.
-        Useful to generate targets of Relationships.
+        Most useful for generating targets of Relationships.
         """
         rb_class = self.ref_builders.get(element_type)
         name_parser = self.name_parsers.get(element_type)
         assert rb_class and name_parser, "invalid element type: {}".format(element_type)
         rb = rb_class()
+        # names/qualifiers
         ref_names_and_qualifiers = name_parser(field)
-        for ref_name in ref_names:
-            rb.add_name(**ref_name)
-        for ref_qualifier in ref_qualifiers:
-            rb.add_qualifier(ref_qualifier)
+        for ref_name_or_qualifier in ref_names_and_qualifiers:
+            if isinstance(ref_name_or_qualifier, dict):
+                rb.add_name(**ref_name_or_qualifier)
+            else:
+                rb.add_qualifier(ref_name_or_qualifier)
+        # link attrs
         rb.set_link(*self.get_linking_info(field, element_type))
+        # subdivisions
+        if element_type in (CONCEPT, LANGUAGE):
+            # ^vxyz should always be subdivisions in concept/language fields
+            for code, val in field.get_subfields('v','x','y','z', with_codes=True):
+                if code == 'v':
+                    # ^v = CONCEPT (i.e. form)
+                    subdiv_element_type = CONCEPT
+                elif code == 'x':
+                    # ^x = CONCEPT or LANGUAGE
+                    subdiv_element_type = CONCEPT if element_type == CONCEPT else LANGUAGE
+                elif code == 'y':
+                    # ^y = TIME
+                    subdiv_element_type = TIME
+                else:
+                    # ^z = PLACE
+                    subdiv_element_type = PLACE
+                val_href = self.ix.simple_lookup(val, subdiv_element_type)
+                rb.add_subdivision_link(val,
+                                        content_lang = None,
+                                        link_title = val,
+                                        href_URI = val_href,
+                                        substitute = None)
         return rb.build()
 
 
@@ -947,7 +960,7 @@ class Transformer:
 
         Returns a Type kwarg dict and a Time/Duration Ref object, for use in a Builder.
         """
-        type_kwargs, type_time_or_duration_ref = {}, None
+        type_kwargs = {}
 
         # Entry Type
         # Valid variant types include any Equivalence relationship concepts
@@ -962,6 +975,16 @@ class Transformer:
                             'set_URI'    : self.ix.simple_lookup("Equivalence", CONCEPT),
                             'href_URI'   : self.ix.simple_lookup(entry_type, RELATIONSHIP) }
 
+        return type_kwargs, self.get_field_chronology(field)
+
+
+    def get_field_chronology(self, field):
+        """
+        Extract chronology of variant type or relation from field (typically subfs 8/9).
+        Returns a Time/Duration Ref object.
+        """
+        type_time_or_duration_ref = None
+
         # Time or Duration
         if field.tag not in ['150','180','450','480']:  # exceptions for MeSH style fields
             start_type_datetime, end_type_datetime = field['8'], field['9']
@@ -971,7 +994,8 @@ class Transformer:
             if type_datetime:
                 type_time_or_duration_ref = self.dp.parse_as_ref(type_datetime, element_type=None)
 
-        return type_kwargs, type_time_or_duration_ref
+        return type_time_or_duration_ref
+
 
     def get_type_and_time_from_title_field(self, field):
         """
@@ -1082,6 +1106,12 @@ class Transformer:
                    "Invalid 245 indicator 2 in record {}".format(record.get_control_number())
             record['149']['1'] = record['245']['a'][:int(record['245'].indicator2)]
         return record
+
+    def get_relation_type(self, rel_name):
+        rel_types = self.ix.lookup_rel_types(rel_name)
+        if len(rel_types) == 1:
+            return rel_types.pop().lower()
+        return None
 
     link_field_w = ('130','730','760','762','765','767','770','772','773','775',
         '776','777','780','785','787','789')

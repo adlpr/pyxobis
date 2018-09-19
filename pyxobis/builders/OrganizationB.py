@@ -10,8 +10,9 @@ class OrganizationBuilder(PrincipalElementBuilder):
     Interface for constructing a XOBIS Organization element.
     """
     #  METHODS DEVIATION FROM SUPER
+    #  ALTERNATE: add_qualifier
     #    MISSING: set_role, set_usage
-    # ADDITIONAL: add_prequalifier
+    # ADDITIONAL: add_prequalifier (?)
     def __init__(self):
         super().__init__()
         self.prequalifiers = []
@@ -19,9 +20,13 @@ class OrganizationBuilder(PrincipalElementBuilder):
         raise AttributeError("Organization element does not have property 'role'")
     def set_usage(self, *args, **kwargs):
         raise AttributeError("Organization element does not have property 'usage'")
-    def add_prequalifier(self, prequalifier):
-        # assert isinstance(qualifier, PreQualifierRefElement)
-        self.prequalifiers.append(prequalifier)
+    # def add_prequalifier(self, prequalifier):
+    #     self.prequalifiers.append(prequalifier)
+    def add_qualifier(self, qualifier):
+        if not self.name_content:
+            self.prequalifiers.append(qualifier)
+        else:
+            self.qualifiers.append(qualifier)
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \
@@ -46,14 +51,19 @@ class OrganizationVariantBuilder(PrincipalElementVariantBuilder):
     Interface for constructing a OrganizationVariantEntry.
     """
     #  METHODS DEVIATION FROM SUPER
+    #  ALTERNATE: add_qualifier
     #    MISSING: -
-    # ADDITIONAL: add_prequalifier
+    # ADDITIONAL: add_prequalifier (?)
     def __init__(self):
         super().__init__()
         self.prequalifiers = []
-    def add_prequalifier(self, prequalifier):
-        # assert isinstance(qualifier, PreQualifierRefElement)
-        self.prequalifiers.append(prequalifier)
+    # def add_prequalifier(self, prequalifier):
+    #     self.prequalifiers.append(prequalifier)
+    def add_qualifier(self, qualifier):
+        if not self.name_content:
+            self.prequalifiers.append(qualifier)
+        else:
+            self.qualifiers.append(qualifier)
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \
@@ -79,14 +89,19 @@ class OrganizationRefBuilder(PrincipalElementRefBuilder):
     Interface for constructing a OrganizationRef.
     """
     #  METHODS DEVIATION FROM SUPER
+    #  ALTERNATE: add_qualifier
     #    MISSING: -
-    # ADDITIONAL: add_prequalifier
+    # ADDITIONAL: add_prequalifier (?)
     def __init__(self):
         super().__init__()
         self.prequalifiers = []
-    def add_prequalifier(self, prequalifier):
-        # assert isinstance(qualifier, PreQualifierRefElement)
-        self.prequalifiers.append(prequalifier)
+    # def add_prequalifier(self, prequalifier):
+    #     self.prequalifiers.append(prequalifier)
+    def add_qualifier(self, qualifier):
+        if not self.name_content:
+            self.prequalifiers.append(qualifier)
+        else:
+            self.qualifiers.append(qualifier)
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \

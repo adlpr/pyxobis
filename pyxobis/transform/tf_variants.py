@@ -226,13 +226,7 @@ def transform_variant_event(self, field):
     # ---
     # n/a for now
 
-    # Prequalifier(s)
-    # ---
-    variant_prequalifiers = self.np.parse_event_prequalifiers(field)
-    for prequalifier in variant_prequalifiers:
-        evb.add_prequalifier(prequalifier)
-
-    # Name(s) & Qualifier(s)
+    # Name(s) & (Pre)Qualifier(s)
     # ---
     variant_names_and_qualifiers = self.np.parse_event_name(field)
     for variant_name_or_qualifier in variant_names_and_qualifiers:
@@ -343,13 +337,7 @@ def transform_variant_organization(self, field):
     # ---
     # n/a for now
 
-    # Prequalifier(s)
-    # ---
-    variant_prequalifiers = self.np.parse_organization_prequalifiers(field)
-    for prequalifier in variant_prequalifiers:
-        ovb.add_prequalifier(prequalifier)
-
-    # Name(s) & Qualifier(s)
+    # Name(s) & (Pre)Qualifier(s)
     # ---
     variant_names_and_qualifiers = self.np.parse_organization_name(field)
     for variant_name_or_qualifier in variant_names_and_qualifiers:

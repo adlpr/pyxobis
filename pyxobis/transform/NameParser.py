@@ -199,11 +199,14 @@ class NameParser:
         """
         field_lang, field_script = field['3'], field['4']
 
+        # PREQUALIFIER(S)
+        # ---
+        event_names_and_qualifiers = self.__parse_event_prequalifiers(field)
+
         # NAME(S)
         # ---
         # ^a Meeting name/jurisdiction name as entry element
         # UNLESS ^e Subordinate unit, in which case ^a is prequalifier
-        event_names_and_qualifiers = []
         name_code = 'e' if 'e' in field else 'a'
         for val in field.get_subfields(name_code):
             val = self.__strip_ending_punctuation(val)
@@ -247,7 +250,7 @@ class NameParser:
 
         return event_names_and_qualifiers
 
-    def parse_event_prequalifiers(self, field):
+    def __parse_event_prequalifiers(self, field):
         """
         Parse a X11 field for a list of prequalifiers (RefElements),
         to pass into a Builder.
@@ -320,12 +323,15 @@ class NameParser:
         """
         field_lang, field_script = field['3'], field['4']
 
+        # PREQUALIFIER(S)
+        # ---
+        organization_names_and_qualifiers = self.__parse_organization_prequalifiers(field)
+
         # NAME(S)
         # ---
         # ^a Corporate name or jurisdiction name as entry element
         # UNLESS ^b Subordinate unit, in which case ^a is prequalifier
         #   (as well as any ^b except the last).
-        organization_names_and_qualifiers = []
         subordinates = field.get_subfields('b')
         val = subordinates[-1] if subordinates else field['a']
         val = self.__strip_ending_punctuation(val)
@@ -365,7 +371,7 @@ class NameParser:
 
         return organization_names_and_qualifiers
 
-    def parse_organization_prequalifiers(self, field):
+    def __parse_organization_prequalifiers(self, field):
         """
         Parse a X10 field for
         - a list of prequalifiers as RefElement objects,
@@ -491,7 +497,7 @@ class NameParser:
         nonfiling = 0
         if field.indicator1.isdigit():
             nonfiling = int(field.indicator1)
-        elif field.indicator2.isdigit():
+        elif field.tag != '630' and field.indicator2.isdigit():
             nonfiling = int(field.indicator2)
 
         # NAME(S) & QUALIFIER(S)
@@ -746,7 +752,7 @@ class NameParser:
                     orb = OrganizationRefBuilder()
                     orb.set_link( val_part,
                                   href_URI = lookup_as_org )
-                    for prequalifier in self.parse_organization_prequalifiers(bespoke_field):
+                    for prequalifier in self.__parse_organization_prequalifiers(bespoke_field):
                         orb.add_prequalifier ( prequalifier )
                     orb.add_name( bespoke_subfields[-1],
                                   lang   = lang,
