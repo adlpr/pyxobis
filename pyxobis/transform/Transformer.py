@@ -915,7 +915,7 @@ class Transformer:
                         id_desc = self.build_simple_ref("Stanford University", ORGANIZATION)
                     elif val_lower.startswith("(ssn)"):
                         orb = OrganizationRefBuilder()
-                        orb.add_prequalifier(self.build_simple_ref("United States", PLACE))
+                        orb.add_qualifier(self.build_simple_ref("United States", PLACE))
                         # warning: hardcoded id!
                         orb.set_link("Social Security Administration", "Z32655")
                         orb.add_name("Social Security Administration")
@@ -1124,18 +1124,21 @@ class Transformer:
         the given field refers to, and the record's control number,
         if there is such a record (if not, generate a representation from the field).
         """
+        ctrlno, id_subfs = None, None
+        # first try looking up the control number given
         if field.tag in self.link_field_w and 'w' in field:
             ctrlno = field['w']
+            id_subfs = self.ix.reverse_lookup(ctrlno)
         elif field.tag in self.link_field_0 and '0' in field:
             ctrlno = field['0']
-        else:
-            ctrlno = self.ix.lookup(field, element_type)
-        if ctrlno in (Indexer.UNVERIFIED, Indexer.CONFLICT):
-            # generate heading from given field
-            id_subfs = LaneMARCRecord.get_identity_from_field(field, element_type, normalized=False).split(LaneMARCRecord.UNNORMALIZED_SEP)
-        else:
-            # heading should exist in reverse index, look it up
             id_subfs = self.ix.reverse_lookup(ctrlno)
+        # if that's invalid, look it up based on the field and try again
+        if ctrlno is None or id_subfs is None:
+            ctrlno = self.ix.lookup(field, element_type)
+            id_subfs = self.ix.reverse_lookup(ctrlno)
+        # if still invalid, generate "heading" based on this field
+        if ctrlno in (Indexer.UNVERIFIED, Indexer.CONFLICT) or id_subfs is None:
+            id_subfs = LaneMARCRecord.get_identity_from_field(field, element_type, normalized=False).split(LaneMARCRecord.UNNORMALIZED_SEP)
         # @@@ this part could be altered to use ISBD punctuation?
         id_repr = ' '.join(filter(None, id_subfs[1::2]))
         return id_repr, ctrlno

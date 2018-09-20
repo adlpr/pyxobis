@@ -36,13 +36,14 @@ def transform_relationships_bib(self, record):
             #   if record is a monograph and "edit" not in 245 ^c, use Author:
             #   else, use Related:
             if record.is_monographic() and not ('c' in record['245'] and re.search(r"(^|\s)edit", record['245']['c'], flags=re.I)):
-                rel_names = ["Author:"]
+                rel_names = ["Author"]
             else:
-                rel_names = ["Related:"]
+                rel_names = ["Related"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
             # Name/Type
+            rel_name = rel_name.rstrip(': ')
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
@@ -77,11 +78,12 @@ def transform_relationships_bib(self, record):
             ...
             ...
             ...
-            rel_names = ["Editor:"]
+            rel_names = ["Editor"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
             # Name/Type
+            rel_name = rel_name.rstrip(': ')
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
@@ -116,11 +118,12 @@ def transform_relationships_bib(self, record):
             ...
             ...
             ...
-            rel_names = ["Author:"]
+            rel_names = ["Author"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
             # Name/Type
+            rel_name = rel_name.rstrip(': ')
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
@@ -176,11 +179,12 @@ def transform_relationships_bib(self, record):
     # Personal Name as Subject (R)
     for field in record.get_fields('600'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('e') or ["Subject:"]
+        rel_names = field.get_subfields('e') or ["Subject"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
             # Name/Type
+            rel_name = rel_name.rstrip(': ')
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
@@ -202,11 +206,12 @@ def transform_relationships_bib(self, record):
     # Organization Name as Subject (R)
     for field in record.get_fields('610'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('e') or ["Subject:"]
+        rel_names = field.get_subfields('e') or ["Subject"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
             # Name/Type
+            rel_name = rel_name.rstrip(': ')
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
@@ -230,11 +235,12 @@ def transform_relationships_bib(self, record):
     # Event Name as Subject (R)
     for field in record.get_fields('611'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('j') or ["Subject:"]
+        rel_names = field.get_subfields('j') or ["Subject"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
             # Name/Type
+            rel_name = rel_name.rstrip(': ')
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
@@ -252,11 +258,12 @@ def transform_relationships_bib(self, record):
     # Title as Subject (R)
     for field in record.get_fields('630'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('e') or ["Subject:"]
+        rel_names = field.get_subfields('e') or ["Subject"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
             # Name/Type
+            rel_name = rel_name.rstrip(': ')
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
@@ -274,11 +281,12 @@ def transform_relationships_bib(self, record):
     # Topical Subject (R)
     for field in record.get_fields('650'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('e') or ["Subject:"]
+        rel_names = field.get_subfields('e') or ["Subject"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
             # Name/Type
+            rel_name = rel_name.rstrip(': ')
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
@@ -297,20 +305,22 @@ def transform_relationships_bib(self, record):
                                    '3': CONCEPT,
                                    '5': TIME,
                                    '6': LANGUAGE}.get(field.indicator2)
-            assert target_element_type, "invalid I2 in field: {}".format(field) 
+            assert target_element_type, "invalid I2 in field: {}".format(field)
 
             if target_element_type == TIME:
                 # ^x is the second part of a Duration
                 datetime_subject, end_datetime_subject = field['a'] if 'a' in field else '', field['x']
                 if end_datetime_subject:
                     datetime_subject = datetime_subject.rstrip('-') + '-' + end_datetime_subject
-                rb.set_target(self.dp.parse_as_ref(datetime_subject, element_type=None))
+                target_ref = self.dp.parse_as_ref(datetime_subject, element_type=None)
             else:
-                rb.set_target(self.build_ref_from_field(field, target_element_type))
+                target_ref = self.build_ref_from_field(field, target_element_type)
+            rb.set_target(target_ref)
 
             # Notes: n/a
 
             relationships.append(rb.build())
+
     ...
     ...
     ...

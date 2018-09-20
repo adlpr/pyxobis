@@ -753,7 +753,7 @@ class NameParser:
                     orb.set_link( val_part,
                                   href_URI = lookup_as_org )
                     for prequalifier in self.__parse_organization_prequalifiers(bespoke_field):
-                        orb.add_prequalifier ( prequalifier )
+                        orb.add_qualifier(prequalifier)
                     orb.add_name( bespoke_subfields[-1],
                                   lang   = lang,
                                   script = script,

@@ -56,10 +56,11 @@ class Record(Component):
         principal_element_e = self.principal_element.serialize_xml()
         record_e.append(principal_element_e)
         # <relationships>
-        relationships_e = E('relationships')
-        relationship_elements = [relationship.serialize_xml() for relationship in self.relationships]
-        relationships_e.extend(relationship_elements)
-        record_e.append(relationships_e)
+        if self.relationships:
+            relationships_e = E('relationships')
+            relationship_elements = [relationship.serialize_xml() for relationship in self.relationships]
+            relationships_e.extend(relationship_elements)
+            record_e.append(relationships_e)
         return record_e
 
 
