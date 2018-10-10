@@ -435,7 +435,7 @@ class NameParser:
 
         # QUALIFIER(S)
         # ---
-        # n/a
+        # 651 ^z ? [not used]
 
         return place_names_and_qualifiers
 

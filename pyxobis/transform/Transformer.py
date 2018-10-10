@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import regex as re
+import os, json
 import pyxobis
 from pyxobis.builders import *
 from .LaneMARCRecord import LaneMARCRecord
@@ -45,12 +46,15 @@ class Transformer:
             ORGANIZATION : self.np.parse_organization_name,
             PLACE        : self.np.parse_place_name,
             STRING       : self.np.parse_string_name,
-            TIME         : lambda x: []
+            TIME         : lambda _: []
         }
         self.lane_org_ref = self.build_simple_ref("Lane Medical Library", ORGANIZATION)
         self.lc_org_ref   = self.build_simple_ref("Library of Congress", ORGANIZATION)
         self.nlm_org_ref  = self.build_simple_ref("National Library of Medicine (U.S.)", ORGANIZATION)
         self.oclc_org_ref = self.build_simple_ref("OCLC", ORGANIZATION)
+        # map of 043 geographic area codes to entry names for relationships
+        # with open(os.path.join(os.path.dirname(__file__), 'gacs.json'), 'r') as inf:
+        #     self.gacs_map = json.load(inf)
 
     def transform(self, record):
         record.__class__ = LaneMARCRecord
@@ -101,11 +105,11 @@ class Transformer:
         # -------
         # TYPES
         # -------
-        # Record "Types" = Subsets = 655 77 / 87 (MeSH)
+        # Record "Types" = Subsets = 655 77
         # NB: Established aut "Record Type" (Z47381) actually refers
         #     to which PE a record is
         for field in record.get_fields('655'):
-            if field.indicator1 in '78':
+            if field.indicator1 in '7':
                 title = field['a']
                 href  = field['0'] or self.ix.simple_lookup(title, CONCEPT)
                 set_ref = self.ix.simple_lookup("Subset", CONCEPT)
@@ -136,10 +140,15 @@ class Transformer:
             # don't transform
             return None
 
+        # ~~~~~~
+        # RECORD PREPROCESSING
+        # ~~~~~~
         # Preprocessing for entry groups/sumptions
-        record = self.__preprocess_sumptions(record)
+        self.__preprocess_sumptions(record)
         # Fix 149 ^1 on bib records if necessary
-        record = self.__reconstruct_149_subf_1(record)
+        self.__reconstruct_149_subf_1(record)
+        # Only use 043 geocode as variant on auts if exactly one
+        self.__preprocess_043(record)
 
         if element_type != HOLDINGS:
 
@@ -901,7 +910,6 @@ class Transformer:
                 else:
                     val_lower = val.lower().strip()
                     if val_lower.startswith("(ocolc)(dnlm)") or val_lower.startswith("(dnlm)(ocolc)"):
-                        print(record['001'].data)
                         id_desc = [self.nlm_org_ref, self.oclc_org_ref]
                     elif val_lower.startswith("(dnlm)"):
                         id_desc = self.nlm_org_ref
@@ -1105,6 +1113,17 @@ class Transformer:
             assert record['245'].indicator2.isdigit(), \
                    "Invalid 245 indicator 2 in record {}".format(record.get_control_number())
             record['149']['1'] = record['245']['a'][:int(record['245'].indicator2)]
+        return record
+
+    def __preprocess_043(self, record):
+        """
+        Only use 043 geocode as variant on auts if exactly one. Add temporary ^e
+        to supply the variant type.
+        """
+        geocodes = record.get_subfields('043','a')
+        record.remove_fields('043')
+        if len(geocodes) == 1 and record.get_control_number().startswith('Z'):
+            record.add_ordered_field(Field('043','  ',['e',"MARC geographic area code",'a',geocodes[0]]))
         return record
 
     def get_relation_type(self, rel_name):

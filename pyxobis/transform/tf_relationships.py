@@ -74,11 +74,7 @@ def transform_relationships_bib(self, record):
         # Relationship Name(s)
         rel_names = field.get_subfields('e')
         if not rel_names:
-            # Determine default relator
-            ...
-            ...
-            ...
-            rel_names = ["Editor"]
+            rel_names = ["Related"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
@@ -87,7 +83,8 @@ def transform_relationships_bib(self, record):
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
-            # Degree: n/a
+            # Degree
+            rb.set_degree('primary')
 
             # Enumeration
             if '1' in field:
@@ -114,11 +111,7 @@ def transform_relationships_bib(self, record):
         # Relationship Name(s)
         rel_names = field.get_subfields('j')
         if not rel_names:
-            # Determine default relator
-            ...
-            ...
-            ...
-            rel_names = ["Author"]
+            rel_names = ["Related"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
@@ -127,7 +120,8 @@ def transform_relationships_bib(self, record):
             rb.set_name(rel_name)
             rb.set_type(self.get_relation_type(rel_name))
 
-            # Degree: n/a
+            # Degree
+            rb.set_degree('primary' if field.tag.startswith('1') else 'secondary')
 
             # Enumeration
             if '1' in field:
@@ -150,12 +144,44 @@ def transform_relationships_bib(self, record):
     for field in record.get_fields('130'):
         rb = RelationshipBuilder()
 
-        # relator?
-        ...
-        ...
+        # Name/Type
         rel_name = "Related"
-        ...
-        ...
+        rb.set_name(rel_name)
+        rb.set_type(self.get_relation_type(rel_name))
+
+        # Degree
+        re.set_degree('primary')
+
+        # Enumeration: n/a
+        # Chronology: n/a
+
+        # Target
+        rb.set_target(self.build_ref_from_field(field, WORK_AUT))
+
+        # Notes: n/a
+
+        relationships.append(rb.build())
+
+    # Projected Publication Date
+    for val in record.get_subfields('263','a'):
+        if not val.isdigit():
+            continue
+
+        val_normalized = None
+        if len(val) == 4:  # YYMM
+            yy, mm = val[:2], val[2:]
+            val_normalized = "19{}-{}".format(yy, mm) if int(yy) >= 80 else "20{}-{}".format(yy, mm)
+        elif len(val) == 6:  # YYYYMM
+            val_normalized = "{}-{}".format(val[:4], val[4:])
+        elif len(val) == 8:  # YYYYMMDD
+            val_normalized = "{}-{}-{}".format(val[:4], val[4:6], val[6:])
+        if not val_normalized:
+            continue
+
+        rb = RelationshipBuilder()
+
+        # Relationship Name
+        rel_name = "Projected publication date"
 
         # Name/Type
         rb.set_name(rel_name)
@@ -166,7 +192,7 @@ def transform_relationships_bib(self, record):
         # Chronology: n/a
 
         # Target
-        rb.set_target(self.build_ref_from_field(field, WORK_AUT))
+        rb.set_target(self.dp.parse_as_ref(val_normalized))
 
         # Notes: n/a
 
@@ -320,6 +346,71 @@ def transform_relationships_bib(self, record):
             # Notes: n/a
 
             relationships.append(rb.build())
+
+    # Geographic Subject (R)
+    for field in record.get_fields('651'):
+        # Relationship Name(s)
+        rel_names = field.get_subfields('e') or ["Subject"]
+        for rel_name in rel_names:
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rel_name = rel_name.rstrip(': ')
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree
+            rb.set_degree({'1': 'primary',
+                           '2': 'secondary'}.get(field.indicator1))
+
+            # Enumeration: n/a
+            # Chronology: n/a
+
+            # Target
+            # determine element type
+            target_ref = self.build_ref_from_field(field, PLACE)
+            rb.set_target(target_ref)
+
+            # Notes:
+            for val in field.get_subfields('j'):
+                rb.add_note(val,
+                            content_lang = None,
+                            type = "annotation")
+
+            relationships.append(rb.build())
+
+    # Keyword not otherwise in Record (Lane: separate $a for each word/phrase) (R)
+    for field in record.get_fields('653'):
+        # Relationship Name(s)
+        rel_names = field.get_subfields('e') or ["Subject"]
+        for rel_name in rel_names:
+            ...
+            # rb = RelationshipBuilder()
+            #
+            # # Name/Type
+            # rel_name = rel_name.rstrip(': ')
+            # rb.set_name(rel_name)
+            # rb.set_type(self.get_relation_type(rel_name))
+            #
+            # # Degree
+            # rb.set_degree({'1': 'primary',
+            #                '2': 'secondary'}.get(field.indicator1))
+            #
+            # # Enumeration: n/a
+            # # Chronology: n/a
+            #
+            # # Target
+            # # determine element type
+            # target_ref = self.build_ref_from_field(field, PLACE)
+            # rb.set_target(target_ref)
+            #
+            # # Notes:
+            # for val in field.get_subfields('j'):
+            #     rb.add_note(val,
+            #                 content_lang = None,
+            #                 type = "annotation")
+            #
+            # relationships.append(rb.build())
 
     ...
     ...

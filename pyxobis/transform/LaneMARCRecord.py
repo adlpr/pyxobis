@@ -94,7 +94,7 @@ class LaneMARCRecord(Record):
                     return TIME
                 else:
                     return CONCEPT
-            elif tag.endswith('51'): return PLACE
+            elif tag.endswith('51') or tag == '043': return PLACE
             elif tag.endswith('55'):
                 broad_category = self.get_broad_category()
                 if 'Relationship' in broad_category:
@@ -153,12 +153,13 @@ class LaneMARCRecord(Record):
                               RELATIONSHIP: 'a',           # X55
                               STRING:       'yqg3' }       # X82
 
+    variant_field_tags = ['043','072','150','210','245','246','247','249','400','410','411','430','450','451','455','480','482']
     def get_variant_fields(self):
         """
         Returns list of fields for variant entries of this record.
         """
         variant_fields = []
-        for field in self.get_fields('072','150','210','245','246','247','249','400','410','411','430','450','451','455','480','482'):
+        for field in self.get_fields(*self.variant_field_tags):
             if field.tag == '150' and 'm' in field:
                 # add MeSH "as Topic" version as a variant
                 new_field = Field(field.tag, (field.indicator1, field.indicator2), field.subfields.copy())

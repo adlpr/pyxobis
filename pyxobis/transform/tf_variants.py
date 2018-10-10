@@ -19,7 +19,7 @@ def transform_variants(self, record):
     411 : EVENT
     430 : WORK_AUT
     450 : CONCEPT or TIME or LANGUAGE
-    043/451 : PLACE
+    451/043[aut] : PLACE
     455 : CONCEPT or RELATIONSHIP
     480 : CONCEPT (subdivision)
     482 : STRING
@@ -363,7 +363,7 @@ def transform_variant_organization(self, field):
 
 def transform_variant_place(self, field):
     """
-    Input:  PyMARC 451 field
+    Input:  PyMARC 451/043 field
     Output: PlaceVariantEntry object
     """
     pvb = PlaceVariantBuilder()
