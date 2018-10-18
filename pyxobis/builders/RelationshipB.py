@@ -51,13 +51,13 @@ class RelationshipBuilder:
                        RelationshipName(
                            GenericContent( self.name_text,
                                     lang = self.name_lang ),
-                           self.link_attributes,
-                           OptNoteList(self.note_list)
+                           self.link_attributes
                        ),
                        self.element_ref,
                        type   = self.type,
                        degree = self.degree,
                        enumeration = self.enumeration,
-                       time_or_duration_ref = self.time_or_duration_ref
+                       time_or_duration_ref = self.time_or_duration_ref,
+                       opt_note_list = OptNoteList(self.note_list)
                    )
                )

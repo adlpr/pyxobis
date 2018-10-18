@@ -27,7 +27,37 @@ def transform_relationships_bib(self, record):
 
     relationships = []
 
-    # Personal Name, Main Entry
+    # Language Code (NR)
+    for field in record.get_fields('041'):
+        for code, val in field.get_subfields('a','b','d','e','f','g', with_codes=True):
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rel_name = { 'a': "Language",
+                         'b': "Language of abstract/summary",
+                         'd': "Language of sung or spoken text",
+                         'e': "Language of librettos",
+                         'f': "Language of table of contents",
+                         'g': "Language of accompanying material" }.get(code)
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+            # Enumeration: n/a
+            # Chronology: n/a
+
+            # Target
+            # get main entry subfields of language based on codes
+            lang_main_entry_fields = self.ix.reverse_lookup(self.ix.simple_lookup(val, LANGUAGE))
+            if not lang_main_entry_fields:
+                continue
+            rb.set_target(self.build_ref_from_field(Field('   ','  ',lang_main_entry_fields), LANGUAGE))
+
+            # Notes: n/a
+
+            relationships.append(rb.build())
+
+    # Personal Name, Main Entry (NR)
     for field in record.get_fields('100'):
         # Relationship Name(s)
         rel_names = field.get_subfields('e')
@@ -69,7 +99,7 @@ def transform_relationships_bib(self, record):
 
             relationships.append(rb.build())
 
-    # Organization Name, Main Entry
+    # Organization Name, Main Entry (NR)
     for field in record.get_fields('110'):
         # Relationship Name(s)
         rel_names = field.get_subfields('e')
@@ -106,7 +136,7 @@ def transform_relationships_bib(self, record):
 
             relationships.append(rb.build())
 
-    # Event Name, Main Entry / Added Entry
+    # Event Name, Main Entry (NR) / Added Entry (R)
     for field in record.get_fields('111','711'):
         # Relationship Name(s)
         rel_names = field.get_subfields('j')
@@ -140,7 +170,7 @@ def transform_relationships_bib(self, record):
 
             relationships.append(rb.build())
 
-    # Uniform Title, Main Entry
+    # Uniform Title, Main Entry (NR)
     for field in record.get_fields('130'):
         rb = RelationshipBuilder()
 
@@ -149,8 +179,8 @@ def transform_relationships_bib(self, record):
         rb.set_name(rel_name)
         rb.set_type(self.get_relation_type(rel_name))
 
-        # Degree
-        re.set_degree('primary')
+        # Degree: n/a
+        # re.set_degree('primary')
 
         # Enumeration: n/a
         # Chronology: n/a
@@ -162,7 +192,7 @@ def transform_relationships_bib(self, record):
 
         relationships.append(rb.build())
 
-    # Projected Publication Date
+    # Projected Publication Date (NR)
     for val in record.get_subfields('263','a'):
         if not val.isdigit():
             continue
@@ -307,7 +337,7 @@ def transform_relationships_bib(self, record):
     # Topical Subject (R)
     for field in record.get_fields('650'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('e') or ["Subject"]
+        rel_names = field.get_subfields('e') or ["Topic"] if field.indicator2 in '23' else ["Subject"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
@@ -411,6 +441,36 @@ def transform_relationships_bib(self, record):
             #                 type = "annotation")
             #
             # relationships.append(rb.build())
+
+    # Category Term (Form/Genre/Format/Subset) (R)
+    for field in record.get_fields('655'):
+        # ignore subsets and categories imported from MHFD
+        if field.indicator1 in '78' or field.indicator2 == '9':
+            continue
+
+        rb = RelationshipBuilder()
+
+        # Name/Type
+        rel_name = "Category"
+        rb.set_name(rel_name)
+        rb.set_type(self.get_relation_type(rel_name))
+
+        # Degree
+        rb.set_degree({'1': 'primary',
+                       '2': 'secondary',
+                       '4': 'broad'}.get(field.indicator1))
+
+        # Enumeration: n/a
+        # Chronology: n/a
+
+        # Target
+        # determine element type
+        target_ref = self.build_ref_from_field(field, CONCEPT)
+        rb.set_target(target_ref)
+
+        # Notes: n/a
+
+        relationships.append(rb.build())
 
     ...
     ...

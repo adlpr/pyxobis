@@ -44,28 +44,29 @@ class RelationshipContent(Component):
             attribute xobis:degree {
               string "primary" | string "secondary" | string "tertiary" | string "broad"
             }?,
-            relationshipName,
+            element xobis:name { linkAttributes?, genericContent },
             stringRef?,  # enumeration
             (timeRef | durationRef)?,
-            element xobis:target { conceptRef },
+            element xobis:target { conceptRef }
           )
          |
           (
             attribute xobis:degree { string "primary" | string "secondary" }?,
-            relationshipName,
+            element xobis:name { linkAttributes?, genericContent },
             stringRef?,  # enumeration
             (timeRef | durationRef)?,
             element xobis:target {
               (beingRef | stringRef | languageRef | orgRef | placeRef | eventRef | objectRef | workRef | timeRef | durationRef)
-            },
+            }
           )
-        )
+        ),
+        optNoteList
     """
     TYPES = ["subordinate", "superordinate", "preordinate", "postordinate", "associative", "dissociative", None]
     # DEGREES_CONCEPT = ["primary", "secondary", "tertiary", "broad", None]
     # DEGREES_NONCONCEPT = ["primary", "secondary", None]
     DEGREES = ["primary", "secondary", "tertiary", "broad", None]
-    def __init__(self, relationship_name, element_ref, type=None, degree=None, enumeration=None, time_or_duration_ref=None):
+    def __init__(self, relationship_name, element_ref, type=None, degree=None, enumeration=None, time_or_duration_ref=None, opt_note_list=OptNoteList()):
         assert type in RelationshipContent.TYPES
         self.type = type
         assert isinstance(element_ref, RefElement), "invalid target type: {}".format(type(element_ref))
@@ -85,6 +86,8 @@ class RelationshipContent(Component):
             assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
         self.element_ref = element_ref
+        assert isinstance(opt_note_list, OptNoteList)
+        self.opt_note_list = opt_note_list
     def serialize_xml(self):
         # Returns a list of two to five Elements and a dict of parent attributes.
         elements, attrs = [], {}
@@ -92,8 +95,8 @@ class RelationshipContent(Component):
             attrs['type'] = self.type
         if self.degree:
             attrs['degree'] = self.degree
-        relationship_name_es = self.relationship_name.serialize_xml()
-        elements.extend(relationship_name_es)
+        relationship_name_e = self.relationship_name.serialize_xml()
+        elements.append(relationship_name_e)
         if self.enumeration is not None:
             enumeration_e = self.enumeration.serialize_xml()
             elements.append(enumeration_e)
@@ -104,26 +107,25 @@ class RelationshipContent(Component):
         element_ref_e = self.element_ref.serialize_xml()
         target_e.append(element_ref_e)
         elements.append(target_e)
+        # note list
+        opt_note_list_e = self.opt_note_list.serialize_xml()
+        if opt_note_list_e is not None:
+            elements.append(opt_note_list_e)
         return elements, attrs
 
 
 class RelationshipName(Component):
     """
-    relationshipName |=
-        element xobis:name { linkAttributes?, genericContent },
-        optNoteList
+    element xobis:name { linkAttributes?, genericContent }
     """
-    def __init__(self, name_content, link_attributes=None, opt_note_list=OptNoteList()):
+    def __init__(self, name_content, link_attributes=None):
         if link_attributes is not None:
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
         assert isinstance(name_content, GenericContent)
         self.name_content = name_content
-        assert isinstance(opt_note_list, OptNoteList)
-        self.opt_note_list = opt_note_list
     def serialize_xml(self):
-        # Returns a list of one or two Elements.
-        elements = []
+        # Returns an Element.
         # name
         attrs = {}
         if self.link_attributes is not None:
@@ -133,9 +135,4 @@ class RelationshipName(Component):
         attrs.update(name_content_attrs)
         name_e = E('name', **attrs)
         name_e.text = name_content_text
-        elements.append(name_e)
-        # note list
-        opt_note_list_e = self.opt_note_list.serialize_xml()
-        if opt_note_list_e is not None:
-            elements.append(opt_note_list_e)
-        return elements
+        return name_e

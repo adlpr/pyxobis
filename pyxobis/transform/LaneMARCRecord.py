@@ -153,7 +153,7 @@ class LaneMARCRecord(Record):
                               RELATIONSHIP: 'a',           # X55
                               STRING:       'yqg3' }       # X82
 
-    variant_field_tags = ['043','072','150','210','245','246','247','249','400','410','411','430','450','451','455','480','482']
+    variant_field_tags = ['043','072','130','150','210','245','246','247','249','400','410','411','430','450','451','455','480','482']
     def get_variant_fields(self):
         """
         Returns list of fields for variant entries of this record.
@@ -166,6 +166,10 @@ class LaneMARCRecord(Record):
                 new_field['a'] = new_field['m']
                 new_field.delete_all_subfields('m')
                 variant_fields.append(new_field)
+            elif field.tag == '130':
+                # only a variant for bibs
+                if '245' in self:
+                    variant_fields.append(field)
             else:
                 variant_fields.append(field)
         return variant_fields
