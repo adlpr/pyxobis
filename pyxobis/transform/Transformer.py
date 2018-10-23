@@ -149,6 +149,8 @@ class Transformer:
         self.__reconstruct_149_subf_1(record)
         # Only use 043 geocode as variant on auts if exactly one
         self.__preprocess_043(record)
+        # Convert 730 variant (translated) titles to 246, for ease of processing
+        self.__translated_title_730_to_246(record)
 
         if element_type != HOLDINGS:
 
@@ -745,6 +747,12 @@ class Transformer:
         return rb.build()
 
 
+    def build_ref_from_author_title_field(self, field):
+        """
+        Build a Work ref based on a 700/710 author/title field.
+        """
+        ...
+
     def build_ref_from_field(self, field, element_type):
         """
         Build a ref based on a parsable field and its element type.
@@ -762,7 +770,8 @@ class Transformer:
             else:
                 rb.add_qualifier(ref_name_or_qualifier)
         # link attrs
-        rb.set_link(*self.get_linking_info(field, element_type))
+        if not (field.tag in ('700','710') and element_type == WORK_INST): # ignore author-title field works
+            rb.set_link(*self.get_linking_info(field, element_type))
         # subdivisions
         if element_type in (CONCEPT, LANGUAGE):
             # ^vxyz should always be subdivisions in concept/language fields
@@ -960,7 +969,7 @@ class Transformer:
                                     val.strip(),
                                     'invalid' if code=='z' else 'valid')
 
-
+    relator_subf_i_tags = ['246','411']
     def get_type_and_time_from_relator(self, field):
         """
         For 1XX and 4XX fields, the ^e "relator" and its time/duration qualifiers ^8 and ^9
@@ -972,7 +981,7 @@ class Transformer:
 
         # Entry Type
         # Valid variant types include any Equivalence relationship concepts
-        if field.tag in ['411']:
+        if field.tag in self.relator_subf_i_tags:
             # exceptions where ^e has other uses
             entry_type = field['i']
         else:
@@ -1068,17 +1077,30 @@ class Transformer:
         Output: 1) Changed (if applicable) Field object
                 2) String value for "included" attribute for use in a VariantBuilder
         """
-        for val in field.get_subfields('e'):
+        subf_code = 'i' if field.tag in self.relator_subf_i_tags else 'e'
+        for val in field.get_subfields(subf_code):
             if re.match(r"Includes broader", val, flags=re.I):
-                field.delete_subfield('e', val)
+                field.delete_subfield(subf_code, val)
                 return field, 'broader'
             elif re.match(r"Includes related", val, flags=re.I):
-                field.delete_subfield('e', val)
+                field.delete_subfield(subf_code, val)
                 return field, 'related'
             elif re.match(r"Includes[ :]*$", val, flags=re.I):
-                field.delete_subfield('e', val)
+                field.delete_subfield(subf_code, val)
                 return field, 'narrower'
         return field, None
+
+    def extract_enumeration(self, field):
+        """
+        Returns a StringRef representing an enumeration
+        to pass into a RelationshipBuilder, or None.
+        """
+        enum = None
+        if '1' in field:
+            enum = str(int(''.join(d for d in field['1'] if d.isdigit())))
+        elif field.tag in ('100','110','111'):
+            enum = '1'
+        return self.build_simple_ref(enum, STRING) if enum else None
 
     def __get_entry_group_id(self, field):
         if field.tag.endswith('50') or field.tag.endswith('80'):
@@ -1124,6 +1146,17 @@ class Transformer:
         record.remove_fields('043')
         if len(geocodes) == 1 and record.get_control_number().startswith('Z'):
             record.add_ordered_field(Field('043','  ',['e',"MARC geographic area code",'a',geocodes[0]]))
+        return record
+
+    def __translated_title_730_to_246(self, record):
+        """
+        Convert 730 variant (translated) titles to 246, for ease of processing.
+        """
+        for field in record.get_fields('730'):
+            if field.indicator2 == '9' and 'l' in field:
+                record.remove_field(field)
+                field.delete_all_subfields('l')
+                record.add_field(Field('246','  ',['i',"Translated title"] + field.subfields.copy()))
         return record
 
     def get_relation_type(self, rel_name):

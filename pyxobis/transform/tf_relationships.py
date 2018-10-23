@@ -80,11 +80,7 @@ def transform_relationships_bib(self, record):
             # Degree: n/a
 
             # Enumeration
-            if '1' in field:
-                enum = str(int(''.join(d for d in field['1'] if d.isdigit())))
-            else:
-                enum = '1'
-            rb.set_enumeration(self.build_simple_ref(enum, STRING))
+            rb.set_enumeration(self.extract_enumeration(field))
 
             # Chronology: n/a
 
@@ -102,9 +98,7 @@ def transform_relationships_bib(self, record):
     # Organization Name, Main Entry (NR)
     for field in record.get_fields('110'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('e')
-        if not rel_names:
-            rel_names = ["Related"]
+        rel_names = field.get_subfields('e') or ["Related"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
@@ -117,11 +111,7 @@ def transform_relationships_bib(self, record):
             rb.set_degree('primary')
 
             # Enumeration
-            if '1' in field:
-                enum = str(int(''.join(d for d in field['1'] if d.isdigit())))
-            else:
-                enum = '1'
-            rb.set_enumeration(self.build_simple_ref(enum, STRING))
+            rb.set_enumeration(self.extract_enumeration(field))
 
             # Chronology: n/a
 
@@ -139,9 +129,7 @@ def transform_relationships_bib(self, record):
     # Event Name, Main Entry (NR) / Added Entry (R)
     for field in record.get_fields('111','711'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('j')
-        if not rel_names:
-            rel_names = ["Related"]
+        rel_names = field.get_subfields('j') or ["Related"]
         for rel_name in rel_names:
             rb = RelationshipBuilder()
 
@@ -154,12 +142,7 @@ def transform_relationships_bib(self, record):
             rb.set_degree('primary' if field.tag.startswith('1') else 'secondary')
 
             # Enumeration
-            if '1' in field:
-                enum = str(int(''.join(d for d in field['1'] if d.isdigit())))
-                rb.set_enumeration(self.build_simple_ref(enum, STRING))
-            elif field.tag == '111':
-                enum = '1'
-                rb.set_enumeration(self.build_simple_ref(enum, STRING))
+            rb.set_enumeration(self.extract_enumeration(field))
 
             # Chronology: n/a
 
@@ -172,25 +155,24 @@ def transform_relationships_bib(self, record):
 
     # Uniform Title, Main Entry (NR)
     for field in record.get_fields('130'):
-        rb = RelationshipBuilder()
+        if 'w' in field:  # if not, these are only treated as variants
+            rb = RelationshipBuilder()
 
-        # Name/Type
-        rel_name = "Related"
-        rb.set_name(rel_name)
-        rb.set_type(self.get_relation_type(rel_name))
+            # Name/Type
+            rel_name = "Realization of"
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
 
-        # Degree: n/a
-        # re.set_degree('primary')
+            # Degree: n/a
+            # Enumeration: n/a
+            # Chronology: n/a
 
-        # Enumeration: n/a
-        # Chronology: n/a
+            # Target
+            rb.set_target(self.build_ref_from_field(field, WORK_AUT))
 
-        # Target
-        rb.set_target(self.build_ref_from_field(field, WORK_AUT))
+            # Notes: n/a
 
-        # Notes: n/a
-
-        relationships.append(rb.build())
+            relationships.append(rb.build())
 
     # Projected Publication Date (NR)
     for val in record.get_subfields('263','a'):
@@ -397,9 +379,7 @@ def transform_relationships_bib(self, record):
             # Chronology: n/a
 
             # Target
-            # determine element type
-            target_ref = self.build_ref_from_field(field, PLACE)
-            rb.set_target(target_ref)
+            rb.set_target(self.build_ref_from_field(field, PLACE))
 
             # Notes:
             for val in field.get_subfields('j'):
@@ -431,8 +411,7 @@ def transform_relationships_bib(self, record):
             #
             # # Target
             # # determine element type
-            # target_ref = self.build_ref_from_field(field, PLACE)
-            # rb.set_target(target_ref)
+            # rb.set_target(self.build_ref_from_field(field, PLACE))
             #
             # # Notes:
             # for val in field.get_subfields('j'):
@@ -465,12 +444,49 @@ def transform_relationships_bib(self, record):
 
         # Target
         # determine element type
-        target_ref = self.build_ref_from_field(field, CONCEPT)
-        rb.set_target(target_ref)
+        rb.set_target(self.build_ref_from_field(field, CONCEPT))
 
         # Notes: n/a
 
         relationships.append(rb.build())
+
+    # Personal / Organization Name, Added Entry (R)
+    for field in record.get_fields('700','710'):
+        # from MFHD
+        if field.indicator2 == '8':
+            continue
+        rel_names = field.get_subfields('e') or (["Related/analytical title"] if 't' in field else ["Related"])
+        for rel_name in rel_names:
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+
+            # Enumeration
+            rb.set_enumeration(self.extract_enumeration(field))
+
+            # Chronology
+            rb.set_time_or_duration_ref(self.get_field_chronology(field))
+
+            # Notes
+            for code, val in field.get_subfields('u','v','z', with_codes=True):
+                rb.add_note(val,
+                            content_lang = None,
+                            type = "transcription")
+
+            if 't' in field:
+                # two relationships: one for title, one for author
+                rb.set_target(self.build_ref_from_field(field, WORK_INST))
+                relationships.append(rb.build())
+                # set relator for being/org
+                rb.set_name("Author (analytic)")
+                rb.set_type(self.get_relation_type("Author (analytic)"))
+
+            rb.set_target(self.build_ref_from_field(field, BEING if field.tag == '700' else ORGANIZATION))
+            relationships.append(rb.build())
 
     ...
     ...

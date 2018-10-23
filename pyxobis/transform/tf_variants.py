@@ -537,7 +537,7 @@ def transform_variant_time(self, field):
 
 def transform_variant_work_authority(self, field):
     """
-    Input:  PyMARC 430 field
+    Input:  PyMARC 130/430 field
     Output: WorkVariantEntry object
     """
     wvb = WorkVariantBuilder()
@@ -556,6 +556,10 @@ def transform_variant_work_authority(self, field):
     # Type / Time/Duration Ref
     # ---
     type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
+    if field.tag == '130':
+        type_kwargs = type_kwargs or { 'link_title' : "Uniform title",
+                    'set_URI'    : self.ix.simple_lookup("Equivalence", CONCEPT),
+                    'href_URI'   : self.ix.simple_lookup("Uniform title", RELATIONSHIP) }
     if type_kwargs:
         wvb.set_type(**type_kwargs)
     if type_time_or_duration_ref is not None:
@@ -620,7 +624,8 @@ def transform_variant_work_instance_or_object(self, field, element_type):
 
     # Included
     # ---
-    # n/a
+    field, included = self.extract_included_relation(field)
+    vb.set_included(included)
 
     # Variant Group Attributes
     # ---
