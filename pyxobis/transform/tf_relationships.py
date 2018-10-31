@@ -91,7 +91,7 @@ def transform_relationships_bib(self, record):
             for code, val in field.get_subfields('u','v','z', with_codes=True):
                 rb.add_note(val,
                             content_lang = None,
-                            type = "transcription")
+                            role = "transcription")
 
             relationships.append(rb.build())
 
@@ -122,7 +122,7 @@ def transform_relationships_bib(self, record):
             for code, val in field.get_subfields('j','u','v','z', with_codes=True):
                 rb.add_note(val,
                             content_lang = None,
-                            type = "transcription" if code != 'j' else "annotation")
+                            role = "transcription" if code != 'j' else "annotation")
 
             relationships.append(rb.build())
 
@@ -237,7 +237,7 @@ def transform_relationships_bib(self, record):
             for val in field.get_subfields('j'):
                 rb.add_note(val,
                             content_lang = None,
-                            type = "annotation")
+                            role = "annotation")
 
             relationships.append(rb.build())
 
@@ -266,7 +266,7 @@ def transform_relationships_bib(self, record):
             for val in field.get_subfields('j'):
                 rb.add_note(val,
                             content_lang = None,
-                            type = "annotation")
+                            role = "annotation")
 
             relationships.append(rb.build())
 
@@ -385,41 +385,37 @@ def transform_relationships_bib(self, record):
             for val in field.get_subfields('j'):
                 rb.add_note(val,
                             content_lang = None,
-                            type = "annotation")
+                            role = "annotation")
 
             relationships.append(rb.build())
 
     # Keyword not otherwise in Record (Lane: separate $a for each word/phrase) (R)
     for field in record.get_fields('653'):
         # Relationship Name(s)
-        rel_names = field.get_subfields('e') or ["Subject"]
+        rel_names = field.get_subfields('e') or ["Keyword"]
         for rel_name in rel_names:
-            ...
-            # rb = RelationshipBuilder()
-            #
-            # # Name/Type
-            # rel_name = rel_name.rstrip(': ')
-            # rb.set_name(rel_name)
-            # rb.set_type(self.get_relation_type(rel_name))
-            #
-            # # Degree
-            # rb.set_degree({'1': 'primary',
-            #                '2': 'secondary'}.get(field.indicator1))
-            #
-            # # Enumeration: n/a
-            # # Chronology: n/a
-            #
-            # # Target
-            # # determine element type
-            # rb.set_target(self.build_ref_from_field(field, PLACE))
-            #
-            # # Notes:
-            # for val in field.get_subfields('j'):
-            #     rb.add_note(val,
-            #                 content_lang = None,
-            #                 type = "annotation")
-            #
-            # relationships.append(rb.build())
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rel_name = rel_name.rstrip(': ')
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+            # Enumeration: n/a
+            # Chronology: n/a
+
+            # Notes:
+            for val in field.get_subfields('c'):
+                rb.add_note(val,
+                            content_lang = None,
+                            role = "documentation")
+
+            # Target(s)
+            for keyword_val in field.get_subfields('a'):
+                rb.set_target(self.build_simple_ref(keyword_val, STRING))
+
+                relationships.append(rb.build())
 
     # Category Term (Form/Genre/Format/Subset) (R)
     for field in record.get_fields('655'):
@@ -443,7 +439,6 @@ def transform_relationships_bib(self, record):
         # Chronology: n/a
 
         # Target
-        # determine element type
         rb.set_target(self.build_ref_from_field(field, CONCEPT))
 
         # Notes: n/a
@@ -475,7 +470,7 @@ def transform_relationships_bib(self, record):
             for code, val in field.get_subfields('u','v','z', with_codes=True):
                 rb.add_note(val,
                             content_lang = None,
-                            type = "transcription")
+                            role = "transcription")
 
             if 't' in field:
                 # two relationships: one for title, one for author
@@ -487,6 +482,55 @@ def transform_relationships_bib(self, record):
 
             rb.set_target(self.build_ref_from_field(field, BEING if field.tag == '700' else ORGANIZATION))
             relationships.append(rb.build())
+
+    # Uniform Title, Added Entry (R)
+    for field in record.get_fields('730'):
+        # from MFHD
+        if field.indicator2 == '8':
+            continue
+
+        rb = RelationshipBuilder()
+
+        # Name/Type
+        rel_name = "Related uniform title"
+        rb.set_name(rel_name)
+        rb.set_type(self.get_relation_type(rel_name))
+
+        # Degree: n/a
+        # Enumeration: n/a
+        # Chronology: n/a
+        # Notes: n/a
+
+        rb.set_target(self.build_ref_from_field(field, WORK_AUT))
+
+        relationships.append(rb.build())
+
+    # 76x-78x Linking Entry Fields
+    # for field in record.get_fields('760','762','765','767','770','772','773','775','776','777','780','785','787','789'):
+    #     rel_names = field.get_subfields('e') or [self.get_linking_entry_field_default_relator(field)]
+    #     for rel_name in rel_names:
+    #         rb = RelationshipBuilder()
+    #
+    #         # Name/Type
+    #         rb.set_name(rel_name)
+    #         rb.set_type(self.get_relation_type(rel_name))
+    #
+    #         # Degree: n/a
+    #         # Enumeration: n/a
+    #
+    #         # Chronology
+    #         rb.set_time_or_duration_ref(self.get_field_chronology(field))
+    #
+    #         # Target
+    #         rb.set_target(self.build_ref_from_field(field, WORK_INST))
+    #
+    #         # Notes
+    #         for code, val in field.get_subfields('n', with_codes=True):
+    #             rb.add_note(val,
+    #                         content_lang = None,
+    #                         role = "annotation" if field.indicator1 == '0' else "documentation")
+    #
+    #         relationships.append(rb.build())
 
     ...
     ...

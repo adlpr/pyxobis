@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-Enables quick lookup of a record ID by identity tuple.
+Enables lookup between record IDs and identities.
 """
 
 import os
@@ -18,8 +18,8 @@ INDEX_REL_TYPE = None
 
 # @@@@@@ TEMPORARY, ONLY WORKS FROM DIR WITH THESE FILES,
 #        DO SOMETHING BETTER WITH INPUT FILENAMES
-BIB_INF_NAME = "bibmfhd.20181022"
-AUT_INF_NAME = "aut.20181022"
+BIB_INF_NAME = "../surveytool/bibmfhd.20181029"
+AUT_INF_NAME = "../surveytool/aut.20181004"
 
 
 class Indexer:

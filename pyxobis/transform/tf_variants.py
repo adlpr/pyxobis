@@ -103,10 +103,11 @@ def transform_variant_being(self, field):
     for note_text in field.get_subfields('2','j'):
         bvb.add_note( content_text = note_text,
                       content_lang = field_lang,
-                      type = "annotation",
+                      role = "annotation",
                       link_title = None,
                       href_URI = None,
-                      set_URI  = None )
+                      set_URI  = None,
+                      generic_type = None )
 
     return bvb.build()
 
@@ -184,7 +185,7 @@ def transform_variant_concept(self, field):
     for note_text in field.get_subfields('2'):
         cvb.add_note( content_text = note_text,
                       content_lang = field_lang,
-                      type = "annotation",
+                      role = "annotation",
                       link_title = None,
                       href_URI = None,
                       set_URI  = None )
@@ -242,7 +243,7 @@ def transform_variant_event(self, field):
     for note_text in field.get_subfields('j'):
         evb.add_note( content_text = note_text,
                       content_lang = field_lang,
-                      type = "annotation",
+                      role = "annotation",
                       link_title = None,
                       href_URI = None,
                       set_URI  = None )
@@ -295,7 +296,7 @@ def transform_variant_language(self, field):
     for note_text in field.get_subfields('2'):
         lvb.add_note( content_text = note_text,
                       content_lang = None,
-                      type = "annotation",
+                      role = "annotation",
                       link_title = None,
                       href_URI = None,
                       set_URI  = None )
@@ -353,7 +354,7 @@ def transform_variant_organization(self, field):
     for note_text in field.get_subfields('j'):
         ovb.add_note( content_text = note_text,
                       content_lang = field_lang,
-                      type = "annotation",
+                      role = "annotation",
                       link_title = None,
                       href_URI = None,
                       set_URI  = None )
@@ -410,7 +411,7 @@ def transform_variant_place(self, field):
     for note_text in field.get_subfields('2'):
         pvb.add_note( content_text = note_text,
                       content_lang = None,
-                      type = "annotation",
+                      role = "annotation",
                       link_title = None,
                       href_URI = None,
                       set_URI  = None )
@@ -527,7 +528,7 @@ def transform_variant_time(self, field):
     for note_text in field.get_subfields('2'):
         tvb.add_note( content_text = note_text,
                       content_lang = None,
-                      type = "annotation",
+                      role = "annotation",
                       link_title = None,
                       href_URI = None,
                       set_URI  = None )
@@ -588,7 +589,7 @@ def transform_variant_work_authority(self, field):
     for note_text in field.get_subfields('j'):
         wvb.add_note( content_text = note_text,
                       content_lang = field['3'],
-                      type = "annotation",
+                      role = "annotation",
                       link_title = None,
                       href_URI = None,
                       set_URI  = None )
@@ -669,7 +670,7 @@ def transform_variant_work_instance_or_object(self, field, element_type):
         for note_text in field.get_subfields('b'):
             vb.add_note( content_text = note_text,
                           content_lang = field['3'],
-                          type = "transcription",
+                          role = "transcription",
                           link_title = None,
                           href_URI = None,
                           set_URI  = None )
@@ -681,7 +682,7 @@ def transform_variant_work_instance_or_object(self, field, element_type):
         for note_text in field.get_subfields('f','g'):
             vb.add_note( content_text = note_text,
                           content_lang = field['3'],
-                          type = "transcription",
+                          role = "transcription",
                           link_title = None,
                           href_URI = None,
                           set_URI  = None )

@@ -78,13 +78,14 @@ class PrincipalElementBuilder(Builder):
     #     super().add_qualifier(*args, **kwargs)
     def add_variant(self, variant):
         self.variants.append(variant)
-    def add_note(self, content_text, content_lang=None, type=None, link_title=None, href_URI=None, set_URI=None):
+    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, generic_type=None):
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
-            type = type,  # ["transcription", "annotation", "documentation", "description", None]
+            role = role,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
-            set_ref = XSDAnyURI(set_URI) if set_URI else None
+            set_ref = XSDAnyURI(set_URI) if set_URI else None,
+            generic_type = generic_type
         ))
     def set_type(self, new_type):
         self.type = new_type
@@ -162,16 +163,17 @@ class PrincipalElementVariantBuilder(Builder):
     def set_scheme(self, new_scheme):
         # string
         self.scheme = new_scheme
-    def add_note(self, content_text, content_lang=None, type=None, link_title=None, href_URI=None, set_URI=None):
+    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, generic_type=None):
         if link_title:
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None)
         else:
             link_attributes = None
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
-            type = type,  # ["transcription", "annotation", "documentation", "description", None]
+            role = role,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = link_attributes,
-            set_ref = XSDAnyURI(set_URI) if set_URI else None
+            set_ref = XSDAnyURI(set_URI) if set_URI else None,
+            generic_type = generic_type
         ))
 
 

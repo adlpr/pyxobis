@@ -323,29 +323,33 @@ class Note(Component):
     """
     note |=
         element xobis:note {
-            attribute type { "transcription" | "annotation" | "documentation" | "description" }?,
+            attribute role { "transcription" | "annotation" | "documentation" | "description" }?,
             ( linkAttributes,
               attribute set { xsd:anyURI } )?,
+            genericType?,
             genericContent
         }
     """
-    TYPES = ["transcription", "annotation", "documentation", "description", None]
-    def __init__(self, content, type=None, link_attributes=None, set_ref=None):
-        assert type in Note.TYPES
-        self.type = type
+    ROLES = ["transcription", "annotation", "documentation", "description", None]
+    def __init__(self, content, role=None, link_attributes=None, set_ref=None, generic_type=None):
+        assert role in Note.ROLES
+        self.role = role
         assert not (bool(link_attributes) ^ bool(set_ref)), "Need both or neither: link / set"
         if link_attributes is not None:
             assert isinstance(link_attributes, LinkAttributes)
             assert isinstance(set_ref, XSDAnyURI)
         self.link_attributes = link_attributes
         self.set_ref = set_ref
+        if generic_type is not None:
+            assert isinstance(generic_type, GenericType)
+        self.generic_type = generic_type
         assert isinstance(content, GenericContent)
         self.content = content
     def serialize_xml(self):
         # Returns an Element.
         attrs = {}
-        if self.type:
-            attrs['type'] = self.type
+        if self.role:
+            attrs['role'] = self.role
         if self.link_attributes is not None:
             link_attributes_attrs = self.link_attributes.serialize_xml()
             attrs.update(link_attributes_attrs)
@@ -354,6 +358,9 @@ class Note(Component):
         content_text, content_attrs = self.content.serialize_xml()
         attrs.update(content_attrs)
         note_e = E('note', **attrs)
+        if self.generic_type is not None:
+            type_e = self.generic_type.serialize_xml()
+            note_e.append(type_e)
         note_e.text = content_text
         return note_e
 

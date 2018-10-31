@@ -562,58 +562,6 @@ class NameParser:
         return work_aut_names_and_qualifiers
 
 
-    def __parse_author_title_work_name(self, field):
-        """
-        Parse a 700/710 field containing a Work inst name
-        into a list of either names (kwarg dicts) or qualifiers (RefElements),
-        to pass into a WorkRefBuilder.
-        """
-        # 700 uses f h k l n p q s t; 710 only uses n p t
-        field_codes = 'fhklnpqst' if field.tag == '700' else 'npt'
-
-        # NAME(S) & QUALIFIER(S)
-        # ---
-        author_title_work_names_and_qualifiers = []
-        for code, val in field.get_subfields(*field_codes, with_codes=True):
-            if code in 'tp':
-                # ^t  Title of work (NR)                    --> `generic` title
-                # ^p  Name of part/section of a work (R)    --> `section` title
-                val = self.__strip_ending_punctuation(val)
-                name_kwargs = { 'name_text': val,
-                                'type_': 'generic' if code == 't' else 'section' }
-                author_title_work_names_and_qualifiers.append(name_kwargs)
-            elif code == 'f':
-                # ^f  Date of work (NR)          --> Time/DurationRef
-                author_title_work_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
-            elif code == 'k':
-                # ^k  Form subheading (R)        --> ConceptRef
-                val = self.__strip_ending_punctuation(val)
-                crb = ConceptRefBuilder()
-                crb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
-                crb.add_name( val )
-                author_title_work_names_and_qualifiers.append(crb.build())
-            elif code == 'l':
-                # ^l  Language of a work (NR)    --> LanguageRef
-                val = self.__strip_ending_punctuation(val)
-                lrb = LanguageRefBuilder()
-                lrb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, LANGUAGE) )
-                lrb.add_name( val )
-                author_title_work_names_and_qualifiers.append(lrb.build())
-            else:
-                # ^n  Number of part/section of a work (R)  --> StringRef
-                # ^s  Version/edition (NR)                  --> StringRef
-                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
-                srb = StringRefBuilder()
-                srb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, STRING) )
-                srb.add_name( val )
-                author_title_work_names_and_qualifiers.append(srb.build())
-
-        return author_title_work_names_and_qualifiers
-
-
     def __parse_work_instance_or_object_main_name(self, field, element_type):
         """
         Parse a 149/730/740 field containing a Work inst/Object main entry name
@@ -763,10 +711,75 @@ class NameParser:
 
         return work_inst_or_object_variant_names_and_qualifiers
 
+    def __parse_author_title_work_name(self, field):
+        """
+        Parse a 700/710 field containing a Work inst name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
+        to pass into a WorkRefBuilder.
+        """
+        # 700 uses f h k l n p q s t; 710 only uses n p t
+        field_codes = 'fhklnpqst' if field.tag == '700' else 'npt'
+
+        # NAME(S) & QUALIFIER(S)
+        # ---
+        author_title_work_names_and_qualifiers = []
+        for code, val in field.get_subfields(*field_codes, with_codes=True):
+            if code in 'tp':
+                # ^t  Title of work (NR)                    --> `generic` title
+                # ^p  Name of part/section of a work (R)    --> `section` title
+                val = self.__strip_ending_punctuation(val)
+                name_kwargs = { 'name_text': val,
+                                'type_': 'generic' if code == 't' else 'section' }
+                author_title_work_names_and_qualifiers.append(name_kwargs)
+            elif code == 'f':
+                # ^f  Date of work (NR)          --> Time/DurationRef
+                author_title_work_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
+            elif code == 'k':
+                # ^k  Form subheading (R)        --> ConceptRef
+                val = self.__strip_ending_punctuation(val)
+                crb = ConceptRefBuilder()
+                crb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
+                crb.add_name( val )
+                author_title_work_names_and_qualifiers.append(crb.build())
+            elif code == 'l':
+                # ^l  Language of a work (NR)    --> LanguageRef
+                val = self.__strip_ending_punctuation(val)
+                lrb = LanguageRefBuilder()
+                lrb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, LANGUAGE) )
+                lrb.add_name( val )
+                author_title_work_names_and_qualifiers.append(lrb.build())
+            else:
+                # ^n  Number of part/section of a work (R)  --> StringRef
+                # ^s  Version/edition (NR)                  --> StringRef
+                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                srb = StringRefBuilder()
+                srb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, STRING) )
+                srb.add_name( val )
+                author_title_work_names_and_qualifiers.append(srb.build())
+
+        return author_title_work_names_and_qualifiers
+
+    def __parse_linking_entry_work_name(self, field):
+        """
+        Parse a 76X~78X field containing a Work inst main entry name
+        into a list of either names (kwarg dicts) or qualifiers (RefElements),
+        to pass into a WorkRefBuilder.
+        """
+        field_lang, field_script = field['3'], field['4']
+
+        ...
+        ...
+        ...
+
 
     def parse_work_instance_main_name(self, field):
         if field.tag in ('700','710'):
             return self.__parse_author_title_work_name(field)
+        elif field.tag[:2] in ('76','77','78'):
+            return self.__parse_linking_entry_work_name(field)
         return self.__parse_work_instance_or_object_main_name(field, WORK_INST)
 
     def parse_object_main_name(self, field):

@@ -38,7 +38,7 @@
   - Work: `individual`, `serial`, `collective`, `referential`
     - _"collective: Collections; Databases; Loose-leaf Services; Websites"_
     - _"Assembled collections are collective, as are "integrative" works."_
-* **type** of **note**
+* **role** of **note**
   - `transcription`: Designates transcribed information and may contain supplied data in brackets; could be quoted in display
   - `annotation`: Data supplied by the cataloger for public display
   - `documentation`: Data supplied by the cataloger typically not for public display
@@ -143,10 +143,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           class_ = None,
+           role = None,
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### BeingVariantBuilder
@@ -177,10 +178,11 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### BeingRefBuilder
@@ -225,10 +227,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### ConceptVariantBuilder
@@ -258,10 +261,11 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### ConceptRefBuilder
@@ -310,10 +314,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### EventVariantBuilder
@@ -345,10 +350,11 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### EventRefBuilder
@@ -389,10 +395,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### LanguageVariantBuilder
@@ -420,10 +427,11 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### LanguageRefBuilder
@@ -472,10 +480,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 
 set_holdings ( versions_holdings_opt )
 ```
@@ -507,10 +516,11 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### ObjectRefBuilder
@@ -553,10 +563,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### OrganizationVariantBuilder
@@ -588,10 +599,11 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### OrganizationRefBuilder
@@ -644,10 +656,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### PlaceVariantBuilder
@@ -677,10 +690,11 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### PlaceRefBuilder
@@ -724,10 +738,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### StringVariantBuilder
@@ -760,10 +775,11 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### StringRefBuilder
@@ -834,10 +850,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### DurationBuilder
@@ -895,10 +912,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### TimeVariantBuilder
@@ -1071,10 +1089,11 @@ add_variant ( variant )
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 
 set_holdings ( versions_holdings_opt )
 ```
@@ -1107,10 +1126,11 @@ add_qualifier ( qualifier )  # RefElement
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 ```
 
 ### WorkRefBuilder
@@ -1143,10 +1163,11 @@ set_link ( link_title,
 
 add_note ( content_text,
            content_lang = None,
-           type = None,  # transcription, annotation, documentation, description
+           role = None,  # transcription, annotation, documentation, description
            link_title = None,
            href_URI = None,
-           set_URI = None )
+           set_URI = None,
+           generic_type = None )
 
 set_enumeration ( enumeration )  # StringRef
 

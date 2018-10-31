@@ -62,6 +62,10 @@ class Transformer:
         # Ignore record if suppressed.
         if 'Suppressed' in record.get_subsets():
             return None
+        # @@@@@ TEMPORARY: IGNORE IMMI RECS @@@@@
+        if '040' in record and record['040']['a'] == "IMMI":
+            print(record['001'].data)
+            return None
 
         rb = RecordBuilder()
 
@@ -747,11 +751,6 @@ class Transformer:
         return rb.build()
 
 
-    def build_ref_from_author_title_field(self, field):
-        """
-        Build a Work ref based on a 700/710 author/title field.
-        """
-        ...
 
     def build_ref_from_field(self, field, element_type):
         """
@@ -1165,8 +1164,8 @@ class Transformer:
             return rel_types.pop().lower()
         return None
 
-    link_field_w = ('130','730','760','762','765','767','770','772','773','775',
-        '776','777','780','785','787','789')
+    link_field_w = ('130','530','730','760','762','765','767','770','772','773',
+        '775','776','777','780','785','787','789')
     link_field_0 = ('100','110','111','500','510','511','550','551','555','580',
         '582','600','610','611','650','651','653','655','700','710','711','748',
         '750','751','987')
@@ -1178,9 +1177,13 @@ class Transformer:
         """
         ctrlno, id_subfs = None, None
         # first try looking up the control number given
-        if field.tag in self.link_field_w and 'w' in field:
-            ctrlno = field['w']
-            id_subfs = self.ix.reverse_lookup(ctrlno)
+        if field.tag in self.link_field_w:
+            if 'w' in field:
+                ctrlno = field['w']
+                id_subfs = self.ix.reverse_lookup(ctrlno)
+            elif '0' in field:
+                ctrlno = field['0']
+                id_subfs = self.ix.reverse_lookup(ctrlno)
         elif field.tag in self.link_field_0 and '0' in field:
             ctrlno = field['0']
             id_subfs = self.ix.reverse_lookup(ctrlno)
@@ -1194,3 +1197,35 @@ class Transformer:
         # @@@ this part could be altered to use ISBD punctuation?
         id_repr = ' '.join(filter(None, id_subfs[1::2]))
         return id_repr, ctrlno
+
+    def get_linking_entry_field_default_relator(self, field):
+        if field.tag in ('780','785'):
+            return {'780': {'0': "Continues",
+                            '1': "Continues in part",
+                            '2': "Supersedes",
+                            '3': "Supersedes in part",
+                            '4': "Merger of",
+                            '5': "Absorbed",
+                            '6': "Absorbed in part",
+                            '7': "Separated from"},
+                    '785': {'0': "Continued by",
+                            '1': "Offshoot",
+                            '2': "Superseded by",
+                            '3': "Superseded in part by",
+                            '4': "Absorbed by",
+                            '5': "Absorbed in part by",
+                            '6': "Split into",
+                            '7': "Merged with", # @@@@@@!!!!!
+                            '8': "Continued by"}}.get(field.tag).get(field.indicator2, "Related title")
+        return {'760': "Main series",
+                '762': "Subseries",
+                '765': "Translation of",
+                '767': "Translated as",
+                '770': "Supplement",
+                '772': "Supplement to",
+                '773': "Component of",
+                '775': "Related edition",
+                '776': "Also issued as",
+                '777': "Issued with",
+                '787': "Related title",
+                '789': "Related title"}.get(field.tag)
