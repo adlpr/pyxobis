@@ -770,9 +770,33 @@ class NameParser:
         """
         field_lang, field_script = field['3'], field['4']
 
-        ...
-        ...
-        ...
+        # ^t corresponds to 149 ^a
+        # ^g corresponds to 149 ^d
+        # ^b corresponds to 149 ^s
+
+        # NAME(S) & QUALIFIER(S)
+        # ---
+        linking_entry_work_names_and_qualifiers = []
+        for code, val in field.get_subfields('t','g','b', with_codes=True):
+            if code == 't':
+                # ^t  Title of work             --> `generic` title
+                val = self.__strip_ending_punctuation(val)
+                name_kwargs = { 'name_text': val,
+                                'type_': 'generic' }
+                linking_entry_work_names_and_qualifiers.append(name_kwargs)
+            elif code == 'g':
+                # ^g  Relationship information  --> parse
+                linking_entry_work_names_and_qualifiers.extend(self.parse_generic_qualifier(val, field_lang, field_script))
+            else:
+                # ^b  Edition                   --> StringRef
+                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                srb = StringRefBuilder()
+                srb.set_link( val,
+                              href_URI = self.ix.simple_lookup(val, STRING) )
+                srb.add_name( val )
+                linking_entry_work_names_and_qualifiers.append(srb.build())
+
+        return linking_entry_work_names_and_qualifiers
 
 
     def parse_work_instance_main_name(self, field):

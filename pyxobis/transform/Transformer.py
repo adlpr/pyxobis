@@ -64,7 +64,6 @@ class Transformer:
             return None
         # @@@@@ TEMPORARY: IGNORE IMMI RECS @@@@@
         if '040' in record and record['040']['a'] == "IMMI":
-            print(record['001'].data)
             return None
 
         rb = RecordBuilder()
@@ -155,7 +154,14 @@ class Transformer:
         self.__preprocess_043(record)
         # Convert 730 variant (translated) titles to 246, for ease of processing
         self.__translated_title_730_to_246(record)
+        # Relator on 785 I2 7 depends on position in record.
+        self.__preprocess_785(record)
+        # If a linking field just links a control number, pull info into the field itself.
+        self.__preprocess_w_only_linking_fields(record)
 
+        # ~~~~~~
+        # RECORD PROCESSING
+        # ~~~~~~
         if element_type != HOLDINGS:
 
             init_builder = self.init_builder_methods.get(element_type)
@@ -1158,45 +1164,42 @@ class Transformer:
                 record.add_field(Field('246','  ',['i',"Translated title"] + field.subfields.copy()))
         return record
 
+    def __preprocess_785(self, record):
+        """
+        Relator on 785 I2 7 depends on position in record.
+        Temporarily switch the indicator of the last one to 0,
+        to be assigned relator "Continued by:"
+        """
+        merged_with_entries = [field for field in record.get_fields('785') if field.indicator2 == '7']
+        if merged_with_entries:
+            merged_with_entries[-1].indicator2 = '0'
+        return record
+
+    def __preprocess_w_only_linking_fields(self, record):
+        """
+        If a 7XX linking field links only a control number,
+        pull title info into the field itself.
+        """
+        for field in record.get_fields():
+            if field.tag.startswith('7'):
+                if len(field.subfields) == 2 and 'w' in field:
+                    linking_ctrlno = "(CStL)" + field['w'].rstrip('. ')
+                    linking_work_subfields = self.ix.reverse_lookup(linking_ctrlno)
+                    if not linking_work_subfields:
+                        # add dummy title
+                        field.subfields.extend(['t', "Unknown title"])
+                    else:
+                        # convert subfield codes
+                        # linking_work_subfields = []
+                        print(record['001'].data, linking_ctrlno, linking_work_subfields)
+                    ...
+        return record
+
     def get_relation_type(self, rel_name):
         rel_types = self.ix.lookup_rel_types(rel_name)
         if len(rel_types) == 1:
             return rel_types.pop().lower()
         return None
-
-    link_field_w = ('130','530','730','760','762','765','767','770','772','773',
-        '775','776','777','780','785','787','789')
-    link_field_0 = ('100','110','111','500','510','511','550','551','555','580',
-        '582','600','610','611','650','651','653','655','700','710','711','748',
-        '750','751','987')
-    def get_linking_info(self, field, element_type):
-        """
-        Return a string representation of the authorized heading of the record
-        the given field refers to, and the record's control number,
-        if there is such a record (if not, generate a representation from the field).
-        """
-        ctrlno, id_subfs = None, None
-        # first try looking up the control number given
-        if field.tag in self.link_field_w:
-            if 'w' in field:
-                ctrlno = field['w']
-                id_subfs = self.ix.reverse_lookup(ctrlno)
-            elif '0' in field:
-                ctrlno = field['0']
-                id_subfs = self.ix.reverse_lookup(ctrlno)
-        elif field.tag in self.link_field_0 and '0' in field:
-            ctrlno = field['0']
-            id_subfs = self.ix.reverse_lookup(ctrlno)
-        # if that's invalid, look it up based on the field and try again
-        if ctrlno is None or id_subfs is None:
-            ctrlno = self.ix.lookup(field, element_type)
-            id_subfs = self.ix.reverse_lookup(ctrlno)
-        # if still invalid, generate "heading" based on this field
-        if ctrlno in (Indexer.UNVERIFIED, Indexer.CONFLICT) or id_subfs is None:
-            id_subfs = LaneMARCRecord.get_identity_from_field(field, element_type, normalized=False).split(LaneMARCRecord.UNNORMALIZED_SEP)
-        # @@@ this part could be altered to use ISBD punctuation?
-        id_repr = ' '.join(filter(None, id_subfs[1::2]))
-        return id_repr, ctrlno
 
     def get_linking_entry_field_default_relator(self, field):
         if field.tag in ('780','785'):
@@ -1229,3 +1232,39 @@ class Transformer:
                 '777': "Issued with",
                 '787': "Related title",
                 '789': "Related title"}.get(field.tag)
+
+    link_field_w = ('130','530','730','760','762','765','767','770','772','773',
+        '775','776','777','780','785','787','789')
+    link_field_0 = ('100','110','111','500','510','511','550','551','555','580',
+        '582','600','610','611','650','651','653','655','700','710','711','748',
+        '750','751','987')
+    def get_linking_info(self, field, element_type):
+        """
+        Return a string representation of the authorized heading of the record
+        the given field refers to, and the record's control number,
+        if there is such a record (if not, generate a representation from the field).
+        """
+        ctrlno, id_subfs = None, None
+        # first try looking up the control number given
+        if field.tag in self.link_field_w:
+            if 'w' in field:
+                ctrlno = field['w']
+                id_subfs = self.ix.reverse_lookup(ctrlno)
+            elif '0' in field:
+                ctrlno = field['0']
+                id_subfs = self.ix.reverse_lookup(ctrlno)
+        elif field.tag in self.link_field_0 and '0' in field:
+            ctrlno = field['0']
+            id_subfs = self.ix.reverse_lookup(ctrlno)
+        # if that's invalid, look it up based on the field and try again
+        if ctrlno is None or id_subfs is None:
+            ctrlno = self.ix.lookup(field, element_type)
+            id_subfs = self.ix.reverse_lookup(ctrlno)
+        # if still invalid, generate "heading" based on this field
+        if ctrlno in (Indexer.UNVERIFIED, Indexer.CONFLICT) or id_subfs is None:
+            id_from_field = LaneMARCRecord.get_identity_from_field(field, element_type, normalized=False)
+            assert id_from_field, "ID generation failed for field: {}".format(str(field))
+            id_subfs = id_from_field.split(LaneMARCRecord.UNNORMALIZED_SEP)
+        # @@@ this part could be altered to use ISBD punctuation?
+        id_repr = ' '.join(filter(None, id_subfs[1::2]))
+        return id_repr, ctrlno

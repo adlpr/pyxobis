@@ -31,10 +31,10 @@ class RecordBuilder:
         self.id_value = id_value
     def set_id_status(self, id_status):
         self.id_status = id_status
-    def add_id_note(self, content_text, content_lang=None, class_=None, link_title=None, href_URI=None, set_URI=None):
+    def add_id_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None):
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
-            class_ = class_,  # ["transcription", "annotation", "documentation", "description", None]
+            role = role,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
             set_ref = XSDAnyURI(set_URI) if set_URI else None
@@ -45,10 +45,10 @@ class RecordBuilder:
         self.current_id_alternate_descriptions = id_descriptions
         self.current_id_alternate_value = id_value
         self.current_id_alternate_status = id_status
-    def add_id_alternate_note(self, content_text, content_lang=None, type=None, link_title=None, href_URI=None, set_URI=None):
+    def add_id_alternate_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None):
         self.current_id_alternate_notes.append(Note(
             GenericContent(content_text, content_lang),
-            type = type,  # ["transcription", "annotation", "documentation", "description", None]
+            role = role,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
             set_ref = XSDAnyURI(set_URI) if set_URI else None

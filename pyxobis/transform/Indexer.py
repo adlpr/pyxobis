@@ -167,6 +167,8 @@ class Indexer:
         of the associated record,
         or None if not found.
         """
+        if not ctrlno.startswith('('):
+            ctrlno = "(CStL)" + ctrlno
         main_entry = self.index_reverse.get(ctrlno)
         if main_entry is None:
             return None

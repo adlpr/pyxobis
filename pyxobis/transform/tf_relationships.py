@@ -505,32 +505,60 @@ def transform_relationships_bib(self, record):
 
         relationships.append(rb.build())
 
+    # Variant Title, Added Entry (R)
+    for field in record.get_fields('740'):
+        # only those marked as analytical titles
+        if field.indicator2 != '2':
+            continue
+
+        rb = RelationshipBuilder()
+
+        # Name/Type
+        rel_name = "Analytical title"
+        rb.set_name(rel_name)
+        rb.set_type(self.get_relation_type(rel_name))
+
+        # Degree: n/a
+        # Enumeration: n/a
+        # Chronology: n/a
+        # Notes: n/a
+
+        rb.set_target(self.build_ref_from_field(field, WORK_INST))
+
+        relationships.append(rb.build())
+
     # 76x-78x Linking Entry Fields
-    # for field in record.get_fields('760','762','765','767','770','772','773','775','776','777','780','785','787','789'):
-    #     rel_names = field.get_subfields('e') or [self.get_linking_entry_field_default_relator(field)]
-    #     for rel_name in rel_names:
-    #         rb = RelationshipBuilder()
-    #
-    #         # Name/Type
-    #         rb.set_name(rel_name)
-    #         rb.set_type(self.get_relation_type(rel_name))
-    #
-    #         # Degree: n/a
-    #         # Enumeration: n/a
-    #
-    #         # Chronology
-    #         rb.set_time_or_duration_ref(self.get_field_chronology(field))
-    #
-    #         # Target
-    #         rb.set_target(self.build_ref_from_field(field, WORK_INST))
-    #
-    #         # Notes
-    #         for code, val in field.get_subfields('n', with_codes=True):
-    #             rb.add_note(val,
-    #                         content_lang = None,
-    #                         role = "annotation" if field.indicator1 == '0' else "documentation")
-    #
-    #         relationships.append(rb.build())
+    for field in record.get_fields('760','762','765','767','770','772','773','775','776','777','780','785','787','789'):
+        rel_names = field.get_subfields('e') or [self.get_linking_entry_field_default_relator(field)]
+        for rel_name in rel_names:
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+
+            # Enumeration
+            ...
+            ...
+            ...
+
+            # Chronology
+            rb.set_time_or_duration_ref(self.get_field_chronology(field))
+
+            # Target
+            rb.set_target(self.build_ref_from_field(field, WORK_INST))
+
+            # Notes
+            for code, val in field.get_subfields('k','n','p','s', with_codes=True):
+                rb.add_note(val,
+                            content_lang = None,
+                            role = "documentation" if code == 'n' and field.indicator1 != '0' else "annotation")
+                            # generic_type = { 'p': '',
+                            #                  's': '' }.get(code, None) )
+
+            relationships.append(rb.build())
 
     ...
     ...

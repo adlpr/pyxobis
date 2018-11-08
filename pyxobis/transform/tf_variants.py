@@ -597,7 +597,6 @@ def transform_variant_work_authority(self, field):
     return wvb.build()
 
 
-
 def transform_variant_work_instance(self, field):
     """
     Input:  PyMARC 210/245/246/247/249 field
@@ -615,7 +614,9 @@ def transform_variant_object(self, field):
 
 
 def transform_variant_work_instance_or_object(self, field, element_type):
-
+    """
+    Shared code since they're the same field structure
+    """
     if element_type == WORK_INST:
         vb = WorkVariantBuilder()
         name_parser = self.np.parse_work_instance_variant_name

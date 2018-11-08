@@ -70,7 +70,7 @@ set_id_status ( id_status )  # "valid", "invalid", "cancelled", "incorrect", "va
 # note on main record ID
 add_id_note ( content_text,
               content_lang = None,
-              class_ = None,
+              role = None,
               link_title = None,
               href_URI = None,
               set_URI = None )
@@ -82,7 +82,7 @@ set_id_alternate ( id_descriptions,
 
 add_id_alternate_note ( content_text,
                         content_lang = None,
-                        class_ = None,
+                        role = None,
                         link_title = None,
                         href_URI = None,
                         set_URI = None )

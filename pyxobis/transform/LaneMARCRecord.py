@@ -209,7 +209,11 @@ class LaneMARCRecord(Record):
         # which subfields should be included as part of the identity?
         if element_type not in cls.IDENTITY_SUBFIELD_MAP:
             return None
-        subfield_codes = cls.IDENTITY_SUBFIELD_MAP[element_type]
+        elif '760' <= field.tag <= '789':
+            # exception for bib linking entry fields
+            subfield_codes = 'tgb'
+        else:
+            subfield_codes = cls.IDENTITY_SUBFIELD_MAP[element_type]
         # pull those subfields to generate it
         if normalized:
             # normalization also standardizes subfield order and inclusion
