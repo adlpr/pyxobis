@@ -228,7 +228,9 @@ def transform_relationships_bib(self, record):
 
             # Degree: n/a
             # Enumeration: n/a
-            # Chronology: n/a
+
+            # Chronology
+            rb.set_time_or_duration_ref(self.get_field_chronology(field))
 
             # Target
             rb.set_target(self.build_ref_from_field(field, BEING))
@@ -539,24 +541,75 @@ def transform_relationships_bib(self, record):
 
             # Degree: n/a
 
-            # Enumeration
-            ...
-            ...
-            ...
+            # Enumeration / Chronology
 
-            # Chronology
-            rb.set_time_or_duration_ref(self.get_field_chronology(field))
+            # before enum/chron, strip "not owned" out of all ^g AND ^d and move to notes
+            for i, code in enumerate(field.subfields[::2]):
+                if code in 'dg':
+                    not_owned_re = re.search(r'(\(?not *owned\)?)', field.subfields[i*2+1], flags=re.I)
+                    if not_owned_re:
+                        # remove not owned note from that subfield
+                        field.subfields[i*2+1] = re.sub(r'\s\s+', ' ', re.sub(r'(\(?not *owned\)?)', '', field.subfields[i*2+1], flags=re.I), flags=re.I).strip()
+                        # and add to relationship as note
+                        rb.add_note(not_owned_re.group(1),
+                                    content_lang = 'eng',
+                                    role = "annotation")
 
-            # Target
-            rb.set_target(self.build_ref_from_field(field, WORK_INST))
+            # ^g is chronology of the relationship (force all to time) EXCEPT 773 and 787
+            if field.tag in ('773','787'):
+                # ^9 may also occur in 787 [only two though]
+                # self.get_field_chronology(field)
+                # for 773 and 787:
+                #     if ^d or ^9, ^d/^9 is chronology and ^m or ^g is enumeration
+                #     if not but ^m, ^m is enumeration, ^g is chronology
+                #     if not, check whether ^g is a chronology
+                #               if not, treat as an enumeration
+                #               [issue: year+season dates?]
+                if 'd' in field or '9' in field:
+                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'] or field['9'], WORK_INST))
+                    if 'm' in field or 'g' in field:
+                        rb.set_enumeration(self.build_simple_ref(field['m'] or field['g'], STRING))
+                elif 'm' in field:
+                    if 'g' in field:
+                        rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
+                    rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
+                elif 'g' in field:
+                    # ^g is ambiguous...
+                    parsed_g = self.dp.parse_as_ref(field['g'], WORK_INST)
+                    ...
+                    ...
+                    ...
+                    rb.set_time_or_duration_ref(parsed_g)
+            else:
+                # ^m = enumeration; ^g = chronology
+                if 'm' in field:
+                    rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
+                if 'g' in field:
+                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
+
+
+            # If the field is only a linked control number
+            if 't' not in field and ('w' in field or '0' in field):
+                # parse the 149 at the link as the name
+                target_ctrlno = ("(CStL)" + field['w'].rstrip('. ')) if 'w' in field else field['0'].rstrip('. ')
+                target_identity = self.ix.reverse_lookup(target_ctrlno)
+                # if invalid control number, print warning, use dummy name
+                if not target_identity:
+                    print("WARNING: Invalid href: bid {}, field: {}; default title to 'Unknown work'".format(record['001'].data, str(field)))
+                    target_ref = self.build_simple_ref("Unknown work", WORK_INST)
+                else:
+                    target_ref = self.build_ref_from_field(Field('149','  ',target_identity), WORK_INST)
+            else:
+                target_ref = self.build_ref_from_field(field, WORK_INST)
+            rb.set_target(target_ref)
 
             # Notes
             for code, val in field.get_subfields('k','n','p','s', with_codes=True):
+                # note_type = { 'p': '',
+                #               's': '' }.get(code, None)
                 rb.add_note(val,
                             content_lang = None,
                             role = "documentation" if code == 'n' and field.indicator1 != '0' else "annotation")
-                            # generic_type = { 'p': '',
-                            #                  's': '' }.get(code, None) )
 
             relationships.append(rb.build())
 

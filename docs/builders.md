@@ -73,7 +73,10 @@ add_id_note ( content_text,
               role = None,
               link_title = None,
               href_URI = None,
-              set_URI = None )
+              set_URI = None,
+              type_link_title = None,
+              type_href_URI = None,
+              type_set_URI = None )
 
 # Other record IDs (LCCN, etc.).
 set_id_alternate ( id_descriptions,
@@ -85,7 +88,10 @@ add_id_alternate_note ( content_text,
                         role = None,
                         link_title = None,
                         href_URI = None,
-                        set_URI = None )
+                        set_URI = None,
+                        type_link_title = None,
+                        type_href_URI = None,
+                        type_set_URI = None )
 
 add_id_alternate ( *args )  # if args, equivalent to set_id_alternate(*args); add_id_alternate()
 
@@ -147,7 +153,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### BeingVariantBuilder
@@ -182,7 +190,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### BeingRefBuilder
@@ -231,7 +241,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### ConceptVariantBuilder
@@ -265,7 +277,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### ConceptRefBuilder
@@ -318,7 +332,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### EventVariantBuilder
@@ -354,7 +370,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### EventRefBuilder
@@ -399,7 +417,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### LanguageVariantBuilder
@@ -431,7 +451,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### LanguageRefBuilder
@@ -484,7 +506,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 
 set_holdings ( versions_holdings_opt )
 ```
@@ -520,7 +544,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### ObjectRefBuilder
@@ -567,7 +593,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### OrganizationVariantBuilder
@@ -603,7 +631,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### OrganizationRefBuilder
@@ -660,7 +690,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### PlaceVariantBuilder
@@ -694,7 +726,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### PlaceRefBuilder
@@ -742,7 +776,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### StringVariantBuilder
@@ -779,7 +815,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### StringRefBuilder
@@ -854,7 +892,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### DurationBuilder
@@ -916,7 +956,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### TimeVariantBuilder
@@ -1093,7 +1135,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 
 set_holdings ( versions_holdings_opt )
 ```
@@ -1130,7 +1174,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 ```
 
 ### WorkRefBuilder
@@ -1167,7 +1213,9 @@ add_note ( content_text,
            link_title = None,
            href_URI = None,
            set_URI = None,
-           generic_type = None )
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None )
 
 set_enumeration ( enumeration )  # StringRef
 

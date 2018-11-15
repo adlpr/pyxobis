@@ -78,14 +78,22 @@ class PrincipalElementBuilder(Builder):
     #     super().add_qualifier(*args, **kwargs)
     def add_variant(self, variant):
         self.variants.append(variant)
-    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, generic_type=None):
+    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None):
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
             role = role,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
             set_ref = XSDAnyURI(set_URI) if set_URI else None,
-            generic_type = generic_type
+            generic_type = GenericType(
+                               LinkAttributes(
+                                   type_link_title,
+                                   href = XSDAnyURI( type_href_URI ) \
+                                                if type_href_URI else None
+                               ),
+                               set_ref = XSDAnyURI( type_set_URI ) \
+                                         if type_set_URI else None
+                           ) if type_link_title else None
         ))
     def set_type(self, new_type):
         self.type = new_type
@@ -163,17 +171,22 @@ class PrincipalElementVariantBuilder(Builder):
     def set_scheme(self, new_scheme):
         # string
         self.scheme = new_scheme
-    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, generic_type=None):
-        if link_title:
-            link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None)
-        else:
-            link_attributes = None
+    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None):
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
             role = role,  # ["transcription", "annotation", "documentation", "description", None]
-            link_attributes = link_attributes,
+            link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
+                              if link_title else None,
             set_ref = XSDAnyURI(set_URI) if set_URI else None,
-            generic_type = generic_type
+            generic_type = GenericType(
+                               LinkAttributes(
+                                   type_link_title,
+                                   href = XSDAnyURI( type_href_URI ) \
+                                                if type_href_URI else None
+                               ),
+                               set_ref = XSDAnyURI( type_set_URI ) \
+                                         if type_set_URI else None
+                           ) if type_link_title else None
         ))
 
 

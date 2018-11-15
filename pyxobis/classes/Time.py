@@ -49,6 +49,8 @@ class Time(PrincipalElement):
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
         self.opt_note_list = opt_note_list
+    def is_nominal(self):
+        return self.time_or_duration_entry.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         # attributes
@@ -96,6 +98,8 @@ class TimeInstanceEntry(Component):
         if calendar is not None:
             assert isinstance(calendar, Calendar)
         self.calendar = calendar
+    def is_nominal(self):
+        return self.time_content_single.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         # attributes
@@ -215,6 +219,8 @@ class TimeContentSingle(Component):
                     elif self.tz_minute:
                         result += ':' + self.tz_minute.value
             return result
+    def is_nominal(self):
+        return bool(self.generic_name)
     def serialize_xml(self):
         # Returns a list of one to eleven Elements and a dict of parent attributes.
         attrs = {}
@@ -248,6 +254,11 @@ class TimeContent(Component):
         else:
             assert isinstance(time_content_part1, TimeContentPart)
             self.time_contents = time_content_part1
+    def is_nominal(self):
+        if self.is_parts:
+            return any(time_content.is_nominal() for time_content in self.time_contents)
+        else:
+            return self.time_contents.is_nominal()
     def serialize_xml(self):
         # Returns a list of one to eleven Elements, and a dict of parent attributes.
         if self.is_parts:
@@ -274,6 +285,8 @@ class TimeContentPart(Component):
         self.opt_substitute_attribute = opt_substitute_attribute
         assert isinstance(time_content_single, TimeContentSingle)
         self.time_content_single = time_content_single
+    def is_nominal(self):
+        return self.time_content_single.is_nominal()
     def serialize_xml(self):
         # Returns a list of one to eleven Elements, and a dict of parent attributes.
         attrs = {}
@@ -304,6 +317,8 @@ class TimeVariant(VariantEntry):
         self.time_instance_entry = time_instance_entry
         assert isinstance(opt_note_list, OptNoteList)
         self.opt_note_list = opt_note_list
+    def is_nominal(self):
+        return self.time_instance_entry.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
@@ -338,6 +353,8 @@ class TimeRef(RefElement):
         assert isinstance(time_content, TimeContent),  \
             "time_content is {}, must be TimeContent".format(type(time_content))
         self.time_content = time_content
+    def is_nominal(self):
+        return self.time_content.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         time_content_elements, time_content_attrs = self.time_content.serialize_xml()
@@ -374,6 +391,8 @@ class DurationEntry(Component):
         self.time_duration_entry_part1 = time_duration_entry_part1
         assert isinstance(time_duration_entry_part2, DurationEntryPart)
         self.time_duration_entry_part2 = time_duration_entry_part2
+    def is_nominal(self):
+        return self.time_duration_entry_part1.is_nominal() or self.time_duration_entry_part2.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         # attributes
@@ -403,6 +422,8 @@ class DurationEntryPart(Component):
         if calendar is not None:
             assert isinstance(calendar, Calendar)
         self.calendar = calendar
+    def is_nominal(self):
+        return self.time_content.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         # attributes
@@ -437,6 +458,8 @@ class DurationVariant(VariantEntry):
         self.duration_entry = duration_entry
         assert isinstance(opt_note_list, OptNoteList)
         self.opt_note_list = opt_note_list
+    def is_nominal(self):
+        return self.duration_entry.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
@@ -481,6 +504,8 @@ class DurationRef(RefElement):
             assert isinstance(calendar2, Calendar)
         self.calendar2 = calendar1 if calendar2 == "" else calendar2
         self.time_content2 = time_content2
+    def is_nominal(self):
+        return self.time_content1.is_nominal() or self.time_content2.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         duration_e = E('duration')

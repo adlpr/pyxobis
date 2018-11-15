@@ -11,10 +11,10 @@ DEFAULT_TIME_TYPES = {
     None  : ("", ""),
     BEING : ("Born", "Died"),
     EVENT : ("Began", "Ended"),
-    ORGANIZATION : ("Began", "Ended"),
-    WORK_AUT  : ("", ""),  # ??
-    WORK_INST : ("", ""),  # ??
-    # OBJECT : ("Created", "Destroyed"),
+    # ORGANIZATION : ("Began", "Ended"),
+    # WORK_AUT  : ("", ""),
+    # WORK_INST : ("", ""),
+    # OBJECT : ("Created", "Destroyed"),  # ??
 }
 
 class DateTimeParser:
@@ -51,14 +51,31 @@ class DateTimeParser:
         """
         Parse out a time or duration string into a Time or Duration ref element.
         """
-        # Misc preprocessing normalization
-        # Punctuation
-        dts = datestring.strip('.,: ').strip('() ').strip()
+        # Misc preprocessing
+        # print("start", datestring)
+
+        """
+        [between 1401 and 1425?]	1
+        [between 1401 and 1450]	1
+        [between 1401 and 425?]	1
+        [between 1451 and 1500]	3
+        [between 1451-1500]	1
+        [between 1476 and 1500]	10
+        [between 1501 and 1525]	4
+        [between 1551 and 1554]	1
+        [between 880 and 898?]	391
+
+        anything DD month YYYY
+        """
+
+        # Punctuation / control chars
+        dts = datestring.strip('.,:; ').strip('() ').strip()
         if not dts:
             return None
         dts = re.sub(r"([\d\-s]+)~", r"approximately \1", dts)
         # dts = re.sub(r" +cent( |$)", r" century\1", dts)
         dts = re.sub(r"[\u200c-\u200f]", "", dts)
+
         # Arabic
         dts = re.sub(r"(حو(الي|\.?)|نحو) +", "approximately ", dts).replace('؟','?')
         dts = re.sub(r"ت(وفي|\.) +", "died ", dts)
@@ -78,16 +95,50 @@ class DateTimeParser:
         dts = re.sub(r"נפ?[׳'] +", "died ", dts)
         dts = re.sub(r" +או +", " or ", dts)
 
+        # print("punct", dts)
+
         # single digit days
-        dts = re.sub(r"(^|[ \-])([\w\.]+) (\d)(\D)",  r"\1\2 0\3\4", dts, flags=re.I)
+        dts = re.sub(r"(^|[ \-])([\w\.]+) (\d)(\D|$)",  r"\1\2 0\3\4", dts, flags=re.I)
         dts = re.sub(r"(^|[ \-])(\d) ([\w\.]+)([ \-]|$)",  r"\1\3 0\2\4", dts, flags=re.I)
 
+        # abbreviated ranges that could be misparsed as YYYY-MM e.g. 1875-76
+        m = re.search(r"(\d{1,2})(\d{2}-)(\d{2})(\D|$)", dts)
+        if m and int(m.group(3)) > 12:
+            # potential problem here if multiple instances
+            dts = dts.replace(m.group(0), m.group(1)+m.group(2)+m.group(1)+m.group(3)+m.group(4))
+
         # English
+        # DD Month YYYY
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (jan(?:\.|uary)?,?) (\d{3,4})(\D|$)",  r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (feb(?:\.|ruary)?,?) (\d{3,4})(\D|$)", r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (mar(?:\.|ch)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (apr(?:\.|il)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (may) (\d{3,4})(\D|$)",                r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (jun[\.e]?,?) (\d{3,4})(\D|$)",        r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (jul[\.y]?,?) (\d{3,4})(\D|$)",           r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (aug(?:\.|ust)?,?) (\d{3,4})(\D|$)",      r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (sep(?:t?\.|tember)?,?) (\d{3,4})(\D|$)", r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (oct(?:\.|ober)?,?) (\d{3,4})(\D|$)",     r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (nov(?:\.|ember)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (dec(?:\.|ember)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
+        # YYYY Month DD
+        dts = re.sub(r"(\d{3,4}) jan(?:\.|uary)?,? (\d\d?)",  r"\1-01-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) feb(?:\.|ruary)?,? (\d\d?)", r"\1-02-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) mar(?:\.|ch)?,? (\d\d?)",    r"\1-03-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) apr(?:\.|il)?,? (\d\d?)",    r"\1-04-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) may (\d\d?)",                r"\1-05-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) jun[\.e]?,? (\d\d?)",        r"\1-06-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) jul[\.y]?,? (\d\d?)",           r"\1-07-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) aug(?:\.|ust)?,? (\d\d?)",      r"\1-08-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) sep(?:t?\.|tember)?,? (\d\d?)", r"\1-09-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) oct(?:\.|ober)?,? (\d\d?)",     r"\1-10-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) nov(?:\.|ember)?,? (\d\d?)",    r"\1-11-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) dec(?:\.|ember)?,? (\d\d?)",    r"\1-12-\2", dts, flags=re.I)
         # Month DD, YYYY
         dts = re.sub(r"jan(?:\.|uary)? (\d\d?),? (\d{3,4})",  r"\2-01-\1", dts, flags=re.I)
         dts = re.sub(r"feb(?:\.|ruary)? (\d\d?),? (\d{3,4})", r"\2-02-\1", dts, flags=re.I)
         dts = re.sub(r"mar(?:\.|ch)? (\d\d?),? (\d{3,4})",    r"\2-03-\1", dts, flags=re.I)
-        dts = re.sub(r"apr(?:\.|ch)? (\d\d?),? (\d{3,4})",    r"\2-04-\1", dts, flags=re.I)
+        dts = re.sub(r"apr(?:\.|il)? (\d\d?),? (\d{3,4})",    r"\2-04-\1", dts, flags=re.I)
         dts = re.sub(r"may (\d\d?),? (\d{3,4})",              r"\2-05-\1", dts, flags=re.I)
         dts = re.sub(r"jun[\.e]? (\d\d?),? (\d{3,4})",        r"\2-06-\1", dts, flags=re.I)
         dts = re.sub(r"jul[\.y]? (\d\d?),? (\d{3,4})",           r"\2-07-\1", dts, flags=re.I)
@@ -96,19 +147,34 @@ class DateTimeParser:
         dts = re.sub(r"oct(?:\.|ober)? (\d\d?),? (\d{3,4})",     r"\2-10-\1", dts, flags=re.I)
         dts = re.sub(r"nov(?:\.|ember)? (\d\d?),? (\d{3,4})",    r"\2-11-\1", dts, flags=re.I)
         dts = re.sub(r"dec(?:\.|ember)? (\d\d?),? (\d{3,4})",    r"\2-12-\1", dts, flags=re.I)
-        # YYYY Month DD
-        dts = re.sub(r"(\d{3,4}) jan(?:\.|uary)?,? (\d\d?)",  r"\1-01-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) feb(?:\.|ruary)?,? (\d\d?)", r"\1-02-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) mar(?:\.|ch)?,? (\d\d?)",    r"\1-03-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) apr(?:\.|ch)?,? (\d\d?)",    r"\1-04-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) may (\d{3,4})",              r"\1-05-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) jun[\.e]?,? (\d\d?)",        r"\1-06-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) jul[\.y]?,? (\d\d?)",           r"\1-07-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) aug(?:\.|ust)?,? (\d\d?)",      r"\1-08-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) sep(?:t?\.|tember)?,? (\d\d?)", r"\1-09-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) oct(?:\.|ober)?,? (\d\d?)",     r"\1-10-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) nov(?:\.|ember)?,? (\d\d?)",    r"\1-11-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) dec(?:\.|ember)?,? (\d\d?)",    r"\1-12-\2", dts, flags=re.I)
+        # YYYY Month
+        dts = re.sub(r"(\d{3,4}) jan(?:\.|uary)?",  r"\1-01", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) feb(?:\.|ruary)?", r"\1-02", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) mar(?:\.|ch)?",    r"\1-03", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) apr(?:\.|il)?",    r"\1-04", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) may",              r"\1-05", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) jun[\.e]?",        r"\1-06", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) jul[\.y]?",           r"\1-07", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) aug(?:\.|ust)?",      r"\1-08", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) sep(?:t?\.|tember)?", r"\1-09", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) oct(?:\.|ober)?",     r"\1-10", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) nov(?:\.|ember)?",    r"\1-11", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) dec(?:\.|ember)?",    r"\1-12", dts, flags=re.I)
+        # YYYY Month[-/]Month
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])jan(?:\.|uary)?",  r"\1\2\g<1>01", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])feb(?:\.|ruary)?", r"\1\2\g<1>02", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])mar(?:\.|ch)?",    r"\1\2\g<1>03", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])apr(?:\.|il)?",    r"\1\2\g<1>04", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])may",              r"\1\2\g<1>05", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])jun[\.e]?",        r"\1\2\g<1>06", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])jul[\.y]?",           r"\1\2\g<1>07", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])aug(?:\.|ust)?",      r"\1\2\g<1>08", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])sep(?:t?\.|tember)?", r"\1\2\g<1>09", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])oct(?:\.|ober)?",     r"\1\2\g<1>10", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])nov(?:\.|ember)?",    r"\1\2\g<1>11", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])dec(?:\.|ember)?",    r"\1\2\g<1>12", dts, flags=re.I)
+
+        # print("normalize", dts)
 
         # --------
         # ELEMENT-SPECIFIC PARSING
@@ -127,28 +193,18 @@ class DateTimeParser:
             elif re.match(r"d(ied |\. ?|\.? )", dts):
                 # "Died" date --> Born Unknown.
                 dts = 'Unknown-' + re.sub(r"^d(ied |\. ?|\.? )", '', dts).strip()
-        # elif element_type == OBJECT:
-        #     ...
-        #     ...
-        #     ...
-        # elif element_type == ORGANIZATION:
-        #     ...
-        #     ...
-        #     ...
-        # elif element_type == EVENT:
-        #     ...
-        #     ...
-        #     ...
 
         # calendar indication on ranges:
         # copy calendar indicators over.
         dts = re.sub(r"^([\d\-]+)-([\d\-]+) ([^\d ]+)$", r"\1 \3-\2 \3", dts)
 
+        # print("pre split", dts)
+
         # --------
         # SPLIT
         # --------
         # Attempt to split dates at an appropriate hyphen; should result in 1-2.
-        split_dates = re.split(r'-(?!\d\d(?:[\-\.]|[\?~]?$))', dts)
+        split_dates = re.split(r'-(?!\d\d(?:[\-\./]|[\?~]?$))', dts)
 
         if len(split_dates) == 1:
             # This should be a TimeRef.
@@ -263,8 +319,11 @@ class DateTimeParser:
 
     def __resolve_abbreviation(self, date1, date2):
         """
-        Resolves cases of abbreviation in double dates.
+        Resolves cases of abbreviation in a pair of dates.
         """
+        # 2012-09-02-28
+        if re.match(r"\d{4}-\d\d-\d\d$", date1) and re.match(r"\d\d?$", date2):
+            date2 = date1[:-2] + date2.zfill(2)
         # "<1842/43>"
         if re.match(r"<[^<>]+$", date1) and re.match(r"[^<>]+>$", date2):
             date1, date2 = date1[1:], date2[:-1]
@@ -323,7 +382,7 @@ class DateTimeParser:
         # `exact`
         certainty = "exact"
         # `implied`
-        if re.match(r"\[.*\]$", dts):
+        if re.search(r"(^\[|\]$)", dts):
             dts = re.sub(r"(^\[|\]$)", "", dts).strip()
             certainty = "implied"
         # `estimated` -- takes precedence over `implied`: [2018?] = estimated 2018
@@ -334,8 +393,8 @@ class DateTimeParser:
         if re.match(r"approx", dts, flags=re.I):
             dts = re.sub(r"^approx(imate(ly)?|\.)?", "", dts, flags=re.I).strip()
             certainty = "approximate"
-        if re.match(r"c(irca|\.)", dts, flags=re.I):
-            dts = re.sub(r"^c(irca|\.) +", "", dts, flags=re.I).strip()
+        if re.match(r"c(irca|a?\.)", dts, flags=re.I):
+            dts = re.sub(r"^c(irca|a?\.) +", "", dts, flags=re.I)
             certainty = "approximate"
         if re.match(r"^<.*>$", dts, flags=re.I):
             dts = re.sub(r"^<(.*)>$", r"\1", dts, flags=re.I).strip()
@@ -454,3 +513,4 @@ class DateTimeParser:
             ) for element_type, time_types in DEFAULT_TIME_TYPES.items()
         }
         self.default_type_kwargs[ORGANIZATION] = self.default_type_kwargs[EVENT]
+        self.default_type_kwargs[WORK_AUT] = self.default_type_kwargs[WORK_INST] = self.default_type_kwargs[None]

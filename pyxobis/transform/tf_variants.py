@@ -107,7 +107,9 @@ def transform_variant_being(self, field):
                       link_title = None,
                       href_URI = None,
                       set_URI  = None,
-                      generic_type = None )
+                      type_link_title = None,
+                      type_href_URI = None,
+                      type_set_URI = None )
 
     return bvb.build()
 

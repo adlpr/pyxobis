@@ -50,6 +50,9 @@ class LaneMARCRecord(Record):
     def is_monographic(self):
         return self.get_broad_category() in ("Book Sets", "Books", "Pamphlets", "Leaflets", "Documents", "Components")
 
+    def is_suppressed(self):
+        return 'Suppressed' in self.get_subsets()
+
     ID_FIELDS = ('149','100','110','111','130','150','151','155','180','182','852')
 
     def get_id_field(self):
@@ -75,8 +78,9 @@ class LaneMARCRecord(Record):
         id_tag = id_field.tag
         tag = tag or id_tag
 
-        if 'Suppressed' in self.get_subsets():
-            return None
+        # if self.is_suppressed():
+        #     return None
+
         # ~~~~~~ BIB ~~~~~~
         if tag in ('149','210','245','246','247','249'):
             return OBJECT if self.get_broad_category() in ['Objects'] else WORK_INST
@@ -119,8 +123,8 @@ class LaneMARCRecord(Record):
         Returns control number, XOBIS element type, normalized identity string,
         and authorized-form main entry string for this record.
         """
-        if 'Suppressed' in self.get_subsets():
-            return (), None, None, None
+        # if self.is_suppressed():
+        #     return (), None, None, None
         ctrlno = self.get_control_number()
         # @@@@ TEMPORARY? IS AN "IDENTITY" NECESSARY FOR HOLDINGS? @@@@
         if ctrlno is None or 'H' in ctrlno:
@@ -160,12 +164,13 @@ class LaneMARCRecord(Record):
         """
         variant_fields = []
         for field in self.get_fields(*self.variant_field_tags):
-            if field.tag == '150' and 'm' in field:
-                # add MeSH "as Topic" version as a variant
-                new_field = Field(field.tag, (field.indicator1, field.indicator2), field.subfields.copy())
-                new_field['a'] = new_field['m']
-                new_field.delete_all_subfields('m')
-                variant_fields.append(new_field)
+            if field.tag == '150':
+                if 'm' in field:
+                    # add MeSH "as Topic" version as a variant
+                    new_field = Field(field.tag, (field.indicator1, field.indicator2), field.subfields.copy())
+                    new_field['a'] = new_field['m']
+                    new_field.delete_all_subfields('m')
+                    variant_fields.append(new_field)
             elif field.tag == '130':
                 # only a variant for bibs
                 if '245' in self:
@@ -211,7 +216,7 @@ class LaneMARCRecord(Record):
             return None
         elif '760' <= field.tag <= '789':
             # exception for bib linking entry fields
-            subfield_codes = 'tgb'
+            subfield_codes = 'tb'
         else:
             subfield_codes = cls.IDENTITY_SUBFIELD_MAP[element_type]
         # pull those subfields to generate it

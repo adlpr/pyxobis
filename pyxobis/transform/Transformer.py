@@ -157,7 +157,7 @@ class Transformer:
         # Relator on 785 I2 7 depends on position in record.
         self.__preprocess_785(record)
         # If a linking field just links a control number, pull info into the field itself.
-        self.__preprocess_w_only_linking_fields(record)
+        # self.__preprocess_w_only_linking_fields(record)
 
         # ~~~~~~
         # RECORD PROCESSING
@@ -1175,25 +1175,25 @@ class Transformer:
             merged_with_entries[-1].indicator2 = '0'
         return record
 
-    def __preprocess_w_only_linking_fields(self, record):
-        """
-        If a 7XX linking field links only a control number,
-        pull title info into the field itself.
-        """
-        for field in record.get_fields():
-            if field.tag.startswith('7'):
-                if len(field.subfields) == 2 and 'w' in field:
-                    linking_ctrlno = "(CStL)" + field['w'].rstrip('. ')
-                    linking_work_subfields = self.ix.reverse_lookup(linking_ctrlno)
-                    if not linking_work_subfields:
-                        # add dummy title
-                        field.subfields.extend(['t', "Unknown title"])
-                    else:
-                        # convert subfield codes
-                        # linking_work_subfields = []
-                        print(record['001'].data, linking_ctrlno, linking_work_subfields)
-                    ...
-        return record
+    # def __preprocess_w_only_linking_fields(self, record):
+    #     """
+    #     If a 7XX linking field links only a control number,
+    #     pull title info into the field itself.
+    #     """
+    #     for field in record.get_fields():
+    #         if field.tag.startswith('7'):
+    #             if len(field.subfields) == 2 and 'w' in field:
+    #                 linking_ctrlno = "(CStL)" + field['w'].rstrip('. ')
+    #                 linking_work_subfields = self.ix.reverse_lookup(linking_ctrlno)
+    #                 if not linking_work_subfields:
+    #                     # add dummy title
+    #                     field.subfields.extend(['t', "Unknown title"])
+    #                 else:
+    #                     # convert subfield codes
+    #                     # linking_work_subfields = []
+    #                     print(record['001'].data, linking_ctrlno, linking_work_subfields)
+    #                 ...
+    #     return record
 
     def get_relation_type(self, rel_name):
         rel_types = self.ix.lookup_rel_types(rel_name)
