@@ -768,14 +768,14 @@ class NameParser:
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a WorkRefBuilder.
         """
-        field_lang, field_script = field['3'], field['4']
-
         # NAME(S) & QUALIFIER(S)
         # ---
         linking_entry_work_names_and_qualifiers = []
-        for code, val in field.get_subfields('t','b', with_codes=True):
-            if code == 't':
-                # ^t  Title of work             --> `generic` title
+        # use abbr title if real title not available
+        name_field_code = 'p' if field.tag == '773' and 't' not in field else 't'
+        for code, val in field.get_subfields(name_field_code,'b', with_codes=True):
+            if code == name_field_code:
+                # ^t  Title of work             --> `generic` title  [p = abbr title]
                 val = self.__strip_ending_punctuation(val)
                 name_kwargs = { 'name_text': val,
                                 'type_': 'generic' }

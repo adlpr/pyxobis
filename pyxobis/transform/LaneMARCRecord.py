@@ -132,7 +132,7 @@ class LaneMARCRecord(Record):
         # which field contains the identity?
         id_field = self.get_id_field()
         if id_field is None:
-            print("PROBLEM: no id found:", ctrlno)
+            print("PROBLEM: no id field found:", ctrlno)
             return (), None, None, None
         # get the identity
         element_type = self.get_xobis_element_type()

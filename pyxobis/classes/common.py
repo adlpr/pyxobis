@@ -194,7 +194,7 @@ class GenericType(Component):
     def __init__(self, link_attributes, set_ref):
         assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
-        assert isinstance(set_ref, XSDAnyURI)
+        assert isinstance(set_ref, XSDAnyURI), "invalid set ref: {}".format(set_ref)
         self.set_ref = set_ref
     def serialize_xml(self):
         # Returns an Element.

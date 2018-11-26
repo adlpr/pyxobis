@@ -66,6 +66,8 @@ class DateTimeParser:
         [between 880 and 898?]	391
 
         anything DD month YYYY
+
+        2019 Aug 2-10
         """
 
         # Punctuation / control chars
@@ -109,31 +111,31 @@ class DateTimeParser:
 
         # English
         # DD Month YYYY
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (jan(?:\.|uary)?,?) (\d{3,4})(\D|$)",  r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (feb(?:\.|ruary)?,?) (\d{3,4})(\D|$)", r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (mar(?:\.|ch)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (apr(?:\.|il)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (may) (\d{3,4})(\D|$)",                r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (jun[\.e]?,?) (\d{3,4})(\D|$)",        r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (jul[\.y]?,?) (\d{3,4})(\D|$)",           r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (aug(?:\.|ust)?,?) (\d{3,4})(\D|$)",      r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (sep(?:t?\.|tember)?,?) (\d{3,4})(\D|$)", r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (oct(?:\.|ober)?,?) (\d{3,4})(\D|$)",     r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (nov(?:\.|ember)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) (dec(?:\.|ember)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(jan(?:\.|uary)?,?) (\d{3,4})(\D|$)",  r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(feb(?:\.|ruary)?,?) (\d{3,4})(\D|$)", r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(mar(?:\.|ch)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(apr(?:\.|il)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(may) (\d{3,4})(\D|$)",                r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(jun[\.e]?,?) (\d{3,4})(\D|$)",        r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(jul[\.y]?,?) (\d{3,4})(\D|$)",           r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(aug(?:\.|ust)?,?) (\d{3,4})(\D|$)",      r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(sep(?:t?\.|tember)?,?) (\d{3,4})(\D|$)", r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(oct(?:\.|ober)?,?) (\d{3,4})(\D|$)",     r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(nov(?:\.|ember)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(dec(?:\.|ember)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
         # YYYY Month DD
-        dts = re.sub(r"(\d{3,4}) jan(?:\.|uary)?,? (\d\d?)",  r"\1-01-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) feb(?:\.|ruary)?,? (\d\d?)", r"\1-02-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) mar(?:\.|ch)?,? (\d\d?)",    r"\1-03-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) apr(?:\.|il)?,? (\d\d?)",    r"\1-04-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) may (\d\d?)",                r"\1-05-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) jun[\.e]?,? (\d\d?)",        r"\1-06-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) jul[\.y]?,? (\d\d?)",           r"\1-07-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) aug(?:\.|ust)?,? (\d\d?)",      r"\1-08-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) sep(?:t?\.|tember)?,? (\d\d?)", r"\1-09-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) oct(?:\.|ober)?,? (\d\d?)",     r"\1-10-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) nov(?:\.|ember)?,? (\d\d?)",    r"\1-11-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) dec(?:\.|ember)?,? (\d\d?)",    r"\1-12-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *jan(?:\.|uary)?,? (\d\d?)",  r"\1-01-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *feb(?:\.|ruary)?,? (\d\d?)", r"\1-02-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *mar(?:\.|ch)?,? (\d\d?)",    r"\1-03-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *apr(?:\.|il)?,? (\d\d?)",    r"\1-04-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *may (\d\d?)",                r"\1-05-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *jun[\.e]?,? (\d\d?)",        r"\1-06-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *jul[\.y]?,? (\d\d?)",           r"\1-07-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *aug(?:\.|ust)?,? (\d\d?)",      r"\1-08-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *sep(?:t?\.|tember)?,? (\d\d?)", r"\1-09-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *oct(?:\.|ober)?,? (\d\d?)",     r"\1-10-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *nov(?:\.|ember)?,? (\d\d?)",    r"\1-11-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *dec(?:\.|ember)?,? (\d\d?)",    r"\1-12-\2", dts, flags=re.I)
         # Month DD, YYYY
         dts = re.sub(r"jan(?:\.|uary)? (\d\d?),? (\d{3,4})",  r"\2-01-\1", dts, flags=re.I)
         dts = re.sub(r"feb(?:\.|ruary)? (\d\d?),? (\d{3,4})", r"\2-02-\1", dts, flags=re.I)

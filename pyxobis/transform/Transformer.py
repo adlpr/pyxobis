@@ -114,7 +114,7 @@ class Transformer:
         for field in record.get_fields('655'):
             if field.indicator1 in '7':
                 title = field['a']
-                href  = field['0'] or self.ix.simple_lookup(title, CONCEPT)
+                href  = "(CStL)" + field['0'] if '0' in field else self.ix.simple_lookup(title, CONCEPT)
                 set_ref = self.ix.simple_lookup("Subset", CONCEPT)
                 rb.add_type(title, href, set_ref)
 
@@ -186,8 +186,11 @@ class Transformer:
 
             # NOTES
             # -------
-            for note in self.transform_notes(record):
-                peb.add_note(note)
+            notes = self.transform_notes_bib(record)  \
+                        if element_type in (WORK_INST, OBJECT)  \
+                        else self.transform_notes_aut(record)
+            for note in notes:
+                peb.add_note(**note)
 
             rb.set_principal_element(peb.build())
 
@@ -726,7 +729,8 @@ class Transformer:
     transform_variant_object = transform_variant_object
     transform_variant_work_instance_or_object = transform_variant_work_instance_or_object
 
-    transform_notes = transform_notes
+    transform_notes_aut = transform_notes_aut
+    transform_notes_bib = transform_notes_bib
 
     transform_relationships_aut = transform_relationships_aut
     transform_relationships_bib = transform_relationships_bib
@@ -825,7 +829,7 @@ class Transformer:
         for field in record.get_fields('020'):
             id_alternate_notes = field.get_subfields('c','q')
             for code, val in field.get_subfields('a','z', with_codes=True):
-                rb.set_id_alternate("International Standard Book Number",
+                rb.set_id_alternate("ISBN",  # "International Standard Book Number" ?
                                     val.strip(),
                                     'invalid' if code=='z' else 'valid')
                 for note in id_alternate_notes:
@@ -841,7 +845,7 @@ class Transformer:
                            'm': 'cancelled linking',
                            'y': 'incorrect',
                            'z': 'cancelled' }.get(code)
-                rb.set_id_alternate("International Standard Serial Number",
+                rb.set_id_alternate("ISSN",  # "International Standard Serial Number" ?
                                     val.strip(),
                                     status)
                 for note in id_alternate_notes:
@@ -1249,12 +1253,16 @@ class Transformer:
         if field.tag in self.link_field_w:
             if 'w' in field:
                 ctrlno = field['w']
+                if not ctrlno.startswith('('):
+                    ctrlno = "(CStL)" + ctrlno
                 id_subfs = self.ix.reverse_lookup(ctrlno)
             elif '0' in field:
                 ctrlno = field['0']
                 id_subfs = self.ix.reverse_lookup(ctrlno)
         elif field.tag in self.link_field_0 and '0' in field:
             ctrlno = field['0']
+            if not ctrlno.startswith('('):
+                ctrlno = "(CStL)" + ctrlno
             id_subfs = self.ix.reverse_lookup(ctrlno)
         # if that's invalid, look it up based on the field and try again
         if ctrlno is None or id_subfs is None:

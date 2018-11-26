@@ -27,6 +27,10 @@ def transform_relationships_bib(self, record):
 
     relationships = []
 
+    # for field in record.get_fields(*RELATIONSHIP_FIELDS_BIB):
+    # Doing this as one large query then using a switch conditional
+    # is a way to retain original order.
+
     # Language Code (NR)
     for field in record.get_fields('041'):
         for code, val in field.get_subfields('a','b','d','e','f','g', with_codes=True):
@@ -558,7 +562,6 @@ def transform_relationships_bib(self, record):
             # ^g is chronology of the relationship (force all to time) EXCEPT 773 and 787
             if field.tag in ('773','787'):
                 # ^9 may also occur in 787 [only two though]
-                # self.get_field_chronology(field)
                 # for 773 and 787:
                 #     if ^d or ^9, ^d/^9 is chronology and ^m or ^g is enumeration
                 #     if not but ^m, ^m is enumeration, ^g is chronology
@@ -575,17 +578,21 @@ def transform_relationships_bib(self, record):
                     rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
                 elif 'g' in field:
                     # ^g is ambiguous...
-                    parsed_g = self.dp.parse_as_ref(field['g'], WORK_INST)
+                    # for now, if there's a 4-digit year somewhere in there, treat as a chron,
+                    # otherwise enum
+                    if re.search(r'\d{4}', field['g']):
+                        rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
+                    else:
+                        rb.set_enumeration(self.build_simple_ref(field['g'], STRING))
                     ...
                     ...
                     ...
-                    rb.set_time_or_duration_ref(parsed_g)
             else:
-                # ^m = enumeration; ^g = chronology
+                # ^m = enumeration; ^d/g = chronology
                 if 'm' in field:
                     rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
-                if 'g' in field:
-                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
+                if 'd' in field or 'g' in field:
+                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'] or field['g'], WORK_INST))
 
 
             # If the field is only a linked control number
@@ -604,12 +611,18 @@ def transform_relationships_bib(self, record):
             rb.set_target(target_ref)
 
             # Notes
-            for code, val in field.get_subfields('k','n','p','s', with_codes=True):
-                # note_type = { 'p': '',
-                #               's': '' }.get(code, None)
+            for code, val in field.get_subfields('k','n','p','s','z', with_codes=True):
+                if code == 'p' and 't' not in field:
+                    # only include abbr titles if not already being used as main title
+                    continue
+                note_type = { 'p': 'Abbreviated title',
+                              's': 'Uniform title' }.get(code, None)
                 rb.add_note(val,
                             content_lang = None,
-                            role = "documentation" if code == 'n' and field.indicator1 != '0' else "annotation")
+                            role = "documentation" if code == 'n' and field.indicator1 != '0' else "annotation",
+                            type_link_title = note_type,
+                            type_href_URI = self.ix.simple_lookup(note_type, RELATIONSHIP) if note_type else None,
+                            type_set_URI = self.ix.simple_lookup("Note Types", CONCEPT) if note_type else None)  # what should this set be??
 
             relationships.append(rb.build())
 
