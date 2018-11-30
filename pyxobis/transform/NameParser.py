@@ -389,10 +389,12 @@ class NameParser:
             else:
                 prequalifier_element, rb = ORGANIZATION, OrganizationRefBuilder()
             # ^a
+            cumulative_subfields = []
             for val in field.get_subfields('a'):
                 if prequalifier_element == PLACE:
                     val = self.pn.normalize(val)
                 val = self.__strip_ending_punctuation(val)
+                cumulative_subfields.extend(['a', val])
                 rb.set_link( val,
                              href_URI = self.ix.simple_lookup(val, prequalifier_element) )
                 rb.add_name( val,
@@ -402,10 +404,11 @@ class NameParser:
                 org_prequalifiers.append(rb.build())
             # ^b
             for val in field.get_subfields('b')[:-1]:
+                cumulative_subfields.extend(['b', val])
                 val = self.__strip_ending_punctuation(val)
                 orb = OrganizationRefBuilder()
                 orb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, ORGANIZATION) )
+                              href_URI = self.ix.lookup(Field('   ','  ',cumulative_subfields), ORGANIZATION) )
                 orb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -564,7 +567,7 @@ class NameParser:
 
     def __parse_work_instance_or_object_main_name(self, field, element_type):
         """
-        Parse a 149/730/740 field containing a Work inst/Object main entry name
+        Parse a 149/730/740/830/901 field containing a Work inst/Object main entry name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a WorkBuilder.
         """
@@ -596,7 +599,9 @@ class NameParser:
                     name_kwargs['type_'] = 'generic' if code == 'a' else 'section'
                 work_inst_or_object_main_names_and_qualifiers.append(name_kwargs)
             elif code in 'df':
-                # ^d  Date of a work (NR)        --> Time/DurationRef
+                # ^d  Date of a work (NR) / ^f Date of a work (NR) --> Time/DurationRef
+                if field.tag in ('830','901'):  # ^d should always be part of the Relationship in 830s
+                    continue
                 work_inst_or_object_main_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
             elif code == 'k':
                 # ^k  Form subheading (R)        --> ConceptRef
@@ -637,7 +642,7 @@ class NameParser:
                               nonfiling = 0 )
                 work_inst_or_object_main_names_and_qualifiers.append(srb.build())
 
-        # ^h  Medium (NR)  --> SHOULD GO TO HOLDINGS
+        # ^h  Medium (NR)  --> HOLDINGS
 
         return work_inst_or_object_main_names_and_qualifiers
 

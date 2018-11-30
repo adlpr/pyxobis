@@ -23,7 +23,7 @@ def transform_notes_aut(self, record):
         # concatenate all subfields
         note = { 'content_text' : ' '.join(field.get_subfields()),
                  'role' : 'annotation',
-                 'type_link_title' : 'Biographical or Historical Note' }
+                 'type_link_title' : 'Historical Note' }
         notes.append(note)
 
     ...
@@ -32,12 +32,12 @@ def transform_notes_aut(self, record):
 
     # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
     # Staff Note (Lane) (R)
-    for field in record.get_fields('990'):
-        # concatenate all subfields
-        note = { 'content_text' : ' '.join(field.get_subfields()),
-                 'role' : 'documentation',
-                 'type_link_title' : 'Staff Note' }
-        notes.append(note)
+    # for field in record.get_fields('990'):
+    #     # concatenate all subfields
+    #     note = { 'content_text' : ' '.join(field.get_subfields()),
+    #              'role' : 'documentation',
+    #              'type_link_title' : 'Staff Note' }
+    #     notes.append(note)
 
     ...
     ...

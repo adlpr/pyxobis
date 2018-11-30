@@ -218,6 +218,45 @@ def transform_relationships_bib(self, record):
     ...
     ...
 
+    # Citation/References Note (R)
+    for field in record.get_fields('510'):
+        rb = RelationshipBuilder()
+
+        # Name/Type
+        rel_name = "Cited in"
+        rb.set_name(rel_name)
+        rb.set_type(self.get_relation_type(rel_name))
+
+        # Degree: n/a
+
+        # Enumeration
+        if 'c' in field:
+            rb.set_enumeration(self.build_simple_ref(field['c'].rstrip(' .'), STRING))
+
+        # Chronology
+        if 'b' in field:
+            rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['b'], WORK_INST))
+
+        # Target
+        # special case for Garrison & Morton bibliography
+        # 1.1: L133535 ; 1.2 : Q166460 ; 1.3: L81874
+        # 2: L92960 ; 3: L1547 ; 4: L11524 ; 5: L74878
+        # 6+: L327007
+        if 'a' in field and field['a'] == "Garrison-Morton":
+            if 'c' in field and not re.search(r'( ed|ed\.)', field['c']):
+                field.add_subfield('w', 'L327007')
+
+        rb.set_target(self.build_ref_from_field(field, WORK_INST))
+
+        # Notes: n/a
+
+        relationships.append(rb.build())
+
+
+    ...
+    ...
+    ...
+
     # Personal Name as Subject (R)
     for field in record.get_fields('600'):
         # Relationship Name(s)
@@ -489,8 +528,8 @@ def transform_relationships_bib(self, record):
             rb.set_target(self.build_ref_from_field(field, BEING if field.tag == '700' else ORGANIZATION))
             relationships.append(rb.build())
 
-    # Uniform Title, Added Entry (R)
-    for field in record.get_fields('730'):
+    # Uniform Title, [Series] Added Entry (R)
+    for field in record.get_fields('730','830'):
         # from MFHD
         if field.indicator2 == '8':
             continue
@@ -498,16 +537,23 @@ def transform_relationships_bib(self, record):
         rb = RelationshipBuilder()
 
         # Name/Type
-        rel_name = "Related uniform title"
+        rel_name = "Related uniform title" if field.tag == '730' else "Part of series"
         rb.set_name(rel_name)
         rb.set_type(self.get_relation_type(rel_name))
 
         # Degree: n/a
-        # Enumeration: n/a
-        # Chronology: n/a
+
+        # Enumeration
+        if 'v' in field:
+            rb.set_enumeration(self.build_simple_ref(field['v'], STRING))
+
+        # Chronology
+        if 'd' in field:
+            rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'], WORK_INST))
+
         # Notes: n/a
 
-        rb.set_target(self.build_ref_from_field(field, WORK_AUT))
+        rb.set_target(self.build_ref_from_field(field, WORK_AUT if field.tag == '730' else WORK_INST))
 
         relationships.append(rb.build())
 
@@ -578,15 +624,15 @@ def transform_relationships_bib(self, record):
                     rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
                 elif 'g' in field:
                     # ^g is ambiguous...
+                    ...
+                    ...
+                    ...
                     # for now, if there's a 4-digit year somewhere in there, treat as a chron,
                     # otherwise enum
                     if re.search(r'\d{4}', field['g']):
                         rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
                     else:
                         rb.set_enumeration(self.build_simple_ref(field['g'], STRING))
-                    ...
-                    ...
-                    ...
             else:
                 # ^m = enumeration; ^d/g = chronology
                 if 'm' in field:
@@ -626,6 +672,7 @@ def transform_relationships_bib(self, record):
 
             relationships.append(rb.build())
 
+    #
     ...
     ...
     ...

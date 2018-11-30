@@ -68,6 +68,8 @@ class DateTimeParser:
         anything DD month YYYY
 
         2019 Aug 2-10
+
+        1943 September-
         """
 
         # Punctuation / control chars
@@ -119,7 +121,7 @@ class DateTimeParser:
         dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(jun[\.e]?,?) (\d{3,4})(\D|$)",        r"\1\3 \2 \4\5", dts, flags=re.I)
         dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(jul[\.y]?,?) (\d{3,4})(\D|$)",           r"\1\3 \2 \4\5", dts, flags=re.I)
         dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(aug(?:\.|ust)?,?) (\d{3,4})(\D|$)",      r"\1\3 \2 \4\5", dts, flags=re.I)
-        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(sep(?:t?\.|tember)?,?) (\d{3,4})(\D|$)", r"\1\3 \2 \4\5", dts, flags=re.I)
+        dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(sep(?:t|\.|t\.|tember)?,?) (\d{3,4})(\D|$)", r"\1\3 \2 \4\5", dts, flags=re.I)
         dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(oct(?:\.|ober)?,?) (\d{3,4})(\D|$)",     r"\1\3 \2 \4\5", dts, flags=re.I)
         dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(nov(?:\.|ember)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
         dts = re.sub(r"(^|\D)((\d\d?-)?\d\d?) *(dec(?:\.|ember)?,?) (\d{3,4})(\D|$)",    r"\1\3 \2 \4\5", dts, flags=re.I)
@@ -132,7 +134,7 @@ class DateTimeParser:
         dts = re.sub(r"(\d{3,4}) *jun[\.e]?,? (\d\d?)",        r"\1-06-\2", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) *jul[\.y]?,? (\d\d?)",           r"\1-07-\2", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) *aug(?:\.|ust)?,? (\d\d?)",      r"\1-08-\2", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) *sep(?:t?\.|tember)?,? (\d\d?)", r"\1-09-\2", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) *sep(?:t|\.|t\.|tember)?,? (\d\d?)", r"\1-09-\2", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) *oct(?:\.|ober)?,? (\d\d?)",     r"\1-10-\2", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) *nov(?:\.|ember)?,? (\d\d?)",    r"\1-11-\2", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) *dec(?:\.|ember)?,? (\d\d?)",    r"\1-12-\2", dts, flags=re.I)
@@ -145,7 +147,7 @@ class DateTimeParser:
         dts = re.sub(r"jun[\.e]? (\d\d?),? (\d{3,4})",        r"\2-06-\1", dts, flags=re.I)
         dts = re.sub(r"jul[\.y]? (\d\d?),? (\d{3,4})",           r"\2-07-\1", dts, flags=re.I)
         dts = re.sub(r"aug(?:\.|ust)? (\d\d?),? (\d{3,4})",      r"\2-08-\1", dts, flags=re.I)
-        dts = re.sub(r"sep(?:t?\.|tember)? (\d\d?),? (\d{3,4})", r"\2-09-\1", dts, flags=re.I)
+        dts = re.sub(r"sep(?:t|\.|t\.|tember)? (\d\d?),? (\d{3,4})", r"\2-09-\1", dts, flags=re.I)
         dts = re.sub(r"oct(?:\.|ober)? (\d\d?),? (\d{3,4})",     r"\2-10-\1", dts, flags=re.I)
         dts = re.sub(r"nov(?:\.|ember)? (\d\d?),? (\d{3,4})",    r"\2-11-\1", dts, flags=re.I)
         dts = re.sub(r"dec(?:\.|ember)? (\d\d?),? (\d{3,4})",    r"\2-12-\1", dts, flags=re.I)
@@ -158,7 +160,7 @@ class DateTimeParser:
         dts = re.sub(r"(\d{3,4}) jun[\.e]?",        r"\1-06", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) jul[\.y]?",           r"\1-07", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) aug(?:\.|ust)?",      r"\1-08", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}) sep(?:t?\.|tember)?", r"\1-09", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}) sep(?:t|\.|t\.|tember)?", r"\1-09", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) oct(?:\.|ober)?",     r"\1-10", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) nov(?:\.|ember)?",    r"\1-11", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}) dec(?:\.|ember)?",    r"\1-12", dts, flags=re.I)
@@ -171,7 +173,7 @@ class DateTimeParser:
         dts = re.sub(r"(\d{3,4}-)(\d\d[-/])jun[\.e]?",        r"\1\2\g<1>06", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}-)(\d\d[-/])jul[\.y]?",           r"\1\2\g<1>07", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}-)(\d\d[-/])aug(?:\.|ust)?",      r"\1\2\g<1>08", dts, flags=re.I)
-        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])sep(?:t?\.|tember)?", r"\1\2\g<1>09", dts, flags=re.I)
+        dts = re.sub(r"(\d{3,4}-)(\d\d[-/])sep(?:t|\.|t\.|tember)?", r"\1\2\g<1>09", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}-)(\d\d[-/])oct(?:\.|ober)?",     r"\1\2\g<1>10", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}-)(\d\d[-/])nov(?:\.|ember)?",    r"\1\2\g<1>11", dts, flags=re.I)
         dts = re.sub(r"(\d{3,4}-)(\d\d[-/])dec(?:\.|ember)?",    r"\1\2\g<1>12", dts, flags=re.I)

@@ -216,7 +216,7 @@ class LaneMARCRecord(Record):
             return None
         elif '760' <= field.tag <= '789':
             # exception for bib linking entry fields
-            subfield_codes = 'tb'
+            subfield_codes = 'tb' if 't' in field else 'pb'
         else:
             subfield_codes = cls.IDENTITY_SUBFIELD_MAP[element_type]
         # pull those subfields to generate it

@@ -19,7 +19,7 @@ INDEX_REL_TYPE = None
 # @@@@@@ TEMPORARY, ONLY WORKS FROM DIR WITH THESE FILES,
 #        DO SOMETHING BETTER WITH INPUT FILENAMES
 BIB_INF_NAME = "../surveytool/bibmfhd.20181119"
-AUT_INF_NAME = "../surveytool/aut.20181119"
+AUT_INF_NAME = "../surveytool/aut.20181130"
 
 
 class Indexer:
