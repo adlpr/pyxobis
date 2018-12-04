@@ -4,7 +4,7 @@
 # xml pretty print for debug
 from lxml import etree
 def xmlpp(element):
-    return etree.tounicode(element, pretty_print=True)
+    print(etree.tounicode(element, pretty_print=True))
 
 # XOBIS element type codes.
 WORK_AUT     = 'wka'

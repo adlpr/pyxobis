@@ -87,14 +87,13 @@ def transform_notes_bib(self, record):
     #     ...
     #     ...
 
-    # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
     # Staff Note (Lane) (R)
     for field in record.get_fields('990'):
-        # concatenate all subfields
-        note = { 'content_text' : ' '.join(field.get_subfields()),
-                 'role' : 'documentation',
-                 'type_link_title' : 'Staff Note' }
-        notes.append(note)
+        for val in field.get_subfields('a'):
+            note = { 'content_text' : val,
+                     'role' : 'documentation',
+                     'type_link_title' : 'Staff Note' }
+            notes.append(note)
 
 
     # add href and set URIs to all types in notes

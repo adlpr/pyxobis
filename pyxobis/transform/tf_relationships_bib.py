@@ -6,19 +6,6 @@ from pymarc import Field
 from pyxobis.builders import *
 from .tf_common import *
 
-def transform_relationships_aut(self, record):
-    """
-    For each field describing a relationship in record, build a Relationship.
-    Returns a list of zero or more Relationship objects.
-    """
-    ...
-    ...
-    ...
-    ...
-    ...
-    ...
-    return []
-
 def transform_relationships_bib(self, record):
     """
     For each field describing a relationship in record, build a Relationship.
@@ -606,7 +593,7 @@ def transform_relationships_bib(self, record):
                                     role = "annotation")
 
             # ^g is chronology of the relationship (force all to time) EXCEPT 773 and 787
-            if field.tag in ('773','787'):
+            if field.tag == '787':
                 # ^9 may also occur in 787 [only two though]
                 # for 773 and 787:
                 #     if ^d or ^9, ^d/^9 is chronology and ^m or ^g is enumeration
@@ -614,6 +601,26 @@ def transform_relationships_bib(self, record):
                 #     if not, check whether ^g is a chronology
                 #               if not, treat as an enumeration
                 #               [issue: year+season dates?]
+                if '9' in field:
+                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['9'], WORK_INST))
+                    if 'm' in field or 'g' in field:
+                        rb.set_enumeration(self.build_simple_ref(field['m'] or field['g'], STRING))
+                elif 'm' in field:
+                    if 'g' in field:
+                        rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
+                    rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
+                elif 'g' in field:
+                    # ^g is ambiguous...
+                    ...
+                    ...
+                    ...
+                    # for now, if there's a 4-digit year somewhere in there, treat as a chron,
+                    # otherwise enum
+                    if re.search(r'\d{4}', field['g']):
+                        rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
+                    else:
+                        rb.set_enumeration(self.build_simple_ref(field['g'], STRING))
+            elif field.tag == '773':
                 if 'd' in field or '9' in field:
                     rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'] or field['9'], WORK_INST))
                     if 'm' in field or 'g' in field:

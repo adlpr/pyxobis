@@ -12,7 +12,8 @@ from .NameParser import NameParser
 from .tf_variants import *
 from .tf_common import *
 from .tf_notes import *
-from .tf_relationships import *
+from .tf_relationships_aut import *
+from .tf_relationships_bib import *
 
 
 class Transformer:
@@ -978,6 +979,13 @@ class Transformer:
                                     val.strip(),
                                     'invalid' if code=='z' else 'valid')
 
+        # 990 ^w Purchase Order no./Obsolete Lane Control No. (NR)
+        for field in record.get_fields('990'):
+            for val in field.get_subfields('w'):
+                rb.add_id_alternate(self.lane_org_ref,
+                                    val.strip(),
+                                    'cancelled')
+
     relator_subf_i_tags = ['246','411']
     def get_type_and_time_from_relator(self, field):
         """
@@ -1259,6 +1267,8 @@ class Transformer:
                 id_subfs = self.ix.reverse_lookup(ctrlno)
             elif '0' in field:
                 ctrlno = field['0']
+                if field.tag in self.link_field_0 and not ctrlno.startswith('('):
+                    ctrlno = "(CStL)" + ctrlno
                 id_subfs = self.ix.reverse_lookup(ctrlno)
         elif field.tag in self.link_field_0 and '0' in field:
             ctrlno = field['0']
@@ -1274,6 +1284,6 @@ class Transformer:
             id_from_field = LaneMARCRecord.get_identity_from_field(field, element_type, normalized=False)
             assert id_from_field, "ID generation failed for field: {}".format(str(field))
             id_subfs = id_from_field.split(LaneMARCRecord.UNNORMALIZED_SEP)
-        # @@@ this part could be altered to use ISBD punctuation?
+        # @@@ this part could be altered to use e.g. ISBD punctuation?
         id_repr = ' '.join(filter(None, id_subfs[1::2]))
         return id_repr, ctrlno
