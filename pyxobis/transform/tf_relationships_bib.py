@@ -580,7 +580,7 @@ def transform_relationships_bib(self, record):
 
             # Enumeration / Chronology
 
-            # before enum/chron, strip "not owned" out of all ^g AND ^d and move to notes
+            # before enum/chron, strip "not owned" out of all ^g and ^d and move to notes
             for i, code in enumerate(field.subfields[::2]):
                 if code in 'dg':
                     not_owned_re = re.search(r'(\(?not *owned\)?)', field.subfields[i*2+1], flags=re.I)
@@ -592,60 +592,19 @@ def transform_relationships_bib(self, record):
                                     content_lang = 'eng',
                                     role = "annotation")
 
-            # ^g is chronology of the relationship (force all to time) EXCEPT 773 and 787
-            if field.tag == '787':
-                # ^9 may also occur in 787 [only two though]
-                # for 773 and 787:
-                #     if ^d or ^9, ^d/^9 is chronology and ^m or ^g is enumeration
-                #     if not but ^m, ^m is enumeration, ^g is chronology
-                #     if not, check whether ^g is a chronology
-                #               if not, treat as an enumeration
-                #               [issue: year+season dates?]
-                if '9' in field:
-                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['9'], WORK_INST))
-                    if 'm' in field or 'g' in field:
-                        rb.set_enumeration(self.build_simple_ref(field['m'] or field['g'], STRING))
-                elif 'm' in field:
-                    if 'g' in field:
-                        rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
-                    rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
-                elif 'g' in field:
-                    # ^g is ambiguous...
-                    ...
-                    ...
-                    ...
-                    # for now, if there's a 4-digit year somewhere in there, treat as a chron,
-                    # otherwise enum
-                    if re.search(r'\d{4}', field['g']):
-                        rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
-                    else:
-                        rb.set_enumeration(self.build_simple_ref(field['g'], STRING))
-            elif field.tag == '773':
-                if 'd' in field or '9' in field:
-                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'] or field['9'], WORK_INST))
-                    if 'm' in field or 'g' in field:
-                        rb.set_enumeration(self.build_simple_ref(field['m'] or field['g'], STRING))
-                elif 'm' in field:
-                    if 'g' in field:
-                        rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
-                    rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
-                elif 'g' in field:
-                    # ^g is ambiguous...
-                    ...
-                    ...
-                    ...
-                    # for now, if there's a 4-digit year somewhere in there, treat as a chron,
-                    # otherwise enum
-                    if re.search(r'\d{4}', field['g']):
-                        rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
-                    else:
-                        rb.set_enumeration(self.build_simple_ref(field['g'], STRING))
-            else:
-                # ^m = enumeration; ^d/g = chronology
-                if 'm' in field:
-                    rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
-                if 'd' in field or 'g' in field:
-                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'] or field['g'], WORK_INST))
+            # figure out enum/chron of relationship
+            # if field.tag == '773':
+            #     # ^d = chronology; ^g/^m = enumeration
+            #     if 'd' in field:
+            #         rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'], WORK_INST))
+            #     if 'm' in field or 'g' in field:
+            #         rb.set_enumeration(self.build_simple_ref(field['m'] or field['g'], STRING))
+            # else:
+            #     # ^d = date of work; ^g = chronology; ^m = enumeration
+            #     if 'g' in field:
+            #         rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
+            #     if 'm' in field:
+            #         rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
 
 
             # If the field is only a linked control number

@@ -73,7 +73,7 @@ class DateTimeParser:
         """
 
         # Punctuation / control chars
-        dts = datestring.strip('.,:; ').strip('() ').strip()
+        dts = re.sub(r'^\((.*)\)$', r'\1', datestring.strip('.,:; ').strip()).strip()
         if not dts:
             return None
         dts = re.sub(r"([\d\-s]+)~", r"approximately \1", dts)

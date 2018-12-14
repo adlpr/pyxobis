@@ -156,8 +156,9 @@ def transform_variant_concept(self, field):
     type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
     if type_kwargs:
         cvb.set_type(**type_kwargs)
-    if type_time_or_duration_ref is not None:
-        cvb.set_time_or_duration_ref(type_time_or_duration_ref)
+    if field.tag not in ('450','480'):
+        if type_time_or_duration_ref is not None:
+            cvb.set_time_or_duration_ref(type_time_or_duration_ref)
 
     # Substitute
     # ---
@@ -276,8 +277,8 @@ def transform_variant_language(self, field):
     type_kwargs, type_time_or_duration_ref = self.get_type_and_time_from_relator(field)
     if type_kwargs:
         lvb.set_type(**type_kwargs)
-    if type_time_or_duration_ref is not None:
-        lvb.set_time_or_duration_ref(type_time_or_duration_ref)
+    # if type_time_or_duration_ref is not None:
+    #     lvb.set_time_or_duration_ref(type_time_or_duration_ref)
 
     # Substitute
     # ---
@@ -295,7 +296,7 @@ def transform_variant_language(self, field):
     # Note(s)
     # ---
     # ^2 = scope note
-    for note_text in field.get_subfields('2'):
+    for note_text in field.get_subfields('2','6'):
         lvb.add_note( content_text = note_text,
                       content_lang = None,
                       role = "annotation",

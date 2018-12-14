@@ -17,14 +17,24 @@ def transform_notes_aut(self, record):
     ...
     ...
 
-    # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
+
+    # See Also From Reference, Topical/Language/Time Term (R)
+    for field in record.get_fields('550'):
+        if 'a' not in field:
+            # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
+            # @@@@@@@@@@ concatenate all subfields @@@@@@@@@@
+            notes.append({ 'content_text' : concat_subfs(field),
+                           'role' : 'annotation',
+                            # 'type_link_title' : 'Generic phrase, pre-coordinated qualifier, or obsolete descriptor note'
+                            })
+
     # Biographical or Historical Public Note (Epitome) (R)
     for field in record.get_fields('678'):
-        # concatenate all subfields
-        note = { 'content_text' : ' '.join(field.get_subfields()),
-                 'role' : 'annotation',
-                 'type_link_title' : 'Historical Note' }
-        notes.append(note)
+        # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
+        # @@@@@@@@@@ concatenate all subfields @@@@@@@@@@
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'annotation',
+                       'type_link_title' : 'Historical Note' })
 
     ...
     ...

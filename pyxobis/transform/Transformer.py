@@ -63,6 +63,7 @@ class Transformer:
         # Ignore record if suppressed.
         if 'Suppressed' in record.get_subsets():
             return None
+
         # @@@@@ TEMPORARY: IGNORE IMMI RECS @@@@@
         if '040' in record and record['040']['a'] == "IMMI":
             return None
@@ -155,7 +156,7 @@ class Transformer:
         self.__preprocess_043(record)
         # Convert 730 variant (translated) titles to 246, for ease of processing
         self.__translated_title_730_to_246(record)
-        # Relator on 785 I2 7 depends on position in record.
+        # Relator on 785 #7 depends on position in record.
         self.__preprocess_785(record)
         # If a linking field just links a control number, pull info into the field itself.
         # self.__preprocess_w_only_linking_fields(record)
@@ -627,7 +628,7 @@ class Transformer:
 
 
     def init_work_instance_builder(self, record):
-        # if 149 I2=9, add a temporary ^i to 245 to mark it as a "Descriptive title"
+        # if 149 #9, add a temporary ^i to 245 to mark it as a "Descriptive title"
         if '149' in record and record['149'].indicator2 == '9':
             record['245']['i'] = "Descriptive title"
 
@@ -762,7 +763,6 @@ class Transformer:
         return rb.build()
 
 
-
     def build_ref_from_field(self, field, element_type):
         """
         Build a ref based on a parsable field and its element type.
@@ -783,7 +783,7 @@ class Transformer:
         if not (field.tag in ('700','710') and element_type == WORK_INST): # ignore author-title field works
             rb.set_link(*self.get_linking_info(field, element_type))
         # subdivisions
-        if element_type in (CONCEPT, LANGUAGE):
+        if element_type in (CONCEPT, LANGUAGE) and not field.tag.endswith('80'):
             # ^vxyz should always be subdivisions in concept/language fields
             for code, val in field.get_subfields('v','x','y','z', with_codes=True):
                 if code == 'v':
@@ -986,6 +986,7 @@ class Transformer:
                                     val.strip(),
                                     'cancelled')
 
+
     relator_subf_i_tags = ['246','411']
     def get_type_and_time_from_relator(self, field):
         """
@@ -1021,7 +1022,10 @@ class Transformer:
 
         # Time or Duration
         if field.tag not in ['150','180','450','480']:  # exceptions for MeSH style fields
-            start_type_datetime, end_type_datetime = field['8'], field['9']
+            if field.tag in ['650','651','655'] and '7' in field:  # ^7 is start time rather than ID
+                start_type_datetime, end_type_datetime = field['7'], field['8'] or field['9']
+            else:
+                start_type_datetime, end_type_datetime = field['8'], field['9']
             type_datetime = start_type_datetime + end_type_datetime  \
                             if start_type_datetime and end_type_datetime  \
                             else end_type_datetime or start_type_datetime
@@ -1088,6 +1092,7 @@ class Transformer:
 
         return type_kwargs, type_time_or_duration_ref
 
+
     def extract_included_relation(self, field):
         """
         Input: PyMARC Field
@@ -1107,6 +1112,7 @@ class Transformer:
                 return field, 'narrower'
         return field, None
 
+
     def extract_enumeration(self, field):
         """
         Returns a StringRef representing an enumeration
@@ -1115,9 +1121,12 @@ class Transformer:
         enum = None
         if '1' in field:
             enum = str(int(''.join(d for d in field['1'] if d.isdigit())))
+        elif field.tag in ('551','651') and '6' in field:
+            enum = str(int(''.join(d for d in field['6'] if d.isdigit())))
         elif field.tag in ('100','110','111'):
             enum = '1'
         return self.build_simple_ref(enum, STRING) if enum else None
+
 
     def __get_entry_group_id(self, field):
         if field.tag.endswith('50') or field.tag.endswith('80'):
@@ -1178,7 +1187,7 @@ class Transformer:
 
     def __preprocess_785(self, record):
         """
-        Relator on 785 I2 7 depends on position in record.
+        Relator on 785 #7 depends on position in record.
         Temporarily switch the indicator of the last one to 0,
         to be assigned relator "Continued by:"
         """

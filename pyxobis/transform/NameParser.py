@@ -168,9 +168,9 @@ class NameParser:
         concept_names_and_qualifiers = []
         for val in field.get_subfields(name_code):
             concept_names_and_qualifiers.append({ 'name_text': val,
-                                          'lang'     : field_lang,
-                                          'script'   : field_script,
-                                          'nonfiling' : 0 })
+                                                 'lang'     : field_lang,
+                                                 'script'   : field_script,
+                                                 'nonfiling' : 0 })
 
         # QUALIFIER(S)
         # ---
