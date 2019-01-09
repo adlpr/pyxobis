@@ -65,14 +65,16 @@ class DateTimeParser:
         [between 1551 and 1554]	1
         [between 880 and 898?]	391
 
-        anything DD month YYYY
+        2011-05-26~-2018~
+        2015-10-<2018-03>
+        1990-2015-
         """
 
         # Punctuation / control chars
         dts = re.sub(r'^\((.*)\)$', r'\1', datestring.strip('.,:; ').strip()).strip()
         if not dts:
             return None
-        dts = re.sub(r"([\d\-s]+)~", r"approximately \1", dts)
+        dts = re.sub(r"([\d\-]+s?)~", r"approximately \1", dts)
         # dts = re.sub(r" +cent( |$)", r" century\1", dts)
         dts = re.sub(r"[\u200c-\u200f]", "", dts)
 

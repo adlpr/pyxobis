@@ -138,7 +138,7 @@ class NameParser:
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
         to pass into a Builder.
         """
-        if field.tag[1:] == "55":
+        if field.tag.endswith("55"):
             field_lang, field_script = field['3'], field['4']
         else:
             # ^3/^4 are taken up in X50/X80 fields by MeSH UIs

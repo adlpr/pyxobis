@@ -24,5 +24,7 @@ HOLDINGS     = 'hol'
 
 # concatenate subfields where strict subfield preservation desirable
 # couldn't use \x1f (actual subf separator) due to "XML compatibility"
-def concat_subfs(field):
-    return ' '.join('‡{} {}'.format(code, val) for code, val in zip(field.subfields[::2],field.subfields[1::2]))
+def concat_subfs(field, with_codes=True):
+    if with_codes:
+        return ' '.join('‡{} {}'.format(code, val) for code, val in zip(field.subfields[::2],field.subfields[1::2]))
+    return ' '.join(field.subfields[1::2])

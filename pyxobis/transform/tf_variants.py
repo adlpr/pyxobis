@@ -429,6 +429,21 @@ def transform_variant_string(self, field):
     """
     svb = StringVariantBuilder()
 
+    # insert indicators into fields as appropriate subfields
+    if 'e' not in field:
+        # if no relator subfield, add one with mapping from indicator 1
+        variant_type = { '1' : "Combining form",
+                         '2' : "Abbreviation",
+                         '3' : "Acronym/initialism",
+                         '4' : "Archaic",
+                         '6' : "Nonstandard",
+                         '9' : "Error" }.get(field.indicator1)
+        if variant_type:
+            field.add_subfield('e', variant_type)
+    # add "British English" as language subfield for ind1==5
+    if field.indicator1 == '5' and '3' not in field:
+        field.add_subfield('3', "British English")
+
     # Included
     # ---
     field, included = self.extract_included_relation(field)

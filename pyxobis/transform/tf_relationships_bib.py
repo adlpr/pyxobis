@@ -586,25 +586,25 @@ def transform_relationships_bib(self, record):
                     not_owned_re = re.search(r'(\(?not *owned\)?)', field.subfields[i*2+1], flags=re.I)
                     if not_owned_re:
                         # remove not owned note from that subfield
-                        field.subfields[i*2+1] = re.sub(r'\s\s+', ' ', re.sub(r'(\(?not *owned\)?)', '', field.subfields[i*2+1], flags=re.I), flags=re.I).strip()
+                        field.subfields[i*2+1] = re.sub(r'\s\s+', ' ', re.sub(r'(\(?not *owned\)?)', '', field.subfields[i*2+1], flags=re.I)).strip()
                         # and add to relationship as note
                         rb.add_note(not_owned_re.group(1),
                                     content_lang = 'eng',
                                     role = "annotation")
 
             # figure out enum/chron of relationship
-            # if field.tag == '773':
-            #     # ^d = chronology; ^g/^m = enumeration
-            #     if 'd' in field:
-            #         rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'], WORK_INST))
-            #     if 'm' in field or 'g' in field:
-            #         rb.set_enumeration(self.build_simple_ref(field['m'] or field['g'], STRING))
-            # else:
-            #     # ^d = date of work; ^g = chronology; ^m = enumeration
-            #     if 'g' in field:
-            #         rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
-            #     if 'm' in field:
-            #         rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
+            if field.tag == '773':
+                # ^d = chronology; ^g/^m = enumeration
+                if 'd' in field:
+                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'], WORK_INST))
+                if 'm' in field or 'g' in field:
+                    rb.set_enumeration(self.build_simple_ref(field['m'] or field['g'], STRING))
+            else:
+                # ^d = date of work; ^g = chronology; ^m = enumeration
+                if 'g' in field:
+                    rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
+                if 'm' in field:
+                    rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
 
 
             # If the field is only a linked control number

@@ -413,4 +413,31 @@ def transform_relationships_aut(self, record):
     ...
     ...
 
+    # Allowable Subheadings (Lane: MeSH only when 450 $w/3 = a) (R)
+    for field in record.get_fields('925'):
+        rb = RelationshipBuilder()
+
+        # Name/Type
+        rel_name = "Allowable qualifier"
+        rb.set_name(rel_name)
+        rb.set_type(self.get_relation_type(rel_name))
+
+        # Degree: n/a
+        # Enumeration: n/a
+        # Chronology: n/a
+
+        # Target
+        # dummy field for proper parsing (pretend it's a X80)
+        rb.set_target(self.build_ref_from_field(Field('X80','  ',['x' if val == 'a' else val for val in field.subfields]), CONCEPT))
+
+        # Notes
+        # scheme in which the qualifier is allowable
+        rb.add_note("LaSH" if field.indicator1 == '9' else "MeSH",
+                    content_lang = None,
+                    role = "annotation")
+
+
+        relationships.append(rb.build())
+
+
     return relationships
