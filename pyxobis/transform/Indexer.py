@@ -18,8 +18,8 @@ INDEX_REL_TYPE = None
 
 # @@@@@@ TEMPORARY, ONLY WORKS FROM DIR WITH THESE FILES,
 #        DO SOMETHING BETTER WITH INPUT FILENAMES
-BIB_INF_NAME = "../surveytool/bibmfhd.20181221"
-AUT_INF_NAME = "../surveytool/aut.20181221"
+BIB_INF_NAME = "../surveytool/bibmfhd.20190109"
+AUT_INF_NAME = "../surveytool/aut.20190109"
 
 
 class Indexer:
@@ -175,10 +175,14 @@ class Indexer:
         return main_entry.split(LaneMARCRecord.UNNORMALIZED_SEP)
 
     def lookup_rel_types(self, rel_name):
-        # get rid of Equivalence (only used for Variant Types, not Relationships)
+        """
+        Given a relationship name string, return a list of its relationship types.
+        For use with the RelationshipBuilder set_type method.
+        """
         rel_types = self.index_rel_type.get(rel_name)
         if rel_types is None:
             return []
+        # get rid of Equivalence (only used for Variant Types, not Relationships)
         return sorted(list(set(rel_types) - set(["Equivalence"])))
 
     def element_type_from_value(self, field):
@@ -195,7 +199,8 @@ class Indexer:
 
     def simple_element_type_from_value(self, text):
         """
-        If there is a match to a (simplified) identity in only one element type,
+        If there is a match to a primary-field-string (simplified) identity
+        in only one element type,
         return that element type.
         """
         primary_subfs = set([subfs[0] for subfs in LaneMARCRecord.IDENTITY_SUBFIELD_MAP.values()])
@@ -204,4 +209,7 @@ class Indexer:
         return results[0] if len(results) == 1 else None
 
     def list_conflicts(self):
+        """
+        Returns a dict by element type listing identities with conflicts in the main index.
+        """
         return { element_type : [identity for identity, value in index.items() if value == self.CONFLICT] for element_type, index in self.index.items() }

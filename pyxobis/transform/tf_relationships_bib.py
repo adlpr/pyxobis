@@ -226,13 +226,13 @@ def transform_relationships_bib(self, record):
 
         # Target
         # special case for Garrison & Morton bibliography
+        # (commented out 2019-01-09, should be added to data already)
         # 1.1: L133535 ; 1.2 : Q166460 ; 1.3: L81874
         # 2: L92960 ; 3: L1547 ; 4: L11524 ; 5: L74878
         # 6+: L327007
-        if 'a' in field and field['a'] == "Garrison-Morton":
-            if 'c' in field and not re.search(r'( ed|ed\.)', field['c']):
-                field.add_subfield('w', 'L327007')
-
+        # if 'a' in field and field['a'] == "Garrison-Morton":
+        #     if 'c' in field and not re.search(r'( ed|ed\.)', field['c']):
+        #         field.add_subfield('w', 'L327007')
         rb.set_target(self.build_ref_from_field(field, WORK_INST))
 
         # Notes: n/a
@@ -592,20 +592,34 @@ def transform_relationships_bib(self, record):
                                     content_lang = 'eng',
                                     role = "annotation")
 
+            # remove empty subfields
+            field.subfields = [e for code, val in zip(field.subfields[::2], field.subfields[1::2]) for e in (code, val) if val.strip()]
+
+            # address 787 ^g inconsistency
+            if field.tag == '787' and 'g' in field:
+                # should be ^b = edition, ^d = date of work; ^g = chronology; ^m = enumeration
+                # but these are historically messy, so ^g is often what should be in ^d; try this:
+                # if field has ^b OR (field has ^w AND (^w not indexed OR date from id of ^w matches)), treat ^g as ^d.
+                treat_g_as_d = 'b' in field
+                if not treat_g_as_d and 'w' in field:
+                    w_identity = self.ix.reverse_lookup(field['w'])
+                    treat_g_as_d = (w_identity is None) or (field['g'] in [val for code, val in zip(w_identity[::2], w_identity[1::2]) if code=='d'])
+                if treat_g_as_d:
+                    field.subfields = [e for code, val in zip(field.subfields[::2], field.subfields[1::2]) for e in ('d' if code=='g' else code, val)]
+
             # figure out enum/chron of relationship
             if field.tag == '773':
-                # ^d = chronology; ^g/^m = enumeration
+                # ^d = rel chronology; ^g/^m = rel enumeration
                 if 'd' in field:
                     rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'], WORK_INST))
                 if 'm' in field or 'g' in field:
                     rb.set_enumeration(self.build_simple_ref(field['m'] or field['g'], STRING))
             else:
-                # ^d = date of work; ^g = chronology; ^m = enumeration
+                # ^b = edition (enum of work); ^d = date (chron) of work; ^g = rel chronology; ^m = rel enumeration
                 if 'g' in field:
                     rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['g'], WORK_INST))
                 if 'm' in field:
                     rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
-
 
             # If the field is only a linked control number
             if 't' not in field and ('w' in field or '0' in field):

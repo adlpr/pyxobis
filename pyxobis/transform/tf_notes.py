@@ -193,7 +193,7 @@ def transform_notes_bib(self, record):
         for val in field.get_subfields('a'):
             notes.append({ 'content_text' : val,
                            'role' : 'annotation',
-                           'type_link_title' : 'Issuing Body Note' })
+                           'type_link_title' : 'Organizations (Issuing Body) Note' })
 
     # Staff Note (Lane) (R)
     for field in record.get_fields('990'):

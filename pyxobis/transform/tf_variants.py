@@ -24,8 +24,6 @@ def transform_variants(self, record):
     480 : CONCEPT (subdivision)
     482 : STRING
     """
-    record_element_type = record.get_xobis_element_type()
-
     variants = []
 
     for field, variant_element_type in record.get_variant_fields_and_types():

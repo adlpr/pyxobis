@@ -118,6 +118,13 @@ class LaneMARCRecord(Record):
         else:
             return None
 
+    BIB, AUT, HDG = 'bib', 'aut', 'hdg'
+    def get_record_type(self):
+        return { WORK_INST: self.BIB,
+                 OBJECT: self.BIB,
+                 HOLDINGS: self.HDG,
+                 None: None }.get(self.get_xobis_element_type(), self.AUT)
+
     def get_identity_information(self):
         """
         Returns control number, XOBIS element type, normalized identity string,
