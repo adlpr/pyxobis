@@ -6,25 +6,6 @@ from pymarc import Field
 from pyxobis.builders import *
 from .tf_common import *
 
-"""
-established note types as of 2019-01-07:
-
-Description (Edition) Note   250ab
-Description (Computer File) Note   256a
-Description (Extent) Note  300a
-Description (Illustration) Note  300b
-Description (Size) Note  300c
-Description (Playing Time) Note  306a
-Description (Serial Enumeration/Chronology, Formatted) Note  362a
-Description (Serial Enumeration/Chronology, Unformatted) Note  362a
-General Note  500a
-Dissertation Note  502a
-Enumeration Note  515a
-Language Note  546a
-Issuing Body Note  550a
-Historical Note  6781b 678a
-"""
-
 def transform_notes_aut(self, record):
     """
     For each field with note information in record, build a Note.
@@ -47,11 +28,15 @@ def transform_notes_aut(self, record):
                             })
 
     # Nonpublic General Note (R)  [basically 990 but for MeSH]
+    """
+        External Nonpublic Note (667 1st ind blank)
+        MeSH Nonpublic Note (667 1st ind 8)
+    """
     for field in record.get_fields('667'):
         for val in field.get_subfields('a'):
             notes.append({ 'content_text' : val,
-                     'role' : 'documentation',
-                     'type_link_title' : 'General Note' })
+                           'role' : 'documentation',
+                           'type_link_title' : 'General Note' })
 
     # Biographical or Historical Public Note (Epitome) (R)
     for field in record.get_fields('678'):
@@ -61,6 +46,37 @@ def transform_notes_aut(self, record):
                        'role' : 'annotation',
                        'type_link_title' : 'Historical Note' })
 
+    # Public General Note (Lane: reserved for NLM use) (R)
+    """
+        External Public Note (aut 680 1st ind blank)
+        MeSH Public Note (680 1st ind 8)
+    """
+    for field in record.get_fields('680'):
+       notes.append({ 'content_text' : field['a'] if 'a' in field and len(field.get_subfields())==1 else concat_subfs(field),
+                      'role' : 'annotation',
+                      'type_link_title' : 'General Note' })
+
+    # Application History Note (R)
+    """
+        External Application History Note (688 1st ind blank)
+        MeSH Application History Note (688 1st ind 8)
+    """
+    for field in record.get_fields('688'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'MeSH Application History Note' if field.indicator1 == '8' else 'External Application History Note' })
+
+    """
+        External Scope Note (689 1st ind blank)
+        MeSH Scope Note (689 1st ind 8)
+    """
+    # Scope Note (MeSH) (Lane) (R)
+    for field in record.get_fields('689'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'MeSH Scope Note' if field.indicator1 == '8' else 'External Scope Note' })
     ...
     ...
     ...
@@ -109,10 +125,21 @@ def transform_notes_bib(self, record):
     # Doing this as one large query then using a switch conditional
     # is a way to retain original order.
 
+    # Title Statement (NR)
+    for field in record.get_fields('245'):
+        for val in field.get_subfields('b'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'transcription',
+                           'type_link_title' : 'Description (Title Remainder) Note' })
+        for val in field.get_subfields('c'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'transcription',
+                           'type_link_title' : 'Description (Responsibility) Note' })
+
     # Edition Statement (R)
     for field in record.get_fields('250'):
         notes.append({ 'content_text' : concat_subfs(field, with_codes=False) if 'b' in field else field['a'],
-                       'role' : 'annotation',
+                       'role' : 'transcription',
                        'type_link_title' : 'Description (Edition) Note' })
 
     # Computer File Characteristics (Lane: imported only) (NR)
@@ -169,6 +196,12 @@ def transform_notes_bib(self, record):
                            'role' : 'annotation',
                            'type_link_title' : 'Dissertation Note' })
 
+    # Bibliography/Webliography Note (R)
+    for field in record.get_fields('504'):
+        notes.append({ 'content_text' : concat_subfs(field) if 'b' in field else field['a'],
+                       'role' : 'annotation',
+                       'type_link_title' : 'Bibliography Note' })
+
     # Formatted Contents Note (R)
     for field in record.get_fields('505'):
         notes.append({ 'content_text' : concat_subfs(field),
@@ -182,11 +215,26 @@ def transform_notes_bib(self, record):
                            'role' : 'annotation',
                            'type_link_title' : 'Enumeration Note' })
 
+    # Date/Time and Place of an Event Note (Lane Pending) (R)
+    for field in record.get_fields('518'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'Event Note' })
+
     # Language Note (R)
     for field in record.get_fields('546'):
         notes.append({ 'content_text' : concat_subfs(field, with_codes=False),
                        'role' : 'annotation',
                        'type_link_title' : 'Language Note' })
+
+    # Issuing Bodies Note (R)
+    for field in record.get_fields('550'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'Organizations (Issuing Body) Note' })
+
 
     # Issuing Bodies Note (R)
     for field in record.get_fields('550'):

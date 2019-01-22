@@ -78,7 +78,7 @@ class PrincipalElementBuilder(Builder):
     #     super().add_qualifier(*args, **kwargs)
     def add_variant(self, variant):
         self.variants.append(variant)
-    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None):
+    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None, source=[]):
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
             role = role,  # ["transcription", "annotation", "documentation", "description", None]
@@ -93,7 +93,8 @@ class PrincipalElementBuilder(Builder):
                                ),
                                set_ref = XSDAnyURI( type_set_URI ) \
                                          if type_set_URI else None
-                           ) if type_link_title else None
+                           ) if type_link_title else None,
+            source = source
         ))
     def set_type(self, new_type):
         self.type = new_type
@@ -171,7 +172,7 @@ class PrincipalElementVariantBuilder(Builder):
     def set_scheme(self, new_scheme):
         # string
         self.scheme = new_scheme
-    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None):
+    def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None, source=[]):
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
             role = role,  # ["transcription", "annotation", "documentation", "description", None]
@@ -186,7 +187,8 @@ class PrincipalElementVariantBuilder(Builder):
                                ),
                                set_ref = XSDAnyURI( type_set_URI ) \
                                          if type_set_URI else None
-                           ) if type_link_title else None
+                           ) if type_link_title else None,
+            source = source
         ))
 
 

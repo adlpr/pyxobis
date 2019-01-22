@@ -327,11 +327,17 @@ class Note(Component):
             ( linkAttributes,
               attribute set { xsd:anyURI } )?,
             genericType?,
-            genericContent
+            genericContent,
+            noteSource*
+        }
+
+    noteSource |=
+        element xobis:source {
+          ( orgRef | workRef | element xobis:description { text } )+
         }
     """
     ROLES = ["transcription", "annotation", "documentation", "description", None]
-    def __init__(self, content, role=None, link_attributes=None, set_ref=None, generic_type=None):
+    def __init__(self, content, role=None, link_attributes=None, set_ref=None, generic_type=None, source=[]):
         assert role in Note.ROLES
         self.role = role
         assert not (bool(link_attributes) ^ bool(set_ref)), "Need both or neither: link / set"
@@ -345,6 +351,9 @@ class Note(Component):
         self.generic_type = generic_type
         assert isinstance(content, GenericContent)
         self.content = content
+        for source_part in source:
+            assert any(isinstance(source_part, valid_type) for valid_type in (OrganizationRef, WorkRef, str))
+        self.source = source
     def serialize_xml(self):
         # Returns an Element.
         attrs = {}
@@ -362,6 +371,15 @@ class Note(Component):
             type_e = self.generic_type.serialize_xml()
             note_e.append(type_e)
         note_e.text = content_text
+        if self.source:
+            source_e = E('source')
+            for source_part in self.source:
+                if isinstance(source_part, str):
+                    source_part_e = E('description')
+                    source_part_e.text = source_part
+                else:
+                    source_part_e = source_part.serialize_xml()
+                source_e.append(source_part_e)
         return note_e
 
 

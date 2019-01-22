@@ -97,7 +97,7 @@ add_id_alternate_note ( content_text,
 
 # If no args, adds current ID in queue to Record object.
 # If args, acts as shorthand for set_id_alternate(*args) && add_id_alternate()
-add_id_alternate ( *args )
+add_id_alternate ( *args )  # id_descriptions, id_value, id_status=None
 
 # Type of record (e.g. original, derivative, suppressed?)
 add_type ( title = None,  # str
