@@ -201,6 +201,34 @@ def transform_relationships_bib(self, record):
 
         relationships.append(rb.build())
 
+    # Production, Publication, Distribution, Manufacture, and Copyright Notice (R) (R)
+    for field in record.get_fields('264'):
+        if not (field.indicator2 == '4' and 'c' in field):
+            continue
+
+        # remove copyright symbol
+        val = field['c'].replace('©','').replace('Ⓒ','').strip()
+
+        rb = RelationshipBuilder()
+
+        # Relationship Name
+        rel_name = "Copyright"
+
+        # Name/Type
+        rb.set_name(rel_name)
+        rb.set_type(self.get_relation_type(rel_name))
+
+        # Degree: n/a
+        # Enumeration: n/a
+        # Chronology: n/a
+
+        # Target
+        rb.set_target(self.dp.parse_as_ref(val))
+
+        # Notes: n/a
+
+        relationships.append(rb.build())
+
     ...
     ...
     ...

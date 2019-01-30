@@ -159,7 +159,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### BeingVariantBuilder
@@ -196,7 +197,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### BeingRefBuilder
@@ -247,7 +249,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### ConceptVariantBuilder
@@ -283,7 +286,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### ConceptRefBuilder
@@ -338,7 +342,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### EventVariantBuilder
@@ -376,7 +381,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### EventRefBuilder
@@ -423,7 +429,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### LanguageVariantBuilder
@@ -457,7 +464,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### LanguageRefBuilder
@@ -512,7 +520,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 
 set_holdings ( versions_holdings_opt )
 ```
@@ -550,7 +559,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### ObjectRefBuilder
@@ -599,7 +609,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### OrganizationVariantBuilder
@@ -637,7 +648,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### OrganizationRefBuilder
@@ -696,7 +708,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### PlaceVariantBuilder
@@ -732,7 +745,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### PlaceRefBuilder
@@ -782,7 +796,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### StringVariantBuilder
@@ -821,7 +836,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### StringRefBuilder
@@ -898,7 +914,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### DurationBuilder
@@ -962,7 +979,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### TimeVariantBuilder
@@ -1141,7 +1159,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 
 set_holdings ( versions_holdings_opt )
 ```
@@ -1180,7 +1199,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### WorkRefBuilder
@@ -1219,7 +1239,8 @@ add_note ( content_text,
            set_URI = None,
            type_link_title = None,
            type_href_URI = None,
-           type_set_URI = None )
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 
 set_enumeration ( enumeration )  # StringRef
 

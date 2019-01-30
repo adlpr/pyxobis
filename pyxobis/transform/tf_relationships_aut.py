@@ -413,6 +413,29 @@ def transform_relationships_aut(self, record):
     ...
     ...
 
+    # External Relationship Entry (Lane: to PubMed, e.g.) (R)
+    for field in record.get_fields('789'):
+        rel_names = field.get_subfields('e') or ["Related title:"]
+        for rel_name in rel_names:
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+
+            # Enumeration: n/a
+            # Chronology
+            rb.set_time_or_duration_ref(self.get_field_chronology(field))
+
+            # Target
+            rb.set_target(self.build_ref_from_field(field, WORK_INST))
+
+            # Notes: n/a
+
+            relationships.append(rb.build())
+
     # Allowable Subheadings (Lane: MeSH only when 450 $w/3 = a) (R)
     for field in record.get_fields('925'):
         rb = RelationshipBuilder()

@@ -45,7 +45,7 @@ class RelationshipBuilder:
                                set_ref = XSDAnyURI( type_set_URI ) \
                                          if type_set_URI else None
                            ) if type_link_title else None,
-            source = source
+            source = source if isinstance(source, list) else [source]
         ))
     def set_enumeration(self, enumeration):
         self.enumeration = enumeration

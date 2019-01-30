@@ -53,6 +53,7 @@ class Transformer:
         self.lc_org_ref   = self.build_simple_ref("Library of Congress", ORGANIZATION)
         self.nlm_org_ref  = self.build_simple_ref("National Library of Medicine (U.S.)", ORGANIZATION)
         self.oclc_org_ref = self.build_simple_ref("OCLC", ORGANIZATION)
+        self.mesh_ref     = self.build_simple_ref("Medical subject headings", WORK_AUT)
         # map of 043 geographic area codes to entry names for relationships
         # with open(os.path.join(os.path.dirname(__file__), 'gacs.json'), 'r') as inf:
         #     self.gacs_map = json.load(inf)
@@ -1201,13 +1202,13 @@ class Transformer:
 
     def __preprocess_043(self, record):
         """
-        Only use 043 geocode as variant on auts if exactly one. Add temporary ^e
-        to supply the variant type.
+        Only use 043 geocode as variant on auts if exactly one.
+        Add ad-hoc 451 and supply the variant type.
         """
         geocodes = record.get_subfields('043','a')
-        record.remove_fields('043')
         if len(geocodes) == 1 and record.get_record_type() == record.AUT:
-            record.add_ordered_field(Field('043','  ',['e',"MARC geographic area code",'a',geocodes[0]]))
+            record.add_ordered_field(Field('451','  ',['e',"MARC geographic area code",'a',geocodes[0]]))
+            record.remove_fields('043')
         return record
 
     def __translated_title_730_to_246(self, record):
@@ -1291,8 +1292,7 @@ class Transformer:
                 '789': "Related title"}.get(field.tag)
 
     link_field_w = ('130','510','530','730','760','762','765','767',
-        '770','772','773','775','776','777','780','785','787','789',
-        '830')
+        '770','772','773','775','776','777','780','785','787','789','830')
     link_field_0 = ('100','110','111','500','510','511','550','551',
         '555','580','582','600','610','611','650','651','653','655',
         '700','710','711','748','750','751','987')
@@ -1322,7 +1322,7 @@ class Transformer:
             id_subfs = self.ix.reverse_lookup(ctrlno)
         # if that's invalid, look it up based on the field and try again
         if ctrlno is None or id_subfs is None:
-            ctrlno = self.ix.lookup(field, element_type)
+            ctrlno = ctrlno or self.ix.lookup(field, element_type)
             id_subfs = self.ix.reverse_lookup(ctrlno)
         # if still invalid, generate "heading" based on this field
         if ctrlno in (Indexer.UNVERIFIED, Indexer.CONFLICT) or id_subfs is None:
