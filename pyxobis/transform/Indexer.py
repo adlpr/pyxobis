@@ -18,8 +18,8 @@ INDEX_REL_TYPE = None
 
 # @@@@@@ TEMPORARY, ONLY WORKS FROM DIR WITH THESE FILES,
 #        DO SOMETHING BETTER WITH INPUT FILENAMES
-BIB_INF_NAME = "../surveytool/bibmfhd.20190109"
-AUT_INF_NAME = "../surveytool/aut.20190109"
+BIB_INF_NAME = "../surveytool/bibmfhd.20190131"
+AUT_INF_NAME = "../surveytool/aut.20190131"
 
 
 class Indexer:
@@ -37,19 +37,19 @@ class Indexer:
             # read index from file, or generate it
             import json
             try:
-                with open("index.json",'r') as inf:
+                with open("../surveytool/index.json",'r') as inf:
                     self.index = json.load(inf)
-                with open("index_reverse.json",'r') as inf:
+                with open("../surveytool/index_reverse.json",'r') as inf:
                     self.index_reverse = json.load(inf)
-                with open("index_rel_type.json",'r') as inf:
+                with open("../surveytool/index_rel_type.json",'r') as inf:
                     self.index_rel_type = json.load(inf)
             except:
                 self.__generate_index(inf_names)
-                with open("index.json",'w') as outf:
+                with open("../surveytool/index.json",'w') as outf:
                     json.dump(self.index, outf)
-                with open("index_reverse.json",'w') as outf:
+                with open("../surveytool/index_reverse.json",'w') as outf:
                     json.dump(self.index_reverse, outf)
-                with open("index_rel_type.json",'w') as outf:
+                with open("../surveytool/index_rel_type.json",'w') as outf:
                     json.dump(self.index_rel_type, outf)
             INDEX, INDEX_REVERSE = self.index, self.index_reverse
             INDEX_REL_TYPE = self.index_rel_type

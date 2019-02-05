@@ -25,14 +25,14 @@ def transform_notes_aut(self, record):
     ...
 
     # See Also From Reference, Topical/Language/Time Term (R)
-    for field in record.get_fields('550'):
-        if 'a' not in field:
-            # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
-            # @@@@@@@@@@ concatenate all subfields @@@@@@@@@@
-            notes.append({ 'content_text' : concat_subfs(field),
-                           'role' : 'annotation',
-                            # 'type_link_title' : 'Generic phrase, pre-coordinated qualifier, or obsolete descriptor note'
-                            })
+    # for field in record.get_fields('550'):
+    #     if 'a' not in field:
+    #         # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
+    #         # @@@@@@@@@@ concatenate all subfields @@@@@@@@@@
+    #         notes.append({ 'content_text' : concat_subfs(field),
+    #                        'role' : 'annotation',
+    #                         # 'type_link_title' : 'Generic phrase, pre-coordinated qualifier, or obsolete descriptor note'
+    #                         })
 
     # Nonpublic General Note (R)  [basically 990 but for MeSH]
     for field in record.get_fields('667'):
@@ -47,13 +47,13 @@ def transform_notes_aut(self, record):
         # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
         # @@@@@@@@@@ concatenate all subfields @@@@@@@@@@
         notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Historical Note' })
 
     # Public General Note (Lane: reserved for NLM use) (R)
     for field in record.get_fields('680'):
        notes.append({ 'content_text' : field['a'] if 'a' in field and len(field.get_subfields())==1 else concat_subfs(field),
-                      'role' : 'annotation',
+                      'role' : 'description',
                       'type_link_title' : 'General Note',
                       'source' : self.mesh_ref if field.indicator1=='8' else 'External' })
 
@@ -88,6 +88,13 @@ def transform_notes_aut(self, record):
     ...
     ...
     ...
+
+    # Staff Note (Lane) (R)
+    for field in record.get_fields('990'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'documentation',
+                           'type_link_title' : 'General Note' })
 
     # add href and set URIs to all types in notes
     for note in notes:
@@ -131,7 +138,7 @@ def transform_notes_bib(self, record):
     # Edition Statement (R)
     for field in record.get_fields('250'):
         notes.append({ 'content_text' : concat_subfs(field, with_codes=False) if 'b' in field else field['a'],
-                       'role' : 'transcription',
+                       'role' : 'description',
                        'type_link_title' : 'Description (Edition) Note' })
 
     # Computer File Characteristics (Lane: imported only) (NR)
@@ -148,7 +155,7 @@ def transform_notes_bib(self, record):
         ...
         ...
         notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Organizations (Imprint) Note' })
 
     # Production, Publication, Distribution, Manufacture, and Copyright Notice (R) (R)
@@ -160,7 +167,7 @@ def transform_notes_bib(self, record):
         ...
         ...
         notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Organizations (Imprint) Note' })
 
 
@@ -221,14 +228,23 @@ def transform_notes_bib(self, record):
     # Bibliography/Webliography Note (R)
     for field in record.get_fields('504'):
         notes.append({ 'content_text' : concat_subfs(field) if 'b' in field else field['a'],
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Bibliography Note' })
 
     # Formatted Contents Note (R)
     for field in record.get_fields('505'):
-        notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
-                       'type_link_title' : 'Contents Note' })  # @@@@@@@@@
+        notes.append({ 'content_text' : field['a'] if 'a' in field and len(field.get_subfields())==1 else concat_subfs(field),
+                       'role' : 'description',
+                       'type_link_title' : { '1' : 'Contents Note, Incomplete',
+                                             '2' : 'Contents Note, Partial',
+                                             '8' : 'Contents Note, Continued' }.get(field.indicator1, 'Contents Note') })
+
+    # Citation/References Note (R)
+    for field in record.get_fields('510'):
+        if 'w' not in field:
+            notes.append({ 'content_text' : concat_subfs(field),
+                           'role' : 'description',
+                           'type_link_title' : 'Relationship Note, Citation' })
 
     # Numbering Peculiarities Note (R)
     for field in record.get_fields('515'):
@@ -258,7 +274,7 @@ def transform_notes_bib(self, record):
         if label:
             field.subfields = ['e', label] + field.subfields
         notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Summary Note' })
 
     # Target Audience Note (R)
@@ -277,33 +293,38 @@ def transform_notes_bib(self, record):
 
     # Reproduction Note (R)
     for field in record.get_fields('533'):
-        for val in field.get_subfields('a'):
-            notes.append({ 'content_text' : val,
-                           'role' : 'annotation',
-                           'type_link_title' : 'Relationship Note, Reproduction' })
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'description',
+                       'type_link_title' : 'Relationship Note, Reproduction' })
+
+    # Original Version Note (R)
+    for field in record.get_fields('534'):
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'description',
+                       'type_link_title' : 'Relationship Note, Original Version' })
 
     # Funding Information Note (R)
     for field in record.get_fields('536'):
         notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Funding Note' })
 
     # Location of Other Archival Materials Note (R)
     for field in record.get_fields('544'):
         notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Archival Materials (Associated/Related) Note' })
 
     # Biographical or Historical Data (R)
     for field in record.get_fields('545'):
         notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Archival Materials (Administrative) Note' if field.indicator1=='1' else 'Archival Materials (Biographical) Note' })
 
     # Language Note (R)
     for field in record.get_fields('546'):
         notes.append({ 'content_text' : concat_subfs(field, with_codes=False),
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Language Note' })
 
     # Former Title Complexity Note (R)
@@ -323,13 +344,13 @@ def transform_notes_bib(self, record):
     # Cumulative Index/Finding Aids Note (R)
     for field in record.get_fields('555'):
         notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
+                       'role' : 'description',
                        'type_link_title' : 'Archival Materials (Finding Aid) Note' if field.indicator1=='0' else 'Description (Serial Index) Note' })
 
     # Information about Documentation Note (R)
     for field in record.get_fields('556'):
-        notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'annotation',
+        notes.append({ 'content_text' : field['a'] if 'a' in field and len(field.get_subfields())==1 else concat_subfs(field),
+                       'role' : 'description',
                        'type_link_title' : 'Relationship (Documentation) Note' })
 
     # Ownership and Custodial History (Provenance) (R)
@@ -353,6 +374,13 @@ def transform_notes_bib(self, record):
                            'role' : 'annotation',
                            'type_link_title' : 'Relationship Note' })
 
+    # Publications About Described Materials Note (R)
+    for field in record.get_fields('581'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'Relationship Note, Subject' })
+
     # Awards Note (R)
     for field in record.get_fields('586'):
         for val in field.get_subfields('a'):
@@ -360,14 +388,19 @@ def transform_notes_bib(self, record):
                            'role' : 'annotation',
                            'type_link_title' : 'Awards Note' })
 
+    # Local Note (Lane) (R)
+    for field in record.get_fields('590'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'Lane Local Note' })
 
     # Staff Note (Lane) (R)
     for field in record.get_fields('990'):
         for val in field.get_subfields('a'):
             notes.append({ 'content_text' : val,
                            'role' : 'documentation',
-                           'type_link_title' : 'Staff Note' })  # @@@@@@@@@
-
+                           'type_link_title' : 'General Note' })
 
     # add href and set URIs to all types in notes
     for note in notes:

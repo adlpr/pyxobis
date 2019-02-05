@@ -235,6 +235,9 @@ def transform_relationships_bib(self, record):
 
     # Citation/References Note (R)
     for field in record.get_fields('510'):
+        if 'w' not in field:
+            continue
+
         rb = RelationshipBuilder()
 
         # Name/Type

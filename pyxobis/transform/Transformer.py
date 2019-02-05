@@ -620,9 +620,10 @@ class Transformer:
         else:
             broad_cat = record.get_broad_category()
             if broad_cat == "Series":
-                wb.set_class('serial')
-            # otherwise is Title, Formal
-            wb.set_class('collective')  # ??
+                # 130s should all be unnumbered series, NOT "serial"
+                wb.set_class('collective')
+            else:
+                wb.set_class('individual')
 
         # ENTRY GROUP
         # ---
@@ -654,11 +655,14 @@ class Transformer:
         # CLASS
         # ---
         # individual, serial, collective, referential
-        # auts are collective? so instances are only ref/ind/ser?
         if record.is_referential():
             wb.set_class('referential')
         else:
             broad_cat = record.get_broad_category()
+
+            # collections should have "collective"
+            # ......
+
             if broad_cat == "Serials":
                 wb.set_class('serial')
             else:
