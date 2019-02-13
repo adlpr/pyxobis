@@ -31,13 +31,26 @@ class RecordBuilder:
         self.id_value = id_value
     def set_id_status(self, id_status):
         self.id_status = id_status
-    def add_id_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None):
+    def add_id_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None, source=[]):
+        if not isinstance(source, list):
+            source = [source]
+        assert all(any(isinstance(source_part, valid_type) for valid_type in (OrganizationRef, WorkRef, str)) for source_part in source)
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
             role = role,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
-            set_ref = XSDAnyURI(set_URI) if set_URI else None
+            set_ref = XSDAnyURI(set_URI) if set_URI else None,
+            generic_type = GenericType(
+                               LinkAttributes(
+                                   type_link_title,
+                                   href = XSDAnyURI( type_href_URI ) \
+                                                if type_href_URI else None
+                               ),
+                               set_ref = XSDAnyURI( type_set_URI ) \
+                                         if type_set_URI else None
+                           ) if type_link_title else None,
+            source = source if isinstance(source, list) else [source]
         ))
     def set_id_alternate(self, id_descriptions, id_value, id_status=None):
         if not isinstance(id_descriptions, list):
@@ -45,13 +58,26 @@ class RecordBuilder:
         self.current_id_alternate_descriptions = id_descriptions
         self.current_id_alternate_value = id_value
         self.current_id_alternate_status = id_status
-    def add_id_alternate_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None):
+    def add_id_alternate_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None, source=[]):
+        if not isinstance(source, list):
+            source = [source]
+        assert all(any(isinstance(source_part, valid_type) for valid_type in (OrganizationRef, WorkRef, str)) for source_part in source)
         self.current_id_alternate_notes.append(Note(
             GenericContent(content_text, content_lang),
             role = role,  # ["transcription", "annotation", "documentation", "description", None]
             link_attributes = LinkAttributes(link_title, XSDAnyURI(href_URI) if href_URI else None) \
                               if link_title else None,
-            set_ref = XSDAnyURI(set_URI) if set_URI else None
+            set_ref = XSDAnyURI(set_URI) if set_URI else None,
+            generic_type = GenericType(
+                               LinkAttributes(
+                                   type_link_title,
+                                   href = XSDAnyURI( type_href_URI ) \
+                                                if type_href_URI else None
+                               ),
+                               set_ref = XSDAnyURI( type_set_URI ) \
+                                         if type_set_URI else None
+                           ) if type_link_title else None,
+            source = source if isinstance(source, list) else [source]
         ))
     def add_id_alternate(self, *args):
         # this set of methods is extremely awkward, maybe figure something better out

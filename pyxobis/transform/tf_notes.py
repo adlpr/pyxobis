@@ -57,6 +57,13 @@ def transform_notes_aut(self, record):
                       'type_link_title' : 'General Note',
                       'source' : self.mesh_ref if field.indicator1=='8' else 'External' })
 
+    # Bibliographical Reference (Lane) (R)
+    for field in record.get_fields('686'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'description',
+                           'type_link_title' : 'Relationship Note, Citation'})
+
     # Application History Note (R)
     for field in record.get_fields('688'):
         for val in field.get_subfields('a'):
@@ -72,6 +79,49 @@ def transform_notes_aut(self, record):
                            'role' : 'annotation',
                            'type_link_title' : 'Scope Note',
                            'source' : self.mesh_ref if field.indicator1=='8' else 'External' })
+
+    ...
+    ...
+    ...
+
+    # Source Data Found (LC: 670) (R)
+    for field in record.get_fields('970'):
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'description',
+                       'type_link_title' : 'Source Data Found Note'})
+
+    # Source Data Not Found (LC: 675) (R)
+    for field in record.get_fields('975'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'description',
+                           'type_link_title' : 'Source Data Not Found Note'})
+
+    # Undisplayed/Unindexed terms
+    for field in record.get_fields('985','986','987','988','995'):
+        # Term type indicator subfield
+        field.subfields = [ 'i', {'985' : 'Place',
+                                '986' : 'Being',
+                                '987' : 'Organization',
+                                '988' : 'Event',
+                                '995' : 'Concept'}.get(field.tag) ] + field.subfields
+        content = concat_subfs(field)
+        # Preserve 995 I2 with description
+        if field.tag == '995':
+            i2_desc = {
+                '1' : '1 = Deleted/transferred by NLM',
+                '2' : '2 = Unreviewed new MeSH "nonprint" xref (current year changes)',
+                '4' : '4 = Demoted "Print" xref (auto copied/deleted from 450 or 451 when 2nd ind = 3)',
+                '5' : '5 = Demoted "Print" xref (auto copied/deleted from 550 or 551 when 2nd ind = 3)',
+                '6' : '8 = Unreviewed legacy MeSH "nonprint" xref',
+                '7' : '9 = Promoted "Nonprint" xref (automatically copied to 450 or 451 with 2nd ind = 9)'
+            }.get(field.indicator2, "_ = MeSH Short form and/or Sort version OR other unused xref")
+            content = i2_desc + ' ' + content
+        notes.append({ 'content_text' : content,
+                       'role' : 'annotation',
+                       'type_link_title' : 'Scope Note',
+                       'source' : self.mesh_ref if field.indicator1=='8' else 'External' })
+
     ...
     ...
     ...

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from .common import *
+from .common import Component, PrincipalElement, PreQualifierRefElement, VariantEntry, GenericName, OptScheme, OptClass, GenericType, LinkAttributes, OptSubstituteAttribute, OptSubdivisions, OptNoteList, PreQualifiersOpt, QualifiersOpt, OptVariantAttributes, OptEntryGroupAttributes
 from .Time import TimeRef, DurationRef
 
 from lxml.builder import ElementMaker

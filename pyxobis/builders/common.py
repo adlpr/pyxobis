@@ -79,6 +79,9 @@ class PrincipalElementBuilder(Builder):
     def add_variant(self, variant):
         self.variants.append(variant)
     def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None, source=[]):
+        if not isinstance(source, list):
+            source = [source]
+        assert all(any(isinstance(source_part, valid_type) for valid_type in (OrganizationRef, WorkRef, str)) for source_part in source)
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
             role = role,  # ["transcription", "annotation", "documentation", "description", None]
@@ -173,6 +176,9 @@ class PrincipalElementVariantBuilder(Builder):
         # string
         self.scheme = new_scheme
     def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None, source=[]):
+        if not isinstance(source, list):
+            source = [source]
+        assert all(any(isinstance(source_part, valid_type) for valid_type in (OrganizationRef, WorkRef, str)) for source_part in source)
         self.note_list.append(Note(
             GenericContent(content_text, content_lang),
             role = role,  # ["transcription", "annotation", "documentation", "description", None]

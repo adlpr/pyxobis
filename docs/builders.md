@@ -76,7 +76,8 @@ add_id_note ( content_text,
               set_URI = None,
               type_link_title = None,
               type_href_URI = None,
-              type_set_URI = None )
+              type_set_URI = None,
+              source = [] )
 
 # Other record IDs (LCCN, etc.):
 # Set attributes of ID on queue
@@ -93,7 +94,8 @@ add_id_alternate_note ( content_text,
                         set_URI = None,
                         type_link_title = None,
                         type_href_URI = None,
-                        type_set_URI = None )
+                        type_set_URI = None,
+                        source = [] )
 
 # If no args, adds current ID in queue to Record object.
 # If args, acts as shorthand for set_id_alternate(*args) && add_id_alternate()

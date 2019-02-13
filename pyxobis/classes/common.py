@@ -351,8 +351,9 @@ class Note(Component):
         self.generic_type = generic_type
         assert isinstance(content, GenericContent)
         self.content = content
-        for source_part in source:
-            assert any(isinstance(source_part, valid_type) for valid_type in (OrganizationRef, WorkRef, str))
+        # cannot be asserted here... assert at builder level for now?
+        # for source_part in source:
+        #     assert any(isinstance(source_part, valid_type) for valid_type in (OrganizationRef, WorkRef, str))
         self.source = source
     def serialize_xml(self):
         # Returns an Element.
