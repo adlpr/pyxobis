@@ -29,10 +29,10 @@ class LaneMARCRecord(Record):
         broad_categories = [field['a'] for field in self.get_fields('655') if field.indicator1 == '4']
         if not broad_categories:
             if '852' not in self:
-                print("WARNING: record {} has no broad category (655 47)".format(self['001'].data))
+                print(f"WARNING: {self.get_control_number()} has no broad category (655 47)")
             return None
         elif len(broad_categories) > 1:
-            print("WARNING: record {} has more than one broad category (655 47)".format(self['001'].data))
+            print(f"WARNING: {self.get_control_number()} has more than one broad category (655 47)")
             return None
         return broad_categories.pop()
 
@@ -133,13 +133,14 @@ class LaneMARCRecord(Record):
         # if self.is_suppressed():
         #     return (), None, None, None
         ctrlno = self.get_control_number()
-        # @@@@ TEMPORARY? IS AN "IDENTITY" NECESSARY FOR HOLDINGS? @@@@
+        # @@@@ TEMPORARY, HOLDINGS SHOULD HAVE AN IDENTITY EVENTUALLY @@@@
         if ctrlno is None or 'H' in ctrlno:
             return (), None, None, None
         # which field contains the identity?
         id_field = self.get_id_field()
         if id_field is None:
-            print("PROBLEM: no id field found:", ctrlno)
+            if not self.is_suppressed():
+                print("PROBLEM: no id field found:", ctrlno)
             return (), None, None, None
         # get the identity
         element_type = self.get_xobis_element_type()
@@ -202,13 +203,13 @@ class LaneMARCRecord(Record):
         Returns list of element types and identity strings
         for variant entries of this record.
         """
-        variant_types_and_ids = []
+        variant_types_and_ids = set()
         for variant_field, element_type in self.get_variant_fields_and_types():
             variant_id_string = self.get_identity_from_field( variant_field, \
                                                              element_type, \
                                                              normalized )
-            variant_types_and_ids.append((element_type, variant_id_string))
-        return variant_types_and_ids
+            variant_types_and_ids.add((element_type, variant_id_string))
+        return list(variant_types_and_ids)
 
     NORMALIZED_SEP = ','
     UNNORMALIZED_SEP = '\t'

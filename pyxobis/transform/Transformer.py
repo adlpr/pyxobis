@@ -11,9 +11,10 @@ from .DateTimeParser import DateTimeParser
 from .NameParser import NameParser
 from .tf_variants import *
 from .tf_common import *
-from .tf_notes import *
 from .tf_relationships_aut import *
 from .tf_relationships_bib import *
+from .tf_notes_aut import *
+from .tf_notes_bib import *
 
 
 class Transformer:
@@ -254,16 +255,16 @@ class Transformer:
             being_class = 'referential'
         elif broad_category == 'Peoples':
             if record['100'].indicator1 != '9':
-                print("WARNING: Peoples without ind 9#: {}".format(record['001'].data))
+                print(f"WARNING: Peoples without ind 9#: {self.get_control_number()}")
             else:
                 being_class = 'collective'
         elif broad_category == 'Persons, Families or Groups':
             if record['100'].indicator1 != '3':
-                print("WARNING: Family/Group without ind 3#: {}".format(record['001'].data))
+                print(f"WARNING: Family/Group without ind 3#: {self.get_control_number()}")
             being_class = 'familial'
         else:
             if record['100'].indicator1 not in '01':
-                print("WARNING: Individual without ind [01]#: {}".format(record['001'].data))
+                print(f"WARNING: Individual without ind [01]#: {self.get_control_number()}")
             being_class = 'individual'
 
         bb.set_class(being_class)

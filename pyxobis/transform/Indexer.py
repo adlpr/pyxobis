@@ -5,7 +5,7 @@
 Enables lookup between record IDs and identities.
 """
 
-import os
+# import os
 from pymarc import MARCReader, Field
 from .LaneMARCRecord import LaneMARCRecord
 from .tf_common import *
@@ -56,7 +56,7 @@ class Indexer:
 
     def __generate_index(self, inf_names):
         # Generate index from given input MARC files.
-        print("generating index in {}...".format(os.getcwd()))
+        print("generating indices...")
 
         # forward index (main or variant identity string --> ctrl number/conflict)
         index, index_variants = {}, {}
@@ -69,7 +69,8 @@ class Indexer:
             "Postordinate", "Associative", "Dissociative", "Equivalence"])
 
         for inf_name in inf_names:
-            with open(inf_name,'rb') as inf:
+            with open(inf_name, 'rb') as inf:
+                print(f"reading {inf_name}")
                 reader = MARCReader(inf)
                 for record in tqdm(reader):
                 # for record in reader:
@@ -97,6 +98,14 @@ class Indexer:
                         else:
                             index[element_type][id_string] = ctrlno
                         # Variant entries:
+                        # for Organization and Event subdivisions, add variant fields with concatenated divisions as a single ^a
+                        if element_type in (ORGANIZATION, EVENT):
+                            for field in record.get_fields('110','410'):
+                                if 'b' in field:
+                                    record.add_field(Field('410','2 ',('a',' '.join(field.get_subfields('a','b')))))
+                            for field in record.get_fields('111','411'):
+                                if 'e' in field:
+                                    record.add_field(Field('411','2 ',('a',' '.join(field.get_subfields('a','e')))))
                         for variant_element_type, variant_id_string in record.get_variant_types_and_ids():
                             if variant_element_type not in index_variants:
                                 index_variants[variant_element_type] = {}
@@ -138,7 +147,7 @@ class Indexer:
         Identities with multiple ctrl nos will return CONFLICT;
         with none, will return UNVERIFIED
         """
-        assert element_type in self.index, "element type {} not indexed".format(element_type)
+        assert element_type in self.index, f"element type {element_type} not indexed"
         identity = LaneMARCRecord.get_identity_from_field(field, element_type)
         value = self.index[element_type].get(identity)
         return self.UNVERIFIED if value is None else value
@@ -154,10 +163,10 @@ class Indexer:
         If element type is unspecified, only returns a matching value if there is
         an unambigous match to one element type.
         """
-        element_type = element_type or self.element_type_from_value(text)
+        element_type = element_type or self.simple_element_type_from_value(text)
         if element_type is None:
             return self.UNVERIFIED
-        assert element_type in self.index, "element type {} not indexed".format(element_type)
+        assert element_type in self.index, f"element type {element_type} not indexed"
         subf = LaneMARCRecord.IDENTITY_SUBFIELD_MAP[element_type][0]
         return self.lookup(Field('   ','  ',[subf, text]), element_type)
 

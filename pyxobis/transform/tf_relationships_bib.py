@@ -659,7 +659,7 @@ def transform_relationships_bib(self, record):
                 target_identity = self.ix.reverse_lookup(target_ctrlno)
                 # if invalid control number, print warning, use dummy name
                 if not target_identity:
-                    print("WARNING: Invalid href: bid {}, field: {}; default title to 'Unknown work'".format(record['001'].data, str(field)))
+                    print(f"WARNING: Invalid href: bid {record['001'].data}, field: {field}; default title to 'Unknown work'")
                     target_ref = self.build_simple_ref("Unknown work", WORK_INST)
                 else:
                     target_ref = self.build_ref_from_field(Field('149','  ',target_identity), WORK_INST)
