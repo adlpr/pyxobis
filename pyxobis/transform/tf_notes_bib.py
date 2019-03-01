@@ -53,24 +53,77 @@ def transform_notes_bib(self, record):
 
     # LC Publication, Distribution, etc. (Imprint) (Lane: cf. 265) (R)
     for field in record.get_fields('260'):
-        ...
-        ...
-        ...
-        notes.append({ 'content_text' : concat_subfs(field),
-                       'role' : 'description',
-                       'type_link_title' : 'Organizations (Imprint) Note' })
+        # if both 3abc and efg coexist in the field, split them into 2 fields
+        print(field)
+        codes = field.subfields[::2]
+        if any(code in '3abc' for code in codes) and any(code in 'efg' for code in codes):
+            subfs_zipped = list(zip(field.subfields[::2], field.subfields[1::2]))
+            new_fields = [ Field('260', field.indicators,
+                            [code_or_val for code, val in subfs_zipped for code_or_val in (code, val) if code in '3abc']),
+                          Field('260', field.indicators,
+                            [code_or_val for code, val in subfs_zipped for code_or_val in (code, val) if code in 'efg']) ]
+        else:
+            new_fields = [ field ]
+        for new_field in new_fields:
+            print(new_field)
+            # Convert indicators to display note subfield
+            new_codes = new_field.subfields[::2]
+            try:
+                note_subf = [{ ' ' : "Manufacturer:",
+                               '1' : "Earliest manufacturer:",
+                               '2' : "Intervening manufacturer:",
+                               '3' : "Latest manufacturer:" },
+                             { ' ' : "Publisher:",
+                               '1' : "Earliest publisher:",
+                               '2' : "Intervening publisher:",
+                               '3' : "Latest publisher:" }][any(code in '3abc' for code in new_codes)].get(new_field.indicator1)
+            except:
+                print(f"WARNING: {record.get_control_number()}: invalid indicator(s): {field}")
+                continue
+            new_field.subfields = [ 'i', note_subf ] + new_field.subfields
+            notes.append({ 'content_text' : concat_subfs(new_field),
+                           'role' : 'description',
+                           'type_link_title' : 'Organizations (Imprint) Note' })
 
     # Production, Publication, Distribution, Manufacture, and Copyright Notice (R) (R)
     for field in record.get_fields('264'):
         if field.indicator2 == '4':
             # these are Relationships to copyright date
             continue
+        # Convert indicators to display note subfield
+        try:
+            note_subf = { '0' : { ' ' : "Producer:",
+                                  '1' : "Earliest producer:",
+                                  '2' : "Intervening producer:",
+                                  '3' : "Latest producer:" },
+                          '1' : { ' ' : "Publisher:",
+                                  '1' : "Earliest publisher:",
+                                  '2' : "Intervening publisher:",
+                                  '3' : "Latest publisher:" },
+                          '2' : { ' ' : "Distributor:",
+                                  '1' : "Earliest distributor:",
+                                  '2' : "Intervening distributor:",
+                                  '3' : "Latest distributor:" },
+                          '3' : { ' ' : "Manufacturer:",
+                                  '1' : "Earliest manufacturer:",
+                                  '2' : "Intervening manufacturer:",
+                                  '3' : "Latest manufacturer:" } }.get(field.indicator2).get(field.indicator1)
+        except:
+            print(f"WARNING: {record.get_control_number()}: invalid indicator(s): {field}")
+            continue
+        field.subfields = [ 'i', note_subf ] + field.subfields
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'description',
+                       'type_link_title' : 'Organizations (Imprint) Note' })
+
+    # LC Place of Publication for Serials (Lane) (NR)
+    for field in record.get_fields('265'):
         ...
         ...
         ...
         notes.append({ 'content_text' : concat_subfs(field),
                        'role' : 'description',
-                       'type_link_title' : 'Organizations (Imprint) Note' })
+                       'type_link_title' : 'Organizations (LC Imprint) Note' })
 
 
     # Physical Description (R)
@@ -88,9 +141,9 @@ def transform_notes_bib(self, record):
                            'role' : 'annotation',
                            'type_link_title' : 'Description (Size) Note' })
         for val in field.get_subfields('e'):
-            ...
-            ...
-            ...
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'Description (Accompanying Material) Note' })
 
     # Playing Time (NR)
     for field in record.get_fields('306'):
@@ -98,6 +151,24 @@ def transform_notes_bib(self, record):
             notes.append({ 'content_text' : val,
                            'role' : 'annotation',
                            'type_link_title' : 'Description (Playing Time) Note' })
+
+    # Current Publication Frequency (NR)
+    for field in record.get_fields('310'):
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'annotation',
+                       'type_link_title' : 'Description (Serial Frequency, Latest) Note' })
+
+    # Former Publication Frequency (R)
+    for field in record.get_fields('321'):
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'annotation',
+                       'type_link_title' : 'Description (Serial Frequency, Former) Note' })
+
+    # Organization and Arrangement of Materials (R)
+    for field in record.get_fields('351'):
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'annotation',
+                       'type_link_title' : 'Archival Materials (Organization) Note' })
 
     # Dates of Publication and/or Sequential Designation (R)
     for field in record.get_fields('362'):
@@ -307,7 +378,7 @@ def transform_notes_bib(self, record):
     # add href and set URIs to all types in notes
     for note in notes:
         if 'type_link_title' in note:
-            note['type_href_URI'] = self.ix.simple_lookup(note['type_link_title'], RELATIONSHIP)
-            note['type_set_URI'] = self.ix.simple_lookup("Notes", CONCEPT)
+            note['type_href_URI'] = self.ix.simple_lookup(note['type_link_title'], CONCEPT)
+            note['type_set_URI'] = self.ix.simple_lookup("Note Type", CONCEPT)
 
     return notes

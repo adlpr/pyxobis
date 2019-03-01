@@ -69,6 +69,9 @@ def transform_notes_aut(self, record):
                       'type_link_title' : 'General Note',
                       'source' : self.mesh_ref if field.indicator1=='8' else 'External' })
 
+    # Note that 683/684/685 fields that successfully map to Organizational Relationships
+    # should have been converted to 610s before now
+
     # Academic Credentials (for persons) (Lane) (R)
     for field in record.get_fields('683'):
        notes.append({ 'content_text' : concat_subfs(field),
@@ -159,7 +162,7 @@ def transform_notes_aut(self, record):
     # add href and set URIs to all types in notes
     for note in notes:
         if 'type_link_title' in note:
-            note['type_href_URI'] = self.ix.simple_lookup(note['type_link_title'], RELATIONSHIP)
-            note['type_set_URI'] = self.ix.simple_lookup("Notes", CONCEPT)
+            note['type_href_URI'] = self.ix.simple_lookup(note['type_link_title'], CONCEPT)
+            note['type_set_URI'] = self.ix.simple_lookup("Note Type", CONCEPT)
 
     return notes

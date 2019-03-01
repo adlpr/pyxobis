@@ -146,7 +146,7 @@ class Transformer:
         element_type = record.get_xobis_element_type()
         # assert element_type, "could not determine type of record {}".format(record['001'].data)
         # @@@@@ TEMPORARY @@@@@
-        if not element_type:
+        if not element_type or element_type == HOLDINGS:
             # don't transform
             return None
 
@@ -161,6 +161,8 @@ class Transformer:
         self.__preprocess_043(record)
         # Convert 730 variant (translated) titles to 246, for ease of processing
         self.__translated_title_730_to_246(record)
+        # Split aut 68X (education/affiliation) fields, and/or convert to 610 (Organizational Relationship).
+        self.__preprocess_68X(record)
         # Relator on 785 #7 depends on position in record.
         self.__preprocess_785(record)
         # If a linking field just links a control number, pull info into the field itself.
@@ -169,50 +171,46 @@ class Transformer:
         # ~~~~~~
         # RECORD PROCESSING
         # ~~~~~~
-        if element_type != HOLDINGS:
+        init_builder = self.init_builder_methods.get(element_type)
+        parse_name = self.name_parsers.get(element_type)
 
-            init_builder = self.init_builder_methods.get(element_type)
-            parse_name = self.name_parsers.get(element_type)
+        # Initialize, perform PE-specific work on, and return Builder object.
+        peb = init_builder(record)
 
-            # Initialize, perform PE-specific work on, and return Builder object.
-            peb = init_builder(record)
+        # ENTRY NAME(S) AND QUALIFIERS
+        # -------
+        entry_names_and_qualifiers = parse_name(record.get_id_field())
+        for entry_name_or_qualifier in entry_names_and_qualifiers:
+            if isinstance(entry_name_or_qualifier, dict):
+                peb.add_name(**entry_name_or_qualifier)
+            else:
+                peb.add_qualifier(entry_name_or_qualifier)
 
-            # ENTRY NAME(S) AND QUALIFIERS
-            # -------
-            entry_names_and_qualifiers = parse_name(record.get_id_field())
-            for entry_name_or_qualifier in entry_names_and_qualifiers:
-                if isinstance(entry_name_or_qualifier, dict):
-                    peb.add_name(**entry_name_or_qualifier)
-                else:
-                    peb.add_qualifier(entry_name_or_qualifier)
+        # VARIANTS
+        # -------
+        for variant in self.transform_variants(record):
+            peb.add_variant(variant)
 
-            # VARIANTS
-            # -------
-            for variant in self.transform_variants(record):
-                peb.add_variant(variant)
+        # NOTES
+        # -------
+        notes = self.transform_notes_bib(record)  \
+                    if element_type in (WORK_INST, OBJECT)  \
+                    else self.transform_notes_aut(record)
+        for note in notes:
+            peb.add_note(**note)
 
-            # NOTES
-            # -------
-            notes = self.transform_notes_bib(record)  \
-                        if element_type in (WORK_INST, OBJECT)  \
-                        else self.transform_notes_aut(record)
-            for note in notes:
-                peb.add_note(**note)
+        rb.set_principal_element(peb.build())
 
-            rb.set_principal_element(peb.build())
+        # RELATIONSHIPS
+        # -------
+        relationships = self.transform_relationships_bib(record)  \
+                            if element_type in (WORK_INST, OBJECT)  \
+                            else self.transform_relationships_aut(record)
+        for relationship in relationships:
+            rb.add_relationship(relationship)
 
-            # -------------
-            # RELATIONSHIPS
-            # -------------
-            relationships = self.transform_relationships_bib(record)  \
-                                if element_type in (WORK_INST, OBJECT)  \
-                                else self.transform_relationships_aut(record)
-            for relationship in relationships:
-                rb.add_relationship(relationship)
+        return rb.build()
 
-            return rb.build()
-
-        return None
 
 
     def init_being_builder(self, record):
@@ -983,12 +981,12 @@ class Transformer:
         # 086   Government Document Classification Number (R)
         ...
 
-        # 088   Report Number (R)
-        for field in record.get_fields('088'):
-            for code, val in field.get_subfields('a','z', with_codes=True):
-                rb.add_id_alternate("Report Number",
-                                    val.strip(),
-                                    'invalid' if code=='z' else 'valid')
+        # 902   Expanded ISN Information (Lane) (R)
+        for field in record.get_fields('902'):
+            # either ISBN or ISSN, needs parsing to figure out which
+            ...
+            ...
+            ...
 
         # 990 ^w Purchase Order no./Obsolete Lane Control No. (NR)
         for field in record.get_fields('990'):
@@ -1225,6 +1223,78 @@ class Transformer:
                 record.remove_field(field)
                 field.delete_all_subfields('l')
                 record.add_field(Field('246','  ',['i',"Translated title"] + field.subfields.copy()))
+        return record
+
+    def __preprocess_68X(self, record):
+        """
+        Split any compound 683/684/685 into separate fields,
+        then convert any with linkable ^a to 610 for mapping to Relationships.
+        """
+        # split compound 68X
+        for field in record.get_fields('683','684','685'):
+
+            codes = ''.join(field.subfields[::2])
+            if any(code not in 'abc' for code in codes):
+                # warn of invalid code and ignore this field
+                print(f"WARNING: {record.get_control_number()}: field contains invalid subfield: {field}")
+                continue
+
+            record.remove_field(field)
+
+            # step 1: separate at each abc sequence
+            code_sets = re.split(r'(ab?c?|a?bc?|a?b?c)', codes)[1::2]
+
+            # step 2: calculate indices to split at
+            subfield_set_lengths = list(map(len, code_sets))
+            subfield_set_end_indices = [0] + [sum(subfield_set_lengths[:i+1]) for i, l in enumerate(subfield_set_lengths)]
+
+            # step 3: split subfields into sets, keeping track of current ^a and adding it on
+            # to sets without an ^a
+            current_a = ''
+            subfield_sets = []
+            for i,j in zip(subfield_set_end_indices, subfield_set_end_indices[1:]):
+                subfield_set = field.subfields[i*2:j*2]
+                if 'a' in subfield_set[::2]:
+                    current_a = subfield_set[subfield_set[::2].index('a')*2+1]
+                elif current_a:
+                    subfield_set = ['a',current_a] + subfield_set
+                subfield_sets.append(subfield_set)
+
+            for subfield_set in subfield_sets:
+                record.add_field(Field(field.tag,'  ',subfield_set))
+
+        # attempt link to organizational authority; but if not, make into Note
+        for field in record.get_fields('683','684','685'):
+            if any(code not in 'abc' for code in field.subfields[::2]):
+                # invalid subfield code, ignore again
+                continue
+            if 'a' not in field:
+                continue
+
+            # all these fields should now only have ^a/^b/^c, and only one of each
+            # a -> a, b -> j, c -> 9
+            org_rel_subfields = [val if i%2 else {'b':'j','c':'9'}.get(val, val) for i, val in enumerate(field.subfields)]
+
+            # determine relator to insert
+            if field.tag == '683':
+                relator = 'Graduate'
+            else:
+                if 'b' in field and re.search(r'(^| )prof(essor)?([ ,;\.]|$)', field['b'].lower()):
+                    relator = 'Faculty'
+                else:
+                    relator = 'Affiliation'
+
+            org_rel_field = Field('610','24', ['e', relator] + org_rel_subfields)
+
+            lookup_result = self.ix.lookup(org_rel_field, ORGANIZATION)
+            # print(f"{record.get_control_number()}\t{field}\t{org_rel_field}\t{lookup_result}",end='\t')
+
+            if lookup_result not in (self.ix.CONFLICT, self.ix.UNVERIFIED):
+                # print(''.join([val if i%2 else '$'+val for i, val in enumerate(self.ix.reverse_lookup(lookup_result))]))
+                record.remove_field(field)
+                record.add_field(org_rel_field)
+            # print()
+
         return record
 
     def __preprocess_785(self, record):

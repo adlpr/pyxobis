@@ -2,7 +2,7 @@
 
 Packages for transformation of Lane MARC data to XOBIS-XML.
 
-## Documentation by subpackage
+## Documentation (by subpackage)
 <!-- * [pyxobis.classes](./docs/classes.md) -->
 * [pyxobis.builders](./docs/builders.md)
 * [pyxobis.transform](./docs/transform.md)
