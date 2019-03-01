@@ -172,7 +172,7 @@ class IDContent(Component):
         for description in descriptions:
             assert any(isinstance(description, valid_type) for valid_type in (OrganizationRef, WorkRef, str))
         self.descriptions = descriptions
-        assert isinstance(id_value, str), "id_value is {}, must be str".format(type(id_value))
+        assert isinstance(id_value, str), f"id_value is {type(id_value)}, must be str"
         self.id_value = id_value
         assert isinstance(opt_note_list, OptNoteList)
         self.opt_note_list = opt_note_list

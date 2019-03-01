@@ -144,7 +144,7 @@ class Transformer:
         # Determine which function to delegate PE building based on record type
 
         element_type = record.get_xobis_element_type()
-        # assert element_type, "could not determine type of record {}".format(record['001'].data)
+        # assert element_type, f"{record.get_control_number()}: could not determine type of record"
         # @@@@@ TEMPORARY @@@@@
         if not element_type or element_type == HOLDINGS:
             # don't transform
@@ -763,7 +763,7 @@ class Transformer:
         Build a ref based on only a single name string and its element type.
         """
         rb_class = self.ref_builders.get(element_type)
-        assert rb_class, "invalid element type: {}".format(element_type)
+        assert rb_class, f"invalid element type: {element_type}"
         rb = rb_class()
         rb.set_link(name, self.ix.simple_lookup(name, element_type))
         rb.add_name(name)
@@ -777,7 +777,7 @@ class Transformer:
         """
         rb_class = self.ref_builders.get(element_type)
         name_parser = self.name_parsers.get(element_type)
-        assert rb_class and name_parser, "invalid element type: {}".format(element_type)
+        assert rb_class and name_parser, f"invalid element type: {element_type}"
         rb = rb_class()
         # names/qualifiers
         ref_names_and_qualifiers = name_parser(field)
@@ -830,7 +830,7 @@ class Transformer:
         for field in record.get_fields('017'):
             id_description = "Copyright Registration Number"
             if 'b' in field:
-                id_description += " assigned by: {}".format(field['b'].strip())
+                id_description += " assigned by: " + field['b'].strip()
             rb.add_id_alternate(id_description, field['a'].strip())
 
         # 020  International Standard Book Number (R)
@@ -867,7 +867,7 @@ class Transformer:
                 if id_source.strip().lower() == 'doi':
                     id_description = self.build_simple_ref("International DOI Foundation", ORGANIZATION)
                 else:
-                    id_description = "Standard identifier; source: {}".format(id_source)
+                    id_description = "Standard identifier; source: " + id_source
             else:
                 id_description = { '1': "Universal Product Code",
                                    '3': "International Article Number (EAN) / ISBN 13",
@@ -902,7 +902,7 @@ class Transformer:
                                }.get(field.indicator1)
             if not id_description:
                 id_description = "Unspecified standard identifier"
-            id_description += " ({})".format(field['b'] if 'b' in field else 'source unknown')
+            id_description += f" ({field['b'] if 'b' in field else 'source unknown'})"
             id_alternate_notes = field.get_subfields('q')
             for code, val in field.get_subfields('a', with_codes=True):
                 rb.set_id_alternate(id_description, val.strip())
@@ -920,7 +920,7 @@ class Transformer:
         # 032  Postal Registration Number (R)
         for field in record.get_fields('032'):
             id_description = "Postal Registration Number"
-            id_description += " ({})".format(field['b'] if 'b' in field else 'source unknown')
+            id_description += f" ({field['b'] if 'b' in field else 'source unknown'})"
             for code, val in field.get_subfields('a', with_codes=True):
                 rb.add_id_alternate(id_description, val.strip())
 
@@ -1016,7 +1016,7 @@ class Transformer:
                 # Lane topical equivalent to category.
                 # Used on 155 "shadow records" of equivalent 150s for Voyager indexing purposes.
                 # records with these shouldn't be transformed in the first place.
-                raise ValueError("7XX I2=9: {}: {}".format(record.get_control_number(), str(field)))
+                raise ValueError(f"{record.get_control_number()}: 7XX I2=9: {field}")
 
             id_description = self.nlm_org_ref if field.tag in ('748','755') or field.indicator2 == '2' else self.lc_org_ref
             id_value = ' '.join(field.get_subfields('0')).strip() or "notyet"
@@ -1199,7 +1199,7 @@ class Transformer:
         """
         if '149' in record and '1' in record['149'] and '245' in record:
             assert record['245'].indicator2.isdigit(), \
-                   "Invalid 245 indicator 2 in record {}".format(record.get_control_number())
+                   f"{record.get_control_number()}: invalid 245 I2"
             record['149']['1'] = record['245']['a'][:int(record['245'].indicator2)]
         return record
 
@@ -1402,7 +1402,7 @@ class Transformer:
         # if still invalid, generate "heading" based on this field
         if ctrlno in (Indexer.UNVERIFIED, Indexer.CONFLICT) or id_subfs is None:
             id_from_field = LaneMARCRecord.get_identity_from_field(field, element_type, normalized=False)
-            assert id_from_field, "ID generation failed for field: {}".format(str(field))
+            assert id_from_field, f"ID generation failed for field: {field}"
             id_subfs = id_from_field.split(LaneMARCRecord.UNNORMALIZED_SEP)
         # @@@ this part could be altered to use e.g. ISBD punctuation?
         id_repr = ' '.join(filter(None, id_subfs[1::2]))

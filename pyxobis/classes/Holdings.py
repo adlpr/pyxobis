@@ -10,7 +10,7 @@ NSMAP = {'xsi':"http://www.w3.org/2001/XMLSchema-instance",
 E = ElementMaker(namespace="",
                  nsmap=NSMAP)
 
-nons = {"{}noNameSpaceSchemaLocation".format('{'+NSMAP['xsi']+'}') :
+nons = {"{"+NSMAP['xsi']+"}noNameSpaceSchemaLocation" :
         "https://www.loc.gov/standards/iso20775/ISOholdings_V1.0.xsd"}
 
 

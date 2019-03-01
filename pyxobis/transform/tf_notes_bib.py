@@ -54,7 +54,6 @@ def transform_notes_bib(self, record):
     # LC Publication, Distribution, etc. (Imprint) (Lane: cf. 265) (R)
     for field in record.get_fields('260'):
         # if both 3abc and efg coexist in the field, split them into 2 fields
-        print(field)
         codes = field.subfields[::2]
         if any(code in '3abc' for code in codes) and any(code in 'efg' for code in codes):
             subfs_zipped = list(zip(field.subfields[::2], field.subfields[1::2]))
@@ -65,7 +64,6 @@ def transform_notes_bib(self, record):
         else:
             new_fields = [ field ]
         for new_field in new_fields:
-            print(new_field)
             # Convert indicators to display note subfield
             new_codes = new_field.subfields[::2]
             try:
@@ -118,13 +116,9 @@ def transform_notes_bib(self, record):
 
     # LC Place of Publication for Serials (Lane) (NR)
     for field in record.get_fields('265'):
-        ...
-        ...
-        ...
         notes.append({ 'content_text' : concat_subfs(field),
                        'role' : 'description',
                        'type_link_title' : 'Organizations (LC Imprint) Note' })
-
 
     # Physical Description (R)
     for field in record.get_fields('300'):

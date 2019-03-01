@@ -130,7 +130,7 @@ class DateTimeParser:
             dts = re.sub(r"(\d\d\d\d?-)(\d\d[-/]){}".format(m),   r"\1\2\g<1>{}".format(str(i+1).zfill(2)), dts, flags=re.I)
 
         # abbreviated ranges that could be misparsed as YYYY-MM e.g. 1875-76
-        m = re.search(r"(\d{1,2})(\d{2}-)(\d{2})(\D|$)", dts)
+        m = re.search(r"(\d{1,2})(\d{2}-)(\d{2})(\D|(?: \w+)?$)", dts)
         if m and int(m.group(3)) > 12:
             # potential problem here if multiple instances
             dts = dts.replace(m.group(0), m.group(1)+m.group(2)+m.group(1)+m.group(3)+m.group(4))
@@ -254,7 +254,7 @@ class DateTimeParser:
 
         else:
             # Did not split as expected
-            raise ValueError("problem parsing date: {}".format(datestring))
+            raise ValueError(f"problem parsing date: {datestring}")
 
 
     def __parse_for_double(self, datestring, type_kwargs):
@@ -266,7 +266,7 @@ class DateTimeParser:
             return self.__parse_single(date1.strip(), type_kwargs),  \
                    self.__parse_single(date2.strip(), type_kwargs)
         elif len(dts_split_slash) > 2:
-            raise ValueError("problem parsing date: {}".format(datestring))
+            raise ValueError(f"problem parsing date: {datestring}")
 
         # or, they might be separated with "or",
         # in which case they're both "estimated" dates
@@ -277,7 +277,7 @@ class DateTimeParser:
             return self.__parse_single(date1.strip()+'?', type_kwargs),  \
                    self.__parse_single(date2.strip()+'?', type_kwargs)
         elif len(dts_split_or) > 2:
-            raise ValueError("problem parsing date: {}".format(datestring))
+            raise ValueError(f"problem parsing date: {datestring}")
 
         # not a double date
         return self.__parse_single(datestring, type_kwargs), None
@@ -296,7 +296,7 @@ class DateTimeParser:
             if date1.isdigit() and date2.isdigit():
                 if len(date1) > len(date2) and int(date1) > int(date2):
                     date2 = date1[:-len(date2)] + date2
-            date1, date2 = "<{}>".format(date1), "<{}>".format(date2)
+            date1, date2 = f"<{date1}>", f"<{date2}>"
         # "Nov./Dec. 1967"
         m = re.match(r"[\w\.]+( \d+)$", date2)
         if m and re.match(r"[\w\.]+$", date1):
@@ -375,7 +375,7 @@ class DateTimeParser:
         for quality_candidate in ["before", "after", "early", "mid", "late"]:
             if re.match(r"^{}\s*".format(quality_candidate), dts, flags=re.I):
                 dts = re.sub(r"^{}\s*".format(quality_candidate), "", dts, flags=re.I)
-                quality += " {}".format(quality_candidate)
+                quality += " " + quality_candidate
         if quality:
             tecb.set_quality(quality.strip())
 

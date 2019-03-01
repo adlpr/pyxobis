@@ -44,11 +44,9 @@ class Being(PrincipalElement):
         # attributes
         assert isinstance(role_attributes, RoleAttributes)
         self.role_attributes = role_attributes
-        assert type_ in Being.TYPES, \
-            "Being type ({}) must be in: {}".format(type_, str(Being.TYPES))
+        assert type_ in Being.TYPES, f"Being type ({type_}) must be in: {Being.TYPES}"
         self.type = type_
-        assert class_ in Being.CLASSES, \
-            "Being class ({}) must be in: {}".format(type_, str(Being.CLASSES))
+        assert class_ in Being.CLASSES, f"Being class ({type_}) must be in: {Being.CLASSES}"
         self.class_ = class_
         # for entry element
         assert isinstance(opt_scheme, OptScheme)
@@ -65,7 +63,7 @@ class Being(PrincipalElement):
         self.being_entry_content = being_entry_content
         # for variant elements
         assert all(isinstance(variant, VariantEntry) for variant in variants), \
-            "Invalid type(s) for variant: {}".format(', '.join(repr(variant) for variant in variants if not isinstance(variant, VariantEntry)))
+            f"Invalid type(s) for variant: {', '.join(repr(variant) for variant in variants if not isinstance(variant, VariantEntry))}"
         self.variants = variants
         # for note list
         assert isinstance(opt_note_list, OptNoteList)
@@ -155,7 +153,7 @@ class BeingEntryContent(Component):
             assert name_content
             assert all(len(t) == 2 for t in name_content)
             assert all(t[0] in self.PART_TYPES_1 for t in name_content) or all(t[0] in self.PART_TYPES_2 for t in name_content), \
-                "Invalid part type set: {}".format(', '.join(t[0] for t in name_content))
+                f"Invalid part type set: {', '.join(t[0] for t in name_content)}"
             assert all(isinstance(t[1], NameContent) for t in name_content)
         self.name_content = name_content
         assert isinstance(qualifiers_opt, QualifiersOpt)

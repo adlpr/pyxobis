@@ -317,7 +317,7 @@ def transform_relationships_aut(self, record):
                                    '3': CONCEPT,
                                    '5': TIME,
                                    '6': LANGUAGE}.get(field.indicator2)
-            assert target_element_type, "invalid I2 in field: {}".format(field)
+            assert target_element_type, f"invalid I2 in field: {field}"
 
             if target_element_type == TIME:
                 # ^x is the second part of a Duration

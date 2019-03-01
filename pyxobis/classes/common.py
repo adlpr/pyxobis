@@ -16,7 +16,7 @@ class Component:
         if format == "xml":
             return self.serialize_xml()
         else:
-            raise ValueError("unknown serialize format: {}".format())
+            raise ValueError(f"unknown serialize format: {format}")
     def serialize_xml(self):
         # Returns None.
         return None
@@ -194,7 +194,7 @@ class GenericType(Component):
     def __init__(self, link_attributes, set_ref):
         assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
-        assert isinstance(set_ref, XSDAnyURI), "invalid set ref: {}".format(set_ref)
+        assert isinstance(set_ref, XSDAnyURI), f"invalid set ref: {set_ref}"
         self.set_ref = set_ref
     def serialize_xml(self):
         # Returns an Element.
@@ -583,7 +583,7 @@ class XSDAnyURI(Component):
 #     def __init__(self, date_time):
 #         # verify match to ISO 8601 extended format
 #         assert re.match(r"-?\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(Z|[+-]\d\d:\d\d])?$", date_time), \
-#             "Datetime ({}) must match ISO 8601 extended format".format(date_time)
+#             f"Datetime ({date_time}) must match ISO 8601 extended format"
 #         self.date_time = date_time
 #     def serialize_xml(self):
 #         # Returns a text string.

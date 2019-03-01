@@ -351,7 +351,7 @@ class TimeRef(RefElement):
             assert isinstance(calendar, Calendar)
         self.calendar = calendar
         assert isinstance(time_content, TimeContent),  \
-            "time_content is {}, must be TimeContent".format(type(time_content))
+            f"time_content is {type(time_content)}, must be TimeContent"
         self.time_content = time_content
     def is_nominal(self):
         return self.time_content.is_nominal()

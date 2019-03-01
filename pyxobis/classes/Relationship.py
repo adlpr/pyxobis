@@ -69,13 +69,13 @@ class RelationshipContent(Component):
     def __init__(self, relationship_name, element_ref, type=None, degree=None, enumeration=None, time_or_duration_ref=None, opt_note_list=OptNoteList()):
         assert type in RelationshipContent.TYPES
         self.type = type
-        assert isinstance(element_ref, RefElement), "invalid target type: {}".format(type(element_ref))
+        assert isinstance(element_ref, RefElement), f"invalid target type: {type(element_ref)}"
         # self.target_is_concept = isinstance(element_ref, ConceptRef)
         # if self.target_is_concept:
-        #     assert degree in RelationshipContent.DEGREES_CONCEPT, "invalid degree: {}".format(degree)
+        #     assert degree in RelationshipContent.DEGREES_CONCEPT, f"invalid degree: {degree}"
         # else:
-        #     assert degree in RelationshipContent.DEGREES_NONCONCEPT, "invalid degree: {}".format(degree)
-        assert degree in RelationshipContent.DEGREES, "invalid degree: {}".format(degree)
+        #     assert degree in RelationshipContent.DEGREES_NONCONCEPT, f"invalid degree: {degree}"
+        assert degree in RelationshipContent.DEGREES, f"invalid degree: {degree}"
         self.degree = degree
         assert isinstance(relationship_name, RelationshipName)
         self.relationship_name = relationship_name

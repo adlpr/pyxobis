@@ -257,12 +257,12 @@ class VersionsHoldingsBuilder(Builder):
         self.is_holdings_only = False
     def set_holdings(self, text, lang=None):
         if self.versions:
-            print("WARNING: versions list is non-empty!\nemptying to set holdings: {}".format(text))
+            print(f"WARNING: versions list is non-empty!\nemptying to set holdings: {text}")
         self.versions = [ Holdings( GenericContent(text, lang) ) ]
         self.is_holdings_only = True
     def add_version(self, version_text, holdings_text, version_lang=None, version_script=None, version_nonfiling=0, holdings_lang=None, qualifiers=[], notes=[]):
         if not all(isinstance(version, Version) for version in self.versions):
-            print("WARNING: versions list contains non-Version!\nemptying to add version: {}".format(version_text))
+            print(f"WARNING: versions list contains non-Version!\nemptying to add version: {version_text}")
             self.versions = []
         self.versions.append( Version(
             NameContent(

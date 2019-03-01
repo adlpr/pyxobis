@@ -27,12 +27,11 @@ class Work(PrincipalElement):
     def __init__(self, work_content, role, type_=None, \
                        versions_holdings_opt=VersionsHoldingsOpt()):
         # attributes
-        assert type_ in Work.TYPES, \
-            "Work type ({}) must be in: {}".format(type_, str(Work.TYPES))
+        assert type_ in Work.TYPES, f"Work type ({type_}) must be in: {Work.TYPES}"
         self.is_authority = role in Work.ROLES_2
         if not self.is_authority:
             assert role in Work.ROLES_1, \
-                "Non-authority Work role ({}) must be in: {}".format(role, str(Work.ROLES_1))
+                f"Non-authority Work role ({role}) must be in: {Work.ROLES_1}"
         self.type = type_
         self.role = role
         # content
@@ -79,7 +78,7 @@ class WorkContent(Component):
                        variants=[], opt_note_list=OptNoteList()):
         # attributes
         assert class_ in WorkContent.CLASSES, \
-            "Work entry class ({}) must be in: {}".format(class_, str(WorkContent.CLASSES))
+            f"Work entry class ({class_}) must be in: {WorkContent.CLASSES}"
         self.class_ = class_
         # for entry element
         assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)

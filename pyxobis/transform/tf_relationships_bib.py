@@ -173,11 +173,11 @@ def transform_relationships_bib(self, record):
         val_normalized = None
         if len(val) == 4:  # YYMM
             yy, mm = val[:2], val[2:]
-            val_normalized = "19{}-{}".format(yy, mm) if int(yy) >= 80 else "20{}-{}".format(yy, mm)
+            val_normalized = f"19{yy}-{mm}" if int(yy) >= 80 else f"20{yy}-{mm}"
         elif len(val) == 6:  # YYYYMM
-            val_normalized = "{}-{}".format(val[:4], val[4:])
+            val_normalized = f"{val[:4]}-{val[4:]}"
         elif len(val) == 8:  # YYYYMMDD
-            val_normalized = "{}-{}-{}".format(val[:4], val[4:6], val[6:])
+            val_normalized = f"{val[:4]}-{val[4:6]}-{val[6:]}"
         if not val_normalized:
             continue
 
@@ -304,8 +304,8 @@ def transform_relationships_bib(self, record):
 
             relationships.append(rb.build())
 
-    # Organization Name as Subject (R)
-    for field in record.get_fields('610'):
+    # Organization Name as Subject (R) / Organization/Jurisdiction Name, undisplayed/unindexed as phrase (R)
+    for field in record.get_fields('610','987'):
         # Relationship Name(s)
         rel_names = field.get_subfields('e') or ["Subject"]
         for rel_name in rel_names:
@@ -406,7 +406,7 @@ def transform_relationships_bib(self, record):
                                    '3': CONCEPT,
                                    '5': TIME,
                                    '6': LANGUAGE}.get(field.indicator2)
-            assert target_element_type, "invalid I2 in field: {}".format(field)
+            assert target_element_type, f"invalid I2 in field: {field}"
 
             if target_element_type == TIME:
                 # ^x is the second part of a Duration

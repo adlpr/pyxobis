@@ -91,10 +91,10 @@ class ObjectContent(Component):
         self.is_manufactured = org_ref is not None
         if self.is_manufactured:
             assert type_ in ObjectContent.TYPES_2, \
-                "manufactured (no Org ID) Object type ({}) must be in: {}".format(type_, str(ObjectContent.TYPES_2))
+                f"manufactured (no Org ID) Object type ({type_}) must be in: {ObjectContent.TYPES_2}"
         else:
             assert type_ in ObjectContent.TYPES_1, \
-                "non-manufactured Object type ({}) must be in: {}".format(type_, str(ObjectContent.TYPES_1))
+                f"non-manufactured Object type ({type_}) must be in: {ObjectContent.TYPES_1}"
             assert isinstance(org_ref, OrganizationRef)
         self.type = type_
         # for entry element
