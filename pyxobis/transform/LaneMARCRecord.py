@@ -159,7 +159,7 @@ class LaneMARCRecord(Record):
                               ORGANIZATION: 'abcdn',       # X10
                               EVENT:        'acden',       # X11
                               CONCEPT:      'ax',          # X50/X55/X80
-                              TIME:         'a',           # X50
+                              TIME:         'ax',          # X50
                               LANGUAGE:     'a',           # X50
                               PLACE:        'az',          # X51
                               RELATIONSHIP: 'a',           # X55

@@ -983,10 +983,25 @@ class Transformer:
 
         # 902   Expanded ISN Information (Lane) (R)
         for field in record.get_fields('902'):
-            # either ISBN or ISSN, needs parsing to figure out which
-            ...
-            ...
-            ...
+            for code, val in field.get_subfields('a','z', with_codes=True):
+                # either ISBN or ISSN, needs parsing to figure out which
+                # parse out parenthetics (qualifiers)
+                has_qualifier = re.match(r'([^\(]+)(\(.+)$', val)
+                if has_qualifier:
+                    val, qualifier = has_qualifier.groups()
+                digit_count = len(re.sub(r'[^0-9X]', '', val.upper()))
+                if digit_count >= 9:
+                    id_description = "ISBN"
+                elif digit_count == 8:
+                    id_description = "ISSN"
+                else:
+                    id_description = "Unspecified standard identifier"
+                rb.set_id_alternate(id_description,
+                                    val.strip(),
+                                    'invalid' if code=='z' else 'valid')
+                if has_qualifier:
+                    rb.add_id_alternate_note(qualifier, "annotation")
+                rb.add_id_alternate()
 
         # 990 ^w Purchase Order no./Obsolete Lane Control No. (NR)
         for field in record.get_fields('990'):
@@ -1201,6 +1216,37 @@ class Transformer:
             assert record['245'].indicator2.isdigit(), \
                    f"{record.get_control_number()}: invalid 245 I2"
             record['149']['1'] = record['245']['a'][:int(record['245'].indicator2)]
+        return record
+
+    def __preprocess_041(self, record):
+        """
+        Only use 043 geocode as variant on auts if exactly one.
+        Add ad-hoc 451 and supply the variant type.
+        """
+        if '041' not in record:
+            return record
+        language_code_field = record['041']
+        if language_code_field.indicator1 == '1' and "Translations" not in record.get_all_categories():
+            record.add_ordered_field(Field('655','17',['a','Translations']))
+        # @@@@@@@@@@@@@@@@@@@
+        # $h isn't a relationship to the present work
+        # but if record has a 765 or (single) 730 this is the language of that; add $3 language to that field
+        orig_langs = language_code_field.get_subfields('h')
+        orig_langs_as_note = True
+        if len(orig_langs) == 1:
+            fields_730 = [field for field in record.get_fields('730') if field.indicator2 != '8' and 'l' in field]
+            fields_765 = record.get_fields('765')
+            if len(fields_730) == 1:
+                fields_730[0].subfields += ['3', orig_langs[0]]
+                orig_langs_as_note = False
+            for field in fields_765:
+                field.subfields += ['3', orig_langs[0]]
+                orig_langs_as_note = False
+        # if no field can be found to accept the information, just add a 546 note instead
+        if orig_langs_as_note:
+            record.add_ordered_field(Field('546','  ',['a', f'Language(s) of original: {"; ".join(orig_langs)}']))
+        else:
+            print(record)
         return record
 
     def __preprocess_043(self, record):

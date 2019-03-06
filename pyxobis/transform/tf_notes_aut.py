@@ -34,6 +34,20 @@ def transform_notes_aut(self, record):
     #                         # 'type_link_title' : 'Generic phrase, pre-coordinated qualifier, or obsolete descriptor note'
     #                         })
 
+    # Series Dates of Publication and/or Volume Designation (R) (Lane)
+    for field in record.get_fields('640'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'Description (Serial Enumeration/Chronology, Unformatted) Note' })
+
+    # Series Numbering Peculiarities (R)
+    for field in record.get_fields('641'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'Enumeration Note' })
+
     # Complex See Also Reference, Name (NR)
     for field in record.get_fields('663'):
        notes.append({ 'content_text' : concat_subfs(field),

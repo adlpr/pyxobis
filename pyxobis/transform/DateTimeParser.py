@@ -65,8 +65,6 @@ class DateTimeParser:
         [between 1551 and 1554]	1
         [between 880 and 898?]	391
 
-        2011-05-26~-2018~
-        2015-10-<2018-03>
         1990-2015-
         """
 
@@ -74,7 +72,7 @@ class DateTimeParser:
         dts = re.sub(r'^\((.*)\)$', r'\1', datestring.strip('.,:; ').strip()).strip()
         if not dts:
             return None
-        dts = re.sub(r"([\d\-]+s?)~", r"approximately \1", dts)
+        # dts = re.sub(r"([\d\-]+s?)~", r"approximately \1", dts)
         # dts = re.sub(r" +cent( |$)", r" century\1", dts)
         dts = re.sub(r"[\u200c-\u200f]", "", dts)
 
@@ -119,11 +117,17 @@ class DateTimeParser:
                 r"oct(?:\.|ober)?",  r"nov(?:\.|ember)?",  r"dec(?:\.|ember)?"
             ]):
             # DD Month YYYY --> YYYY Month DD
-            dts = re.sub(r"(^|\D)((?:\d\d?-)?\d\d?) *({},?) (\d\d\d\d?)(\D|$)".format(m),  r"\1\4 \3 \2\5", dts, flags=re.I)
+            dts_m = re.search(r"(^|\D)((?:\d\d?-)?\d\d?) *({},?) (\d\d\d\d?)(\D|$)".format(m), dts, flags=re.I)
+            if dts_m:
+                dts = re.sub(r"(^|\D)((?:\d\d?-)?\d\d?) *({},?) (\d\d\d\d?)(\D|$)".format(m),  r"\1\4 \3 {}\5".format(dts_m.group(2).zfill(2)), dts, flags=re.I)
             # YYYY Month DD --> YYYY-MM-DD
-            dts = re.sub(r"(\d\d\d\d?) *{},? (\d\d?)".format(m),  r"\1-{}-\2".format(str(i+1).zfill(2)), dts, flags=re.I)
+            dts_m = re.search(r"(\d\d\d\d?) *{},? (\d\d?)".format(m), dts, flags=re.I)
+            if dts_m:
+                dts = re.sub(r"(\d\d\d\d?) *{},? (\d\d?)".format(m),  r"\1-{}-{}".format(str(i+1).zfill(2), dts_m.group(2).zfill(2)), dts, flags=re.I)
             # Month DD, YYYY --> YYYY-MM-DD
-            dts = re.sub(r"{} (\d\d?),? (\d\d\d\d?)".format(m),   r"\2-{}-\1".format(str(i+1).zfill(2)), dts, flags=re.I)
+            dts_m = re.search(r"{} (\d\d?),? (\d\d\d\d?)".format(m), dts, flags=re.I)
+            if dts_m:
+                dts = re.sub(r"{} (\d\d?),? (\d\d\d\d?)".format(m),   r"\2-{}-{}".format(str(i+1).zfill(2), dts_m.group(1).zfill(2)), dts, flags=re.I)
             # YYYY Month --> YYYY-MM
             dts = re.sub(r"(\d\d\d\d?) {}".format(m),             r"\1-{}".format(str(i+1).zfill(2)), dts, flags=re.I)
             # YYYY Month[-/]Month
@@ -134,6 +138,9 @@ class DateTimeParser:
         if m and int(m.group(3)) > 12:
             # potential problem here if multiple instances
             dts = dts.replace(m.group(0), m.group(1)+m.group(2)+m.group(1)+m.group(3)+m.group(4))
+
+        # <> to ~
+        dts = re.sub(r"\<([\d\-]+)\>",  r"\1~", dts, flags=re.I)
 
         # print("normalize", dts)
 
@@ -155,10 +162,6 @@ class DateTimeParser:
                 # "Died" date --> Born Unknown.
                 dts = 'Unknown-' + re.sub(r"^d(ied |\. ?|\.? )", '', dts).strip()
 
-        # calendar indication on ranges:
-        # copy calendar indicators over.
-        dts = re.sub(r"^([\d\-]+)-([\d\-]+) ([^\d ]+)$", r"\1 \3-\2 \3", dts)
-
         # print("pre split", dts)
 
         # --------
@@ -168,7 +171,7 @@ class DateTimeParser:
         # YYYY-MM-DD-DD --> YYYY-MM-DD, DD
         split_dates = re.split(r'(?<=^\d\d\d\d-\d\d-\d\d)-(?=\d\d$)', dts)
         if len(split_dates) == 1:
-            split_dates = re.split(r'-(?!\d\d(?:[\-\./\?~]|[\-\./\?~]?$))', dts)
+            split_dates = re.split(r'-(?!\d\d(?:[\-\./\?~](?: [\w\.]+)?|[\-\./\?~]?(?: [\w\.]+)?$))', dts)
 
         # print("split", str(split_dates))
 
@@ -210,6 +213,10 @@ class DateTimeParser:
             calendar_kwargs2, date2 = self.extract_calendar(date2)
             if calendar_kwargs2:
                 drb.set_calendar2(**calendar_kwargs2)
+                if not calendar_kwargs1:
+                    # fairly safe to assume same calendar
+                    # for beginning of duration as end if unspecified
+                    drb.set_calendar1(**calendar_kwargs2)
 
             # TIME ENTRIES
             # Blank dates

@@ -184,7 +184,9 @@ class TimeContentSingle(Component):
             # ISO 8601
             result = ''
             if self.year:
-                result += self.year.value
+                if self.year.value.startswith('-'):
+                    result += 'BC '
+                result += self.year.value.lstrip('-')
             elif self.month or self.day:
                 result += '-'
             if self.month:
@@ -556,7 +558,8 @@ class Calendar(Component):
 
 
 """
-    _year   |= element xobis:year { xsd:positiveInteger }   # <-- what about BCE? does this assume holocene?
+    #_year   |= element xobis:year { xsd:positiveInteger }   # <-- what about BCE? does this assume holocene?
+    _year   |= element xobis:year { xsd:integer }
     _month  |= element xobis:month { xsd:positiveInteger }
     _day    |= element xobis:day { xsd:positiveInteger }
     _hour   |= element xobis:hour { xsd:positiveInteger }
@@ -580,8 +583,8 @@ class TimePart(Component):
 class Year(TimePart):
     def __init__(self, value, zf=4):
         assert isinstance(value, int) or value.isdigit()
-        self.value  = '-' if int(value) != abs(int(value)) else ''
-        self.value += str(abs(int(value))).zfill(zf)
+        value = int(value)
+        self.value = f"{'-' if value < 0 else ''}{str(abs(value)).zfill(zf)}"
     def serialize_xml(self):
         return super().serialize_xml('year')
 
