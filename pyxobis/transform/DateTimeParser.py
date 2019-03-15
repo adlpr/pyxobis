@@ -6,18 +6,18 @@ from pyxobis.builders import *
 from .Indexer import Indexer
 from .tf_common import *
 
-# Default starting and ending Time Types by PE type
-DEFAULT_TIME_TYPES = {
-    None  : ("", ""),
-    BEING : ("Born", "Died"),
-    EVENT : ("Began", "Ended"),
-    # ORGANIZATION : ("Began", "Ended"),
-    # WORK_AUT  : ("", ""),
-    # WORK_INST : ("", ""),
-    # OBJECT : ("Created", "Destroyed"),  # ??
-}
-
 class DateTimeParser:
+    # Default starting and ending Time Types by PE type
+    DEFAULT_TIME_TYPES = {
+        None  : ("", ""),
+        BEING : ("Born", "Died"),
+        EVENT : ("Began", "Ended"),
+        # ORGANIZATION : ("Began", "Ended"),
+        # WORK_AUT  : ("", ""),
+        # WORK_INST : ("", ""),
+        # OBJECT : ("Created", "Destroyed"),  # ??
+    }
+
     def __init__(self):
         self.__set_default_type_kwargs()
 
@@ -101,6 +101,9 @@ class DateTimeParser:
         # single digit days
         dts = re.sub(r"(^|[ \-])([\w\.]+) (\d)(\D|$)",  r"\1\2 0\3\4", dts, flags=re.I)
         dts = re.sub(r"(^|[ \-])(\d) ([\w\.]+)([ \-]|$)",  r"\1\3 0\2\4", dts, flags=re.I)
+
+        # change hyphen in mid-YYYY to avoid confusion with range
+        dts = re.sub(r"^mid-\s*", "mid ", dts, flags=re.I)
 
         # abbreviated ranges that could be misparsed as YYYY-MM e.g. 1875-76
         m = re.search(r"(\d{1,2})(\d{2}-)(\d{2})(\D|$)", dts)
@@ -478,12 +481,12 @@ class DateTimeParser:
 
 
     def __set_default_type_kwargs(self):
-        # turn global into full map
+        # turn class variable into full map
         self.default_type_kwargs = {
             element_type : (
                 self.__type_string_to_kwargs(time_types[0]),
                 self.__type_string_to_kwargs(time_types[1])
-            ) for element_type, time_types in DEFAULT_TIME_TYPES.items()
+            ) for element_type, time_types in self.DEFAULT_TIME_TYPES.items()
         }
         self.default_type_kwargs[ORGANIZATION] = self.default_type_kwargs[EVENT]
         self.default_type_kwargs[WORK_AUT] = self.default_type_kwargs[WORK_INST] = self.default_type_kwargs[None]

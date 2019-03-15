@@ -48,6 +48,12 @@ def transform_notes_aut(self, record):
                            'role' : 'annotation',
                            'type_link_title' : 'Enumeration Note' })
 
+    # Series Place and Publisher/Issuing Body (R)
+    for field in record.get_fields('643'):
+       notes.append({ 'content_text' : concat_subfs(field),
+                      'role' : 'description',
+                      'type_link_title' : 'Organizations (Imprint) Note' })
+
     # Complex See Also Reference, Name (NR)
     for field in record.get_fields('663'):
        notes.append({ 'content_text' : concat_subfs(field),
@@ -70,11 +76,19 @@ def transform_notes_aut(self, record):
 
     # Biographical or Historical Public Note (Epitome) (R)
     for field in record.get_fields('678'):
-        # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
-        # @@@@@@@@@@ concatenate all subfields @@@@@@@@@@
+        is_unprocessed_rda = field.indicator1 == '7'
+        if is_unprocessed_rda:
+            field.subfields = ['9', { '0': 'Associated Place',
+                                    '1': 'Address',
+                                    '2': 'Field of Activity',
+                                    '3': 'Affiliation',
+                                    '4': 'Occupation',
+                                    '6': 'Family Information',
+                                    '7': 'Associated Language',
+                                    '8': 'Fuller Form of Personal Name' }.get(field.indicator2, 'Undefined')] + field.subfields
         notes.append({ 'content_text' : concat_subfs(field),
                        'role' : 'annotation',
-                       'type_link_title' : 'Historical Note' })
+                       'type_link_title' : 'Relationship Note, Unprocessed RDA' if is_unprocessed_rda else 'Historical Note' })
 
     # Public General Note (Lane: reserved for NLM use) (R)
     for field in record.get_fields('680'):

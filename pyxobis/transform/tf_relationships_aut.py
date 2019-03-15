@@ -436,6 +436,50 @@ def transform_relationships_aut(self, record):
 
             relationships.append(rb.build())
 
+    # Electronic Location and Access (Lane: use MFHD) (R)
+    for field in record.get_fields('856'):
+        # only those marked as "related resource" and not the resource itself
+        if field.indicator2 != '2':
+            continue
+
+        rb = RelationshipBuilder()
+
+        # Name/Type
+        rel_name = "Related"
+        rb.set_name(rel_name)
+        rb.set_type(self.get_relation_type(rel_name))
+
+        # Degree: n/a
+        # Enumeration: n/a
+        # Chronology: n/a
+
+        # Notes
+        for code, val in field.get_subfields('9','x', with_codes=True):
+            if code == 'x':
+                val = "Date verified: " + val
+            rb.add_note(val,
+                        role = "annotation" if code == 'x' else "documentation")
+
+        # Target
+        wrb = WorkRefBuilder()
+
+        # field should only have one y or z, but do all just in case.
+        link_name = ' '.join(field.get_subfields('y','z'))
+        wrb.add_name(link_name)
+        wrb.set_link(link_name,
+                     href_URI = field['u'] )
+
+        for val in field.get_subfields('q'):
+            # take a wild guess at the qualifier type
+            qualifier_type = self.ix.simple_element_type_from_value(val)
+            if qualifier_type is None:
+                qualifier_type = STRING
+            wrb.add_qualifier(self.build_simple_ref(val, qualifier_type))
+
+        rb.set_target(wrb.build())
+
+        relationships.append(rb.build())
+
     # Allowable Subheadings (Lane: MeSH only when 450 $w/3 = a) (R)
     for field in record.get_fields('925'):
         rb = RelationshipBuilder()

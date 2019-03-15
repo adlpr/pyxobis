@@ -206,12 +206,34 @@ def transform_notes_bib(self, record):
                                              '2' : 'Contents Note, Partial',
                                              '8' : 'Contents Note, Continued' }.get(field.indicator1, 'Contents Note') })
 
+    # Credits Note (NR)
+    for field in record.get_fields('508'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'transcription',
+                           'type_link_title' : 'Description (Credits) Note' })
+
     # Citation/References Note (R)
     for field in record.get_fields('510'):
         if 'w' not in field:
             notes.append({ 'content_text' : concat_subfs(field),
                            'role' : 'description',
                            'type_link_title' : 'Relationship Note, Citation' })
+
+    # Participant or Performer Note (R)
+    for field in record.get_fields('511'):
+        for val in field.get_subfields('a'):
+            if field.indicator1 == '1':
+                val = 'Cast: ' + val
+            notes.append({ 'content_text' : val,
+                           'role' : 'transcription',
+                           'type_link_title' : 'Description (Participant) Note' })
+
+    # Type of Report and Period Covered Note (R)
+    for field in record.get_fields('513'):
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'description',
+                       'type_link_title' : 'Description (Report Type) Note' })
 
     # Numbering Peculiarities Note (R)
     for field in record.get_fields('515'):
@@ -275,6 +297,26 @@ def transform_notes_bib(self, record):
         notes.append({ 'content_text' : concat_subfs(field),
                        'role' : 'description',
                        'type_link_title' : 'Funding Note' })
+
+    # System Details Note (R)
+    for field in record.get_fields('538'):
+        for val in field.get_subfields('a'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'annotation',
+                           'type_link_title' : 'Computer Access Note' })
+
+    # Immediate Source of Acquistion Note (R)
+    for field in record.get_fields('541'):
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'annotation',
+                       'type_link_title' : 'Archival Materials (Source) Note' })
+
+    # Information Related to Copyright Status (R)
+    for field in record.get_fields('542'):
+        for val in field.get_subfields('f'):
+            notes.append({ 'content_text' : val,
+                           'role' : 'documentation' if field.indicator1=='1' else 'annotation',
+                           'type_link_title' : 'Copyright Status Note' })
 
     # Location of Other Archival Materials Note (R)
     for field in record.get_fields('544'):
@@ -362,12 +404,24 @@ def transform_notes_bib(self, record):
                            'role' : 'annotation',
                            'type_link_title' : 'Lane Local Note' })
 
+    # System Details Access to Computer Files (R)
+    for field in record.get_fields('753'):
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'annotation',
+                       'type_link_title' : 'Computer System Note' })
+
     # Staff Note (Lane) (R)
     for field in record.get_fields('990'):
         for val in field.get_subfields('a'):
             notes.append({ 'content_text' : val,
                            'role' : 'documentation',
                            'type_link_title' : 'General Note' })
+
+    # Antiquarian Price Information (Lane) (R)
+    for field in record.get_fields('997'):
+        notes.append({ 'content_text' : concat_subfs(field),
+                       'role' : 'documentation',
+                       'type_link_title' : 'Antiquarian Price Note' })
 
     # add href and set URIs to all types in notes
     for note in notes:
