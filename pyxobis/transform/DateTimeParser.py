@@ -105,6 +105,10 @@ class DateTimeParser:
         # change hyphen in mid-YYYY to avoid confusion with range
         dts = re.sub(r"^mid-\s*", "mid ", dts, flags=re.I)
 
+        # move hyphens outside angle brackets
+        dts = re.sub(r"->", ">-", dts, flags=re.I)
+        dts = re.sub(r"<-", "-<", dts, flags=re.I)
+
         # abbreviated ranges that could be misparsed as YYYY-MM e.g. 1875-76
         m = re.search(r"(\d{1,2})(\d{2}-)(\d{2})(\D|$)", dts)
         if m and int(m.group(3)) > 12:
@@ -201,7 +205,11 @@ class DateTimeParser:
                 time_content2_str = str(time_content2)
                 trb.set_time_content_part2_link(time_content2_str, self.ix.simple_lookup(time_content2_str, TIME))
 
-            return trb.build()
+            try:
+                return trb.build()
+            except:
+                # Did not break down as expected
+                raise ValueError(f"problem building time from datestring: {datestring}")
 
         elif len(split_dates) == 2:
             # This should be a DurationRef.
@@ -260,11 +268,15 @@ class DateTimeParser:
                 time_content_single_e2_str = str(time_content_single_e2)
                 drb.set_time_content2_part2_link(time_content_single_e2_str, self.ix.simple_lookup(time_content_single_e2_str, TIME))
 
-            return drb.build()
+            try:
+                return drb.build()
+            except:
+                # Did not break down as expected
+                raise ValueError(f"problem building duration from datestring: {datestring}")
 
         else:
             # Did not split as expected
-            raise ValueError(f"problem parsing date: {datestring}")
+            raise ValueError(f"problem parsing datestring: {datestring}")
 
 
     def __parse_for_double(self, datestring, type_kwargs):

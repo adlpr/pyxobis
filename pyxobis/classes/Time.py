@@ -285,7 +285,7 @@ class TimeContentPart(Component):
         self.link_attributes = link_attributes
         assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
         self.opt_substitute_attribute = opt_substitute_attribute
-        assert isinstance(time_content_single, TimeContentSingle)
+        assert isinstance(time_content_single, TimeContentSingle), f"expected TimeContentSingle, got type: {type(time_content_single)}"
         self.time_content_single = time_content_single
     def is_nominal(self):
         return self.time_content_single.is_nominal()
