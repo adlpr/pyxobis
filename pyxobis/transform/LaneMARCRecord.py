@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
+import unicodedata
 import regex as re
 from pymarc import Record, Field
 from .tf_common import *
@@ -257,11 +258,12 @@ class LaneMARCRecord(Record):
     def normalize(cls, text):
         """
         Normalization algorithm for indexing:
-        1. Convert anything of Unicode General Category
+        1. Unicode NFKD normalize.
+        2. Convert anything of Unicode General Category
            Punctuation (P*), Separator (Z*), or Other (C*)
            to single spaces.
            (Requires the `regex` module, `re` cannot use \p)
-        2. Strip.
-        3. Convert to lowercase.
+        3. Strip.
+        4. Convert to lowercase.
         """
-        return re.sub(r"[\p{P}\p{Z}\p{C}]+", ' ', text).strip().lower()
+        return re.sub(r"[\p{P}\p{Z}\p{C}]+", ' ', unicodedata.normalize('NFKD', text)).strip().lower()
