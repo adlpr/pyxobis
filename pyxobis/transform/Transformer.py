@@ -1393,6 +1393,13 @@ class Transformer:
 
         return record
 
+    def add_linked_880s_as_notes(self, record, tag, rb):
+        # ^6 130, 630, 730, 740, 830 --> note on relationship
+        for field_880 in record.get_fields('880'):
+            if '6' in field_880 and field_880['6'][:3] == tag:
+                rb.add_note(concat_subfs(field_880),
+                            role = "transcription")
+
     # def __preprocess_w_only_linking_fields(self, record):
     #     """
     #     If a 7XX linking field links only a control number,

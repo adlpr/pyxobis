@@ -163,10 +163,7 @@ def transform_relationships_bib(self, record):
 
             # Notes
             # linked alternate script field(s)
-            for field_880 in record.get_fields('880'):
-                if '6' in field_880 and field_880['6'][:3] == field.tag:
-                    rb.add_note(concat_subfs(field_880),
-                                role = "transcription")
+            self.add_linked_880s_as_notes(record, field.tag, rb)
 
             relationships.append(rb.build())
 
@@ -382,10 +379,7 @@ def transform_relationships_bib(self, record):
 
             # Notes
             # linked alternate script field(s)
-            for field_880 in record.get_fields('880'):
-                if '6' in field_880 and field_880['6'][:3] == field.tag:
-                    rb.add_note(concat_subfs(field_880),
-                                role = "transcription")
+            self.add_linked_880s_as_notes(record, field.tag, rb)
 
             relationships.append(rb.build())
 
@@ -581,10 +575,7 @@ def transform_relationships_bib(self, record):
 
         # Notes
         # linked alternate script field(s)
-        for field_880 in record.get_fields('880'):
-            if '6' in field_880 and field_880['6'][:3] == field.tag:
-                rb.add_note(concat_subfs(field_880),
-                            role = "transcription")
+        self.add_linked_880s_as_notes(record, field.tag, rb)
 
         rb.set_target(self.build_ref_from_field(field, WORK_AUT if field.tag == '730' else WORK_INST))
 
@@ -609,10 +600,7 @@ def transform_relationships_bib(self, record):
 
         # Notes
         # linked alternate script field(s)
-        for field_880 in record.get_fields('880'):
-            if '6' in field_880 and field_880['6'][:3] == field.tag:
-                rb.add_note(concat_subfs(field_880),
-                            role = "transcription")
+        self.add_linked_880s_as_notes(record, field.tag, rb)
 
         rb.set_target(self.build_ref_from_field(field, WORK_INST))
 
