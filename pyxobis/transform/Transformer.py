@@ -1376,6 +1376,9 @@ class Transformer:
                 elif linked_field_tag == '246':
                     new_subfields.extend(['i', "Vernacular title"])
                 display_text = field['9'] or ''
+                if display_text.rstrip(' :').lower() == 'colophon':
+                    # skip these here, add them as notes in transform bib note method
+                    continue
                 if display_text.rstrip(' :').lower() not in ('','title','variant title'):
                     new_subfields.extend(['i', display_text])
                 record.remove_field(field)

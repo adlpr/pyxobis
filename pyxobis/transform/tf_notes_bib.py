@@ -410,6 +410,14 @@ def transform_notes_bib(self, record):
                        'role' : 'annotation',
                        'type_link_title' : 'Computer System Note' })
 
+    # (transcribed colophons for Arabic materials)
+    for field in record.get_fields('880'):
+        if '6' in field and field['6'][:3] == '500' and '9' in field and field['9'].rstrip(' :').lower() == 'colophon':
+            notes.append({ 'content_text' : field['a'],
+                           'content_lang' : field['3'],
+                           'role' : 'transcription',
+                           'type_link_title' : 'Colophon Note' })
+
     # Staff Note (Lane) (R)
     for field in record.get_fields('990'):
         for val in field.get_subfields('a'):
