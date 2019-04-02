@@ -165,6 +165,8 @@ class Transformer:
         self.__preprocess_68X(record)
         # Relator on 785 #7 depends on position in record.
         self.__preprocess_785(record)
+        # Juggle 880s based on linked field.
+        self.__preprocess_880(record)
         # If a linking field just links a control number, pull info into the field itself.
         # self.__preprocess_w_only_linking_fields(record)
 
@@ -253,16 +255,16 @@ class Transformer:
             being_class = 'referential'
         elif broad_category == 'Peoples':
             if record['100'].indicator1 != '9':
-                print(f"WARNING: Peoples without ind 9#: {self.get_control_number()}")
+                print(f"WARNING: {self.get_control_number()}: Peoples without I1=9")
             else:
                 being_class = 'collective'
         elif broad_category == 'Persons, Families or Groups':
             if record['100'].indicator1 != '3':
-                print(f"WARNING: Family/Group without ind 3#: {self.get_control_number()}")
+                print(f"WARNING: {self.get_control_number()}: Family/Group without I1=3")
             being_class = 'familial'
         else:
             if record['100'].indicator1 not in '01':
-                print(f"WARNING: Individual without ind [01]#: {self.get_control_number()}")
+                print(f"WARNING: {self.get_control_number()}: Individual without I1=[01]")
             being_class = 'individual'
 
         bb.set_class(being_class)
@@ -1352,6 +1354,43 @@ class Transformer:
         merged_with_entries = [field for field in record.get_fields('785') if field.indicator2 == '7']
         if merged_with_entries:
             merged_with_entries[-1].indicator2 = '0'
+        return record
+
+    def __preprocess_880(self, record):
+        """
+        Change tags of certain bib 880s based on linked field.
+        """
+        for field in record.get_fields('880'):
+            linked_field_tag = field['6']
+            if linked_field_tag is None:
+                raise ValueError(f"linking field tag ($6) not found: {field}")
+            linked_field_tag = linked_field_tag[:3]
+
+            if linked_field_tag in ('245','246','500'):
+                # 245 --> 246 + ^i Descriptive title, vernacular:
+                # 246 --> 246 + ^i Vernacular title:
+                # 500 --> 246 (^9 Incipit / Explicit / Colophon to ^i)
+                new_subfields = [code_or_val for code, val in zip(field.subfields[::2], field.subfields[1::2]) for code_or_val in (code, val) if code not in '69']
+                if linked_field_tag == '245':
+                    new_subfields.extend(['i', "Descriptive title, vernacular"])
+                elif linked_field_tag == '246':
+                    new_subfields.extend(['i', "Vernacular title"])
+                display_text = field['9'] or ''
+                if display_text.rstrip(' :').lower() not in ('','title','variant title'):
+                    new_subfields.extend(['i', display_text])
+                record.remove_field(field)
+                record.add_field(Field('246', field.indicators, new_subfields))
+            elif linked_field_tag == '250':
+                # 250 --> treat as 250
+                new_subfields = [code_or_val for code, val in zip(field.subfields[::2], field.subfields[1::2]) for code_or_val in (code, val) if code not in '69']
+                record.remove_field(field)
+                record.add_field(Field('246', field.indicators, new_subfields))
+
+            # ^6 130, 630, 730, 740, 830 --> note on relationship; deal with this during bib rel tf for those fields
+            # but trigger warning here if there are multiple candidates
+            if linked_field_tag in ('130','630','730','740','830') and len(record.get_fields(linked_field_tag)) > 1:
+                print(f"WARNING: {record.get_control_number()}: multiple candidates for 880 with linked tag {linked_field_tag}")
+
         return record
 
     # def __preprocess_w_only_linking_fields(self, record):

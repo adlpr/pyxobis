@@ -30,10 +30,10 @@ class LaneMARCRecord(Record):
         broad_categories = [field['a'] for field in self.get_fields('655') if field.indicator1 == '4']
         if not broad_categories:
             if '852' not in self:
-                print(f"WARNING: {self.get_control_number()} has no broad category (655 47)")
+                print(f"WARNING: {self.get_control_number()}: missing broad category (655 47)")
             return None
         elif len(broad_categories) > 1:
-            print(f"WARNING: {self.get_control_number()} has more than one broad category (655 47)")
+            print(f"WARNING: {self.get_control_number()}: more than one broad category (655 47)")
             return None
         return broad_categories.pop()
 

@@ -7,6 +7,7 @@ def xmlpp(element):
     print(etree.tounicode(element, pretty_print=True))
 
 # XOBIS element type codes.
+WORK         = 'wrk'
 WORK_AUT     = 'wka'
 WORK_INST    = 'wki'
 BEING        = 'bei'

@@ -161,7 +161,12 @@ def transform_relationships_bib(self, record):
             # Target
             rb.set_target(self.build_ref_from_field(field, WORK_AUT))
 
-            # Notes: n/a
+            # Notes
+            # linked alternate script field(s)
+            for field_880 in record.get_fields('880'):
+                if '6' in field_880 and field_880['6'][:3] == field.tag:
+                    rb.add_note(concat_subfs(field_880),
+                                role = "transcription")
 
             relationships.append(rb.build())
 
@@ -375,7 +380,12 @@ def transform_relationships_bib(self, record):
             # Target
             rb.set_target(self.build_ref_from_field(field, WORK_AUT))
 
-            # Notes: n/a
+            # Notes
+            # linked alternate script field(s)
+            for field_880 in record.get_fields('880'):
+                if '6' in field_880 and field_880['6'][:3] == field.tag:
+                    rb.add_note(concat_subfs(field_880),
+                                role = "transcription")
 
             relationships.append(rb.build())
 
@@ -569,7 +579,12 @@ def transform_relationships_bib(self, record):
         if 'd' in field:
             rb.set_time_or_duration_ref(self.dp.parse_as_ref(field['d'], WORK_INST))
 
-        # Notes: n/a
+        # Notes
+        # linked alternate script field(s)
+        for field_880 in record.get_fields('880'):
+            if '6' in field_880 and field_880['6'][:3] == field.tag:
+                rb.add_note(concat_subfs(field_880),
+                            role = "transcription")
 
         rb.set_target(self.build_ref_from_field(field, WORK_AUT if field.tag == '730' else WORK_INST))
 
@@ -591,7 +606,13 @@ def transform_relationships_bib(self, record):
         # Degree: n/a
         # Enumeration: n/a
         # Chronology: n/a
-        # Notes: n/a
+
+        # Notes
+        # linked alternate script field(s)
+        for field_880 in record.get_fields('880'):
+            if '6' in field_880 and field_880['6'][:3] == field.tag:
+                rb.add_note(concat_subfs(field_880),
+                            role = "transcription")
 
         rb.set_target(self.build_ref_from_field(field, WORK_INST))
 
@@ -659,7 +680,7 @@ def transform_relationships_bib(self, record):
                 target_identity = self.ix.reverse_lookup(target_ctrlno)
                 # if invalid control number, print warning, use dummy name
                 if not target_identity:
-                    print(f"WARNING: Invalid href: bid {record['001'].data}, field: {field}; default title to 'Unknown work'")
+                    print(f"WARNING: {record.get_control_number()}: {field}: invalid href, default title to 'Unknown work'")
                     target_ref = self.build_simple_ref("Unknown work", WORK_INST)
                 else:
                     target_ref = self.build_ref_from_field(Field('149','  ',target_identity), WORK_INST)
