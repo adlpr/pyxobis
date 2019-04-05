@@ -1369,7 +1369,7 @@ class Transformer:
             if linked_field_tag in ('245','246','500'):
                 # 245 --> 246 + ^i Descriptive title, vernacular:
                 # 246 --> 246 + ^i Vernacular title:
-                # 500 --> 246 (^9 Incipit / Explicit / Colophon to ^i)
+                # 500 --> 246 (^9 Incipit / Explicit to ^i)
                 new_subfields = [code_or_val for code, val in zip(field.subfields[::2], field.subfields[1::2]) for code_or_val in (code, val) if code not in '69']
                 if linked_field_tag == '245':
                     new_subfields.extend(['i', "Descriptive title, vernacular"])
