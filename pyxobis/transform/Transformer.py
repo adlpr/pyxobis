@@ -167,6 +167,8 @@ class Transformer:
         self.__preprocess_785(record)
         # Juggle 880s based on linked field.
         self.__preprocess_880(record)
+        # 94Xs need to take into account certain fixed-field bytes.
+        self.__preprocess_94X(record)
         # If a linking field just links a control number, pull info into the field itself.
         # self.__preprocess_w_only_linking_fields(record)
 
@@ -950,12 +952,7 @@ class Transformer:
                     elif val_lower.startswith("(stanf)"):
                         id_desc = self.build_simple_ref("Stanford University", ORGANIZATION)
                     elif val_lower.startswith("(ssn)"):
-                        orb = OrganizationRefBuilder()
-                        orb.add_qualifier(self.build_simple_ref("United States", PLACE))
-                        # warning: hardcoded id!
-                        orb.set_link("Social Security Administration", "Z32655")
-                        orb.add_name("Social Security Administration")
-                        id_desc = orb.build()
+                        id_desc = self.build_simple_ref("United States Social Security Administration", ORGANIZATION)
                     elif val_lower.startswith("(laneconnex)"):
                         id_desc = self.build_simple_ref("LaneConnex", WORK_INST)
                     elif val_lower.startswith("(bassett)"):
@@ -1402,6 +1399,126 @@ class Transformer:
             if '6' in field_880 and field_880['6'][:3] == tag:
                 rb.add_note(concat_subfs(field_880),
                             role = "transcription")
+
+    def __preprocess_94X(self, record):
+        # convert all 94X to equivalent Relationship field
+        # based on relevant element type/fixed-field data
+        element_type = record.get_xobis_element_type()
+        # bib
+        if element_type in (WORK_INST, OBJECT):
+            bib_type = record.leader[6:8]
+            # 941 Place --> 651 27
+            for field in record.get_fields('941'):
+                # rel = am, as, e, f: "Place of publication:"; aa, ab: ignore; else: "Place of production:"
+                if bib_type in ('aa','ab'):
+                    continue
+                if bib_type in ('am','as') or bib_type[0] in 'ef':
+                    relator = "Place of publication"
+                else:
+                    relator = "Place of production"
+                record.remove_field(field)
+                record.add_field(Field('651','27',['e',relator,'a',field['a']]))
+            # 942 Language --> 650 26
+            for field in record.get_fields('942'):
+                # rel = aa, ab, am, as, e, f: "Language of text:"; else: "Language:"
+                relator = "Language"
+                if bib_type in ('aa','ab','am','as') or bib_type[0] in 'ef':
+                    relator += " of text"
+                record.remove_field(field)
+                record.add_field(Field('650','26',['e',relator,'a',field['a']]))
+            # 943 Date --> 650 25
+            #   first, pull dates from fixed field
+            fixed_field_dates = record['008'].data[6:15]
+            date_type, d1, d2 = fixed_field_dates[0], fixed_field_dates[1:5], fixed_field_dates[5:]
+            #     recombine e dates
+            if date_type == 'e':
+                d1 = (d1 + '-' + d2[:2] + '-' + d2[2:]).strip(' -u')
+            relator = self.__get_relator_for_bib_943(record)
+            # NONE:
+            if date_type == 'b':
+                # b - No dates given; B.C. date involved
+                record.add_field(Field('650','25',['e',"Produced",'a',"Ancient"]))
+            elif date_type in 'n|':
+                # n - Dates unknown  /  | - No attempt to code
+                record.add_field(Field('650','25',['e',relator,'a',"Unknown"]))
+            # SINGLE:
+            elif date_type in 'es':
+                record.add_field(Field('650','25',['e',relator,'a',d1]))
+            # SINGLE or RANGE:
+            elif date_type == 'q':
+                if d2.strip():
+                    # range
+                    record.add_field(Field('650','25',['e',relator,'a',d1+'?','x',d2+'?']))
+                    if relator == "Published":
+                        record.add_field(Field('655','77',['a',"Subset, Date Range Verify"]))
+                else:
+                    # single
+                    record.add_field(Field('650','25',['e',relator,'a',d1+'?']))
+            # RANGE:
+            elif date_type == 'c':
+                record.add_field(Field('650','25',['e',relator,'a',d1,'x',"Present"]))
+            elif date_type in 'dm':
+                record.add_field(Field('650','25',['e',relator,'a',d1,'x',d2]))
+            elif date_type == 'u':
+                record.add_field(Field('650','25',['e',relator,'a',d1,'x',"Unknown"]))
+            elif date_type == 'i':
+                record.add_field(Field('650','25',['e',"Inclusive dates",'a',d1,'x',d2]))
+            elif date_type == 'k':
+                record.add_field(Field('650','25',['e',"Bulk dates",'a',d1,'x',d2]))
+            # DOUBLE:
+            elif date_type == 'p':
+                record.add_field(Field('650','25',['e',"Distributed",'a',d1]))
+                record.add_field(Field('650','25',['e',"Produced",'a',d2]))
+            elif date_type == 'r':
+                record.add_field(Field('650','25',['e',"Reprinted",'a',d1]))
+                record.add_field(Field('650','25',['e',"Published originally",'a',d2]))
+            elif date_type == 't':
+                record.add_field(Field('650','25',['e',"Published",'a',d1]))
+                record.add_field(Field('650','25',['e',"Copyright",'a',d2]))
+            #   then, get manually-entered dates (ignore i2==8)
+            manual_dates = [field['a'] for field in record.get_fields('943') if 'a' in field and field.indicator2 != '8']
+            record.remove_fields('943')
+            for date in manual_dates:
+                record.add_field(Field('650','25',['e',"Produced",'a',"Ancient"]))
+        # aut
+        elif element_type in (STRING, TIME):
+            pass
+        elif element_type == WORK_AUT:
+            for field in record.get_fields('941'):
+                record.remove_field(field)
+                record.add_field(Field('651','27',['e',"Place of publication",'a',field['a']]))
+            for field in record.get_fields('942'):
+                record.remove_field(field)
+                record.add_field(Field('650','26',['e',"Language of text",'a',field['a']]))
+            fields_943 = record.get_fields('943')
+            if fields_943:
+                for field in fields_943:
+                    record.remove_field(field)
+                    record.add_field(Field('650','25',['e',"Published",'a',field['a']]))
+            else:
+                record.add_field(Field('650','25',['e',"Published",'a',"Unknown"]))
+        elif element_type in (ORGANIZATION, PLACE):
+            ...
+            ...
+            ...
+        ...
+        ...
+        ...
+        ...
+        return record
+
+    def __get_relator_for_bib_943(self, record):
+        # default relator for (most types of) 943 date(s), based on fixed-field material type
+        bib_type = record.leader[6:8]
+        if re.match(r'[ace][abms]', bib_type):
+            return "Published"
+        elif bib_type[0] == 't':
+            if "Manuscripts, Handwritten" in record.get_all_categories():
+                return "Written"
+            else:
+                return "Printed"
+        return "Produced"
+
 
     # def __preprocess_w_only_linking_fields(self, record):
     #     """

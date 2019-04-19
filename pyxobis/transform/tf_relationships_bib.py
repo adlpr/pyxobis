@@ -23,11 +23,13 @@ def transform_relationships_bib(self, record):
         for code, val in field.get_subfields('a','b','d','e','f','g', with_codes=True):
             rb = RelationshipBuilder()
 
+            bib_type = record.leader[6:8]
+
             # Name/Type
-            rel_name = { 'a': "Language",
+            rel_name = { 'a': "Language of text" if bib_type in ('aa','ab','am','as') or bib_type[0] in 'ef' else "Language",
                          'b': "Language of abstract/summary",
-                         'd': "Language of sung or spoken text",
-                         'e': "Language of librettos",
+                         'd': "Language of voice",
+                         'e': "Language",
                          'f': "Language of table of contents",
                          'g': "Language of accompanying material" }.get(code)
             rb.set_name(rel_name)
