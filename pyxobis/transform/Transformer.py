@@ -1387,7 +1387,7 @@ class Transformer:
                 record.add_field(Field('246', field.indicators, new_subfields))
 
             # ^6 130, 630, 730, 740, 830 --> note on relationship; deal with this during bib rel tf for those fields
-            # but trigger warning here if there are multiple candidates
+            # but print a warning here if there are multiple candidates
             if linked_field_tag in ('130','630','730','740','830') and len(record.get_fields(linked_field_tag)) > 1:
                 print(f"WARNING: {record.get_control_number()}: multiple candidates for 880 with linked tag {linked_field_tag}")
 
@@ -1468,13 +1468,13 @@ class Transformer:
             # DOUBLE:
             elif date_type == 'p':
                 record.add_field(Field('650','25',['e',"Distributed",'a',d1]))
-                record.add_field(Field('650','25',['e',"Produced",'a',d2]))
+                record.add_field(Field('650','25',['e',"Produced",'a',d2 if d2.strip() else "Unknown"]))
             elif date_type == 'r':
                 record.add_field(Field('650','25',['e',"Reprinted",'a',d1]))
-                record.add_field(Field('650','25',['e',"Published originally",'a',d2]))
+                record.add_field(Field('650','25',['e',"Published originally",'a',d2 if d2.strip() else "Unknown"]))
             elif date_type == 't':
                 record.add_field(Field('650','25',['e',"Published",'a',d1]))
-                record.add_field(Field('650','25',['e',"Copyright",'a',d2]))
+                record.add_field(Field('650','25',['e',"Copyright",'a',d2 if d2.strip() else "Unknown"]))
             #   then, get manually-entered dates (ignore i2==8)
             manual_dates = [field['a'] for field in record.get_fields('943') if 'a' in field and field.indicator2 != '8']
             record.remove_fields('943')
@@ -1483,32 +1483,30 @@ class Transformer:
         # aut
         elif element_type in (STRING, TIME):
             pass
-        elif element_type == WORK_AUT:
+        elif element_type == CONCEPT:
+            self.__handle_943_insert_as_650(record, "Related")
+        else:
+            relator_941 = {BEING: "Active", EVENT: "Venue"}.get(element_type, "Related")
             for field in record.get_fields('941'):
+                assert 'a' in field, f"{record.get_control_number()}: 941 with no $a: {field}"
                 record.remove_field(field)
-                record.add_field(Field('651','27',['e',"Place of publication",'a',field['a']]))
+                record.add_field(Field('651','27',['e',relator_941,'a',field['a']]))
+
+            relator_942 = "Related"
             for field in record.get_fields('942'):
+                assert 'a' in field, f"{record.get_control_number()}: 942 with no $a: {field}"
                 record.remove_field(field)
-                record.add_field(Field('650','26',['e',"Language of text",'a',field['a']]))
-            fields_943 = record.get_fields('943')
-            if fields_943:
-                for field in fields_943:
-                    record.remove_field(field)
-                    record.add_field(Field('650','25',['e',"Published",'a',field['a']]))
-            else:
-                record.add_field(Field('650','25',['e',"Published",'a',"Unknown"]))
-        elif element_type in (ORGANIZATION, PLACE):
-            ...
-            ...
-            ...
-        ...
-        ...
-        ...
-        ...
+                record.add_field(Field('650','26',['e',relator_942,'a',field['a']]))
+
+            relator_943 = {EVENT: "Held", ORGANIZATION: "Active", PLACE: "Active"}.get(element_type, "Related")
+            self.__handle_943_insert_as_650(record, relator_943)
+
         return record
 
     def __get_relator_for_bib_943(self, record):
-        # default relator for (most types of) 943 date(s), based on fixed-field material type
+        """
+        Default relator for (most types of) bib 943 date(s), based on fixed-field material type
+        """
         bib_type = record.leader[6:8]
         if re.match(r'[ace][abms]', bib_type):
             return "Published"
@@ -1518,6 +1516,25 @@ class Transformer:
             else:
                 return "Printed"
         return "Produced"
+
+    def __handle_943_insert_as_650(self, record, relator):
+        """
+        Combine all 943 subfields into single 650 25 with single date ($a) or range ($a+$x)
+        ("Unknown" if no 943 $a, empty string if no 943 $b)
+        """
+        combined_943_subfields = {}
+        for field in record.get_fields('943'):
+            record.remove_field(field)
+            for code, vals in field.subfields_as_dict().items():
+                if code not in combined_943_subfields:
+                    combined_943_subfields[code] = []
+                combined_943_subfields[code].extend(vals)
+        start_vals, end_vals = combined_943_subfields.get('a', []), combined_943_subfields.get('b', [])
+        assert (len(start_vals) <= 1 and len(end_vals) <= 1), f"{record.get_control_number()}: >1 943 $a or $b"
+        new_subfields = ['e', relator, 'a', start_vals[0] if start_vals else "Unknown"]
+        if end_vals:
+            new_subfields += ['x', end_vals[0]]
+        record.add_field(Field('650','25',new_subfields))
 
 
     # def __preprocess_w_only_linking_fields(self, record):
