@@ -150,12 +150,11 @@ class LaneMARCRecord(Record):
                               if identity_string else None
         return ctrlno, element_type, identity_string, authorized_form
 
-    IDENTITY_SUBFIELD_MAP = { WORK_INST:    'adklnpqs',   # X49
-                              OBJECT:       'adklnpqs',   # X49
-                              WORK_AUT:     'adfgklnpqs', # X30
+    IDENTITY_SUBFIELD_MAP = { WORK_INST:    'adklnpqs',    # X49
+                              OBJECT:       'adklnpqs',    # X49
                               # WORK_INST:    'adhklnpqs',   # X49 + h (medium)
                               # OBJECT:       'adhklnpqs',   # X49 + h (medium)
-                              # WORK_AUT:     'adfghklnpqs', # X30 + h (medium)
+                              WORK_AUT:     'adfgklnpqs',  # X30
                               BEING:        'abcdq',       # X00
                               ORGANIZATION: 'abcdn',       # X10
                               EVENT:        'acden',       # X11
@@ -225,7 +224,14 @@ class LaneMARCRecord(Record):
             return None
         elif '760' <= field.tag <= '789':
             # exception for bib linking entry fields
-            subfield_codes = 'tb' if 't' in field else 'pb'
+            if 't' in field:
+                subfield_codes = 'tb'
+            elif 'p' in field:
+                subfield_codes = 'pb'
+            else:
+                subfield_codes = 'ab'
+            if field.tag in ('787','789'):
+                subfield_codes += 'd'
         else:
             subfield_codes = cls.IDENTITY_SUBFIELD_MAP[element_type]
         # pull those subfields to generate it
@@ -236,11 +242,7 @@ class LaneMARCRecord(Record):
                 if code in field:
                     for value in field.get_subfields(code):
                         identity.append(code)
-                        try:
-                            identity.append(cls.normalize(value))
-                        except:
-                            print('\n!!! '+str(value))
-                            raise
+                        identity.append(cls.normalize(value))
                 else:
                     identity.append(code)
                     identity.append('')
@@ -248,7 +250,7 @@ class LaneMARCRecord(Record):
         else:
             # if no normalization, only include what's in the field, in the original order
             # this isn't really an "identity," it's really being used to record an authorized form
-            identity = [code_or_val for code_and_val in field.get_subfields(*list(subfield_codes), with_codes=True) for code_or_val in code_and_val]
+            identity = [code_or_val for code_and_val in field.get_subfields(*subfield_codes, with_codes=True) for code_or_val in code_and_val]
             sep = cls.UNNORMALIZED_SEP
         if not ''.join(identity[1::2]):
             return None

@@ -62,7 +62,7 @@ class Transformer:
     def transform(self, record):
         record.__class__ = LaneMARCRecord
 
-        # Ignore record if suppressed.
+        # Ignore record if suppressed
         if record.is_suppressed():
             return None
 
@@ -72,9 +72,9 @@ class Transformer:
 
         rb = RecordBuilder()
 
-        # -------------
+        # --------------------------
         # CONTROLDATA
-        # -------------
+        # --------------------------
 
         # -------
         # LANGUAGE OF RECORD
@@ -119,11 +119,26 @@ class Transformer:
         # NB: Established aut "Record Type" (Z47381) actually refers
         #     to which PE a record is
         for field in record.get_fields('655'):
+            assert 'a' in field, f"{record.get_control_number()}: 655 with no $a: {field}"
             if field.indicator1 in '7':
-                title = field['a']
-                href  = "(CStL)" + field['0'] if '0' in field else self.ix.simple_lookup(title, CONCEPT)
-                set_ref = self.ix.simple_lookup("Subset", CONCEPT)
-                rb.add_type(title, href, set_ref)
+                for val in field.get_subfields('a'):
+                    rb.add_type(title = val,
+                                href  = "(CStL)" + field['0'] if '0' in field else self.ix.simple_lookup(val, CONCEPT),
+                                set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+        # convert 903 NEW(E) to Subset
+        for field in record.get_fields('903'):
+            assert 'a' in field, f"{record.get_control_number()}: 903 with no $a: {field}"
+            for val in field.get_subfields('a'):
+                val = val.upper()
+                assert val.startswith('NEW'), f"{record.get_control_number()}: invalid value for 903 $a: {field}"
+                if val.startswith('NEWE'):
+                    title = f"Subset, New Digital {val[4:].strip()}"
+                else:
+                    title = f"Subset, New Resource {val[3:].strip()}"
+                rb.add_type(title = title,
+                            href  = self.ix.simple_lookup(title, CONCEPT),
+                            set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+
 
         # -------
         # ACTIONS
@@ -138,9 +153,9 @@ class Transformer:
         ...
         ...
 
-        # -------------
+        # --------------------------
         # PRINCIPAL ELEMENT
-        # -------------
+        # --------------------------
         # Determine which function to delegate PE building based on record type
 
         element_type = record.get_xobis_element_type()

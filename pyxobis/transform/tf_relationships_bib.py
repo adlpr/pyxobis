@@ -514,6 +514,35 @@ def transform_relationships_bib(self, record):
 
         relationships.append(rb.build())
 
+    # LC Topical Subject (Lane) (R)
+    for field in record.get_fields('660'):
+        rb = RelationshipBuilder()
+
+        # Name/Type
+        rel_name = "Topic"
+        rb.set_name(rel_name)
+        rb.set_type(self.get_relation_type(rel_name))
+
+        # Degree
+        rb.set_degree({'1': 'primary',
+                       '2': 'secondary'}.get(field.indicator1))
+
+        # Enumeration: n/a
+        # Chronology: n/a
+
+        # Target
+        # use $a only as target String
+        assert 'a' in field, f"{record.get_control_number()}: 660 without $a: {field}"
+        for val in field.get_subfields('a'):
+            rb.set_target(self.build_simple_ref(val, STRING))
+
+        # Notes
+        # preserve full subfielding as Note on Relationship
+        rb.add_note(concat_subfs(field),
+                    role = "description")
+
+        relationships.append(rb.build())
+
     # Personal / Organization Name, Added Entry (R)
     for field in record.get_fields('700','710'):
         # from MFHD
@@ -664,7 +693,7 @@ def transform_relationships_bib(self, record):
                     rb.set_enumeration(self.build_simple_ref(field['m'], STRING))
 
             # If the field is only a linked control number
-            if 't' not in field and ('w' in field or '0' in field):
+            if not any(code in field for code in 'tpa') and ('w' in field or '0' in field):
                 # parse the 149 at the link as the name
                 target_ctrlno = ("(CStL)" + field['w'].rstrip('. ')) if 'w' in field else field['0'].rstrip('. ')
                 target_identity = self.ix.reverse_lookup(target_ctrlno)
