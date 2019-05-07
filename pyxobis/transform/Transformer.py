@@ -115,30 +115,7 @@ class Transformer:
         # -------
         # TYPES
         # -------
-        # Record "Types" = Subsets = 655 77
-        # NB: Established aut "Record Type" (Z47381) actually refers
-        #     to which PE a record is
-        for field in record.get_fields('655'):
-            assert 'a' in field, f"{record.get_control_number()}: 655 with no $a: {field}"
-            if field.indicator1 in '7':
-                for val in field.get_subfields('a'):
-                    rb.add_type(title = val,
-                                href  = "(CStL)" + field['0'] if '0' in field else self.ix.simple_lookup(val, CONCEPT),
-                                set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
-        # convert 903 NEW(E) to Subset
-        for field in record.get_fields('903'):
-            assert 'a' in field, f"{record.get_control_number()}: 903 with no $a: {field}"
-            for val in field.get_subfields('a'):
-                val = val.upper()
-                assert val.startswith('NEW'), f"{record.get_control_number()}: invalid value for 903 $a: {field}"
-                if val.startswith('NEWE'):
-                    title = f"Subset, New Digital {val[4:].strip()}"
-                else:
-                    title = f"Subset, New Resource {val[3:].strip()}"
-                rb.add_type(title = title,
-                            href  = self.ix.simple_lookup(title, CONCEPT),
-                            set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
-
+        self.transform_record_types(record, rb)
 
         # -------
         # ACTIONS
@@ -182,6 +159,8 @@ class Transformer:
         self.__preprocess_785(record)
         # Juggle 880s based on linked field.
         self.__preprocess_880(record)
+        # Treat 904 as 246
+        self.__preprocess_904(record)
         # 94Xs need to take into account certain fixed-field bytes.
         self.__preprocess_94X(record)
         # If a linking field just links a control number, pull info into the field itself.
@@ -229,6 +208,64 @@ class Transformer:
             rb.add_relationship(relationship)
 
         return rb.build()
+
+
+    def transform_record_types(self, record, rb):
+        # Record "Types" = Subsets = 655 77
+        # NB: Established aut "Record Type" (Z47381) actually refers
+        #     to which PE a record is
+        for field in record.get_fields('655'):
+            assert 'a' in field, f"{record.get_control_number()}: 655 with no $a: {field}"
+            if field.indicator1 in '7':
+                for val in field.get_subfields('a'):
+                    rb.add_type(title = val,
+                                href  = "(CStL)" + field['0'] if '0' in field else self.ix.simple_lookup(val, CONCEPT),
+                                set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+
+        # convert 903 NEW(E) to Subset
+        for field in record.get_fields('903'):
+            assert 'a' in field, f"{record.get_control_number()}: 903 with no $a: {field}"
+            for val in field.get_subfields('a'):
+                val = val.upper()
+                assert val.startswith('NEW'), f"{record.get_control_number()}: invalid value for 903 $a: {field}"
+                if val.startswith('NEWE'):
+                    title = f"Subset, New Digital {val[4:].strip()}"
+                else:
+                    title = f"Subset, New Resource {val[3:].strip()}"
+                rb.add_type(title = title,
+                            href  = self.ix.simple_lookup(title, CONCEPT),
+                            set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+
+        # convert 906 ^a/^d (+ sometimes ^c) to Subset
+        for field in record.get_fields('906'):
+            for val in field.get_subfields('a'):
+                # exception for ASV since common in ^a when it should be ^d
+                if val == 'ASV': val = "Alpha Parent Visual"
+                title = f"Subset, Component, {val}"
+                rb.add_type(title = title,
+                            href  = self.ix.simple_lookup(title, CONCEPT),
+                            set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+            for val in field.get_subfields('c'):
+                if val in ('LIB','REF'):
+                    title = f"Subset, Component, {val}"
+                    rb.add_type(title = title,
+                                href  = self.ix.simple_lookup(title, CONCEPT),
+                                set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+            for val in field.get_subfields('d'):
+                title = {'AB'     : "Subset, Component, Alpha Parents",
+                         'AS'     : "Subset, Component, Alpha Parent",
+                         'AS BDM' : "Subset, Component, Alpha Parent Batch",
+                         'ASV'    : "Subset, Component, Alpha Parent Visual",
+                         'CB'     : "Subset, Component, Classed Parents",
+                         'CM'     : "Subset, Component, Classed Parent Monograph",
+                         'CMV'    : "Subset, Component, Classed Parent Visual",
+                         'CS'     : "Subset, Component, Classed Parent Serial",
+                         'CU'     : "Subset, Component, Classed Parent Unknown",
+                         'pubmed2marc' : "Subset, Component, pubmed2marc" }.get(val)
+                assert title is not None, f"{record.get_control_number()}: invalid 906 $d: {field}"
+                rb.add_type(title = title,
+                            href  = self.ix.simple_lookup(title, CONCEPT),
+                            set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
 
 
 
@@ -1414,6 +1451,17 @@ class Transformer:
             if '6' in field_880 and field_880['6'][:3] == tag:
                 rb.add_note(concat_subfs(field_880),
                             role = "transcription")
+
+    def __preprocess_904(self, record):
+        # convert 904 Title Sort/Shelving Version (Normalized) to equivalent 246 field
+        for field in record.get_fields('904'):
+            assert 'a' in field or 'x' in field, f"{record.get_control_number()}: 904 with no $a or $x: {field}"
+            record.remove_field(field)
+            for code, val in field.get_subfields('a','x', with_codes=True):
+                new_subfields = ['i',"Normalized sort title",'a',val]
+                if code == 'x':
+                    new_subfields += ['@',"Exception to algorithm"]
+                record.add_field(Field('246','  ',new_subfields))
 
     def __preprocess_94X(self, record):
         # convert all 94X to equivalent Relationship field

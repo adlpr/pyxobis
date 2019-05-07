@@ -418,6 +418,15 @@ def transform_notes_bib(self, record):
                            'role' : 'transcription',
                            'type_link_title' : 'Colophon Note' })
 
+    # Sub-Encoding Level (Lane) (R)
+    for field in record.get_fields('906'):
+        # treat ^b and sometimes ^c as 990
+        for code, val in field.get_subfields('b','c', with_codes=True):
+            if code == 'b' or val not in ('LIB','REF'):
+                notes.append({ 'content_text' : val,
+                               'role' : 'documentation',
+                               'type_link_title' : 'General Note' })
+
     # Staff Note (Lane) (R)
     for field in record.get_fields('990'):
         for val in field.get_subfields('a'):

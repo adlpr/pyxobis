@@ -686,22 +686,23 @@ def transform_variant_work_instance_or_object(self, field, element_type):
     if field.tag == '247':
         for note_text in field.get_subfields('b'):
             vb.add_note( content_text = note_text,
-                          content_lang = field['3'],
-                          role = "transcription",
-                          link_title = None,
-                          href_URI = None,
-                          set_URI  = None )
+                         content_lang = field['3'],
+                         role = "transcription",
+                         link_title = None,
+                         href_URI = None,
+                         set_URI  = None )
     # 246/7 ^f = Designation of volume and issue number and/or date of a work
     #       ^g = Miscellaneous information
     #         (^f/^g may be pre-parsed out as Entry Type Time/DurationRefs by
     #            parse_work_instance_or_object_variant_name)
+    #       ^@ = CUSTOM NOTE SUBFIELD from preprocessing transform of 904 into 246
     if field.tag in ('246','247'):
-        for note_text in field.get_subfields('f','g'):
+        for code, note_text in field.get_subfields('f','g','@', with_codes=True):
             vb.add_note( content_text = note_text,
-                          content_lang = field['3'],
-                          role = "transcription",
-                          link_title = None,
-                          href_URI = None,
-                          set_URI  = None )
+                         content_lang = field['3'],
+                         role = "documentation" if code=='@' else "transcription",
+                         link_title = None,
+                         href_URI = None,
+                         set_URI  = None )
 
     return vb.build()
