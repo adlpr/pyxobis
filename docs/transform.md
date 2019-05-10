@@ -1,6 +1,6 @@
 # Transform classes
 
-## Transformer
+## RecordTransformer
 ```python
 transform ( record )
 ```

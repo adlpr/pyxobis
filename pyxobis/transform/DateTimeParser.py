@@ -2,52 +2,43 @@
 # -*- coding: UTF-8 -*-
 
 import regex as re
-from pyxobis.builders import *
+
+from ..builders import TimeContentSingleBuilder, TimeRefBuilder, DurationRefBuilder
+
+from .tf_constants import *
+
 from .Indexer import Indexer
-from .tf_common import *
+
 
 class DateTimeParser:
-    # Default starting and ending Time Types by PE type
-    DEFAULT_TIME_TYPES = {
-        None  : ("", ""),
-        BEING : ("Born", "Died"),
-        EVENT : ("Began", "Ended"),
-        # ORGANIZATION : ("Began", "Ended"),
-        # WORK_AUT  : ("", ""),
-        # WORK_INST : ("", ""),
-        # OBJECT : ("Created", "Destroyed"),  # ??
-    }
-
-    def __init__(self):
-        self.__set_default_type_kwargs()
-
-    ix = Indexer()
-
-    def parse_simple(self, datestring, type_kwargs=None):
+    @classmethod
+    def parse_simple(cls, datestring, type_kwargs=None):
         """
         Parse out a date value taken from an X50 field into a TimeContentSingle object.
         """
-        tecb = TimeContentSingleBuilder()
+        tcsb = TimeContentSingleBuilder()
 
         # TYPE: none
 
         # CERTAINTY
         # none on headings?
-        # tecb.set_certainty("exact")
+        # tcsb.set_certainty("exact")
 
         # QUALITY
         # none on headings?
 
         # contents or name?
-        time_kwargs = self.__parse_as_iso_datetime(datestring)
+        time_kwargs = cls.__parse_as_iso_datetime(datestring)
         if time_kwargs:
-            tecb.set_time_contents(**time_kwargs)
+            tcsb.set_time_contents(**time_kwargs)
         else:
-            tecb.add_name(datestring)
+            tcsb.add_name(datestring)
 
-        return tecb.build()
+        return tcsb.build()
 
-    def parse_as_ref(self, datestring, element_type=None, default_start_type=None, default_end_type=None):
+
+    @classmethod
+    def parse_as_ref(cls, datestring, element_type=None, default_start_type=None, default_end_type=None):
         """
         Parse out a time or duration string into a Time or Duration ref element.
         """
@@ -160,7 +151,7 @@ class DateTimeParser:
             # If this is an "active" date, make that the Type for all Contents.
             if re.match(r"(active|fl?(\.| ))", dts, flags=re.I):
                 dts = re.sub(r"^(active|fl?\.?)\s*", '', dts, flags=re.I).strip()
-                type_kwargs = self.__type_string_to_kwargs("Active")
+                type_kwargs = cls.__time_type_string_to_kwargs("Active")
             # Test for born/died and add appropriate other half.
             elif re.match(r"b(orn |\. ?|\.? )", dts):
                 # "Born" date --> Died Unknown;
@@ -189,21 +180,21 @@ class DateTimeParser:
             date = split_dates[0]
 
             # CALENDAR
-            calendar_kwargs, date = self.extract_calendar(date)
+            calendar_kwargs, date = cls.extract_calendar(date)
             if calendar_kwargs:
                 trb.set_calendar(**calendar_kwargs)
 
             # TIME ENTRIES
-            time_content1, time_content2 = self.__parse_for_double(date, type_kwargs)
+            time_content1, time_content2 = cls.__parse_for_double(date, type_kwargs)
 
             trb.set_time_content(time_content1, time_content2)
 
             # LINK
             time_content1_str = str(time_content1)
-            trb.set_time_content_part1_link(time_content1_str, self.ix.simple_lookup(time_content1_str, TIME))
+            trb.set_time_content_part1_link(time_content1_str, Indexer.simple_lookup(time_content1_str, TIME))
             if time_content2 is not None:
                 time_content2_str = str(time_content2)
-                trb.set_time_content_part2_link(time_content2_str, self.ix.simple_lookup(time_content2_str, TIME))
+                trb.set_time_content_part2_link(time_content2_str, Indexer.simple_lookup(time_content2_str, TIME))
 
             try:
                 return trb.build()
@@ -218,10 +209,10 @@ class DateTimeParser:
             date1, date2 = split_dates
 
             # CALENDAR(S)
-            calendar_kwargs1, date1 = self.extract_calendar(date1)
+            calendar_kwargs1, date1 = cls.extract_calendar(date1)
             if calendar_kwargs1:
                 drb.set_calendar1(**calendar_kwargs1)
-            calendar_kwargs2, date2 = self.extract_calendar(date2)
+            calendar_kwargs2, date2 = cls.extract_calendar(date2)
             if calendar_kwargs2:
                 drb.set_calendar2(**calendar_kwargs2)
                 if not calendar_kwargs1:
@@ -234,39 +225,39 @@ class DateTimeParser:
             if date2 and not date1: date1 = "Unknown"
             if date1 and not date2: date2 = "Present"
 
-            date1, date2 = self.__resolve_abbreviation(date1, date2)
+            date1, date2 = cls.__resolve_abbreviation(date1, date2)
 
             if type_kwargs:
                 start_type_kwargs = end_type_kwargs = type_kwargs
             else:
-                start_type_kwargs, end_type_kwargs = self.default_type_kwargs[element_type]
+                start_type_kwargs, end_type_kwargs = cls.default_type_kwargs[element_type]
                 # defaults given as arguments override the defaults by element
                 if default_start_type:
-                    start_type_kwargs = self.__type_string_to_kwargs(default_start_type)
+                    start_type_kwargs = cls.__time_type_string_to_kwargs(default_start_type)
                 if default_end_type:
-                    end_type_kwargs = self.__type_string_to_kwargs(default_end_type)
+                    end_type_kwargs = cls.__time_type_string_to_kwargs(default_end_type)
                 elif date2 in ["Unknown","Present"]:
                     end_type_kwargs = {}
 
             # parse further for potential double dates
-            time_content_single_s1, time_content_single_s2 = self.__parse_for_double(date1, start_type_kwargs)
-            time_content_single_e1, time_content_single_e2 = self.__parse_for_double(date2, end_type_kwargs)
+            time_content_single_s1, time_content_single_s2 = cls.__parse_for_double(date1, start_type_kwargs)
+            time_content_single_e1, time_content_single_e2 = cls.__parse_for_double(date2, end_type_kwargs)
 
             drb.set_time_content1(time_content_single_s1, time_content_single_s2)
             drb.set_time_content2(time_content_single_e1, time_content_single_e2)
 
             # LINKS
             time_content_single_s1_str = str(time_content_single_s1)
-            drb.set_time_content1_part1_link(time_content_single_s1_str, self.ix.simple_lookup(time_content_single_s1_str, TIME))
+            drb.set_time_content1_part1_link(time_content_single_s1_str, Indexer.simple_lookup(time_content_single_s1_str, TIME))
             if time_content_single_s2 is not None:
                 time_content_single_s2_str = str(time_content_single_s2)
-                drb.set_time_content1_part2_link(time_content_single_s2_str, self.ix.simple_lookup(time_content_single_s2_str, TIME))
+                drb.set_time_content1_part2_link(time_content_single_s2_str, Indexer.simple_lookup(time_content_single_s2_str, TIME))
 
             time_content_single_e1_str = str(time_content_single_e1)
-            drb.set_time_content2_part1_link(time_content_single_e1_str, self.ix.simple_lookup(time_content_single_e1_str, TIME))
+            drb.set_time_content2_part1_link(time_content_single_e1_str, Indexer.simple_lookup(time_content_single_e1_str, TIME))
             if time_content_single_e2 is not None:
                 time_content_single_e2_str = str(time_content_single_e2)
-                drb.set_time_content2_part2_link(time_content_single_e2_str, self.ix.simple_lookup(time_content_single_e2_str, TIME))
+                drb.set_time_content2_part2_link(time_content_single_e2_str, Indexer.simple_lookup(time_content_single_e2_str, TIME))
 
             try:
                 return drb.build()
@@ -275,18 +266,36 @@ class DateTimeParser:
                 raise ValueError(f"problem building duration from datestring: {datestring}")
 
         else:
-            # Did not split as expected
-            raise ValueError(f"problem parsing datestring: {datestring}")
+            # Did not split as expected; print warning and treat as named
+            print(f"WARNING: problem splitting datestring, treating as name: {datestring}")
+            return cls.build_simple_named_datetime(datestring)
 
 
-    def __parse_for_double(self, datestring, type_kwargs):
+    @staticmethod
+    def build_simple_named_datetime(datestring):
+        trb = TimeRefBuilder()
+
+        tcsb = TimeContentSingleBuilder()
+        tcsb.add_name(datestring)
+        time_content = tcsb.build()
+
+        trb.set_time_content(time_content)
+
+        time_content_str = str(time_content)
+        trb.set_time_content_part1_link(time_content_str, Indexer.simple_lookup(time_content_str, TIME))
+
+        return trb.build()
+
+
+    @classmethod
+    def __parse_for_double(cls, datestring, type_kwargs):
         # double dates might be separated with a slash:
         dts_split_slash = datestring.split('/')
         if len(dts_split_slash) == 2:
             # good! now parse each of these
-            date1, date2 = self.__resolve_abbreviation(*dts_split_slash)
-            return self.__parse_single(date1.strip(), type_kwargs),  \
-                   self.__parse_single(date2.strip(), type_kwargs)
+            date1, date2 = cls.__resolve_abbreviation(*dts_split_slash)
+            return cls.__parse_single(date1.strip(), type_kwargs),  \
+                   cls.__parse_single(date2.strip(), type_kwargs)
         elif len(dts_split_slash) > 2:
             raise ValueError(f"problem parsing date: {datestring}")
 
@@ -295,75 +304,27 @@ class DateTimeParser:
         dts_split_or = re.split(r" +or +", datestring)
         if len(dts_split_or) == 2:
             # good! now parse each of these
-            date1, date2 = self.__resolve_abbreviation(*dts_split_or)
-            return self.__parse_single(date1.strip()+'?', type_kwargs),  \
-                   self.__parse_single(date2.strip()+'?', type_kwargs)
+            date1, date2 = cls.__resolve_abbreviation(*dts_split_or)
+            return cls.__parse_single(date1.strip()+'?', type_kwargs),  \
+                   cls.__parse_single(date2.strip()+'?', type_kwargs)
         elif len(dts_split_or) > 2:
             raise ValueError(f"problem parsing date: {datestring}")
 
         # not a double date
-        return self.__parse_single(datestring, type_kwargs), None
+        return cls.__parse_single(datestring, type_kwargs), None
 
 
-    def __resolve_abbreviation(self, date1, date2):
-        """
-        Resolves cases of abbreviation in a pair of dates.
-        """
-        # 2012-09-02-28
-        if re.match(r"\d{4}-\d\d-\d\d$", date1) and re.match(r"\d\d?$", date2):
-            date2 = date1[:-2] + date2.zfill(2)
-        # "<1842/43>"
-        if re.match(r"<[^<>]+$", date1) and re.match(r"[^<>]+>$", date2):
-            date1, date2 = date1[1:], date2[:-1]
-            if date1.isdigit() and date2.isdigit():
-                if len(date1) > len(date2) and int(date1) > int(date2):
-                    date2 = date1[:-len(date2)] + date2
-            date1, date2 = f"<{date1}>", f"<{date2}>"
-        # "Nov./Dec. 1967"
-        m = re.match(r"[\w\.]+( \d+)$", date2)
-        if m and re.match(r"[\w\.]+$", date1):
-            date1 += m.group(1)
-        # "1996/7", "851-73"
-        elif date1.lstrip('-').isdigit() and date2.lstrip('-').isdigit():
-            if len(date1) > len(date2) and int(date1) > int(date2):
-                date2 = date1[:-len(date2)] + date2
-        return date1, date2
-
-
-    def extract_calendar(self, datestring):
-        """
-        Input: Datetime string
-        Output: 1) Calendar as kwargs if applicable; None otherwise
-                2) Datetime string stripped of calendar indicator
-        """
-        # calendar = "Calendar, Gregorian"
-        calendar = ""
-        if re.search(r" A\.?H\.?$", datestring):
-            datestring = re.sub(r" A\.?H\.?$", "", datestring).strip()
-            calendar = "Calendar, Islamic"
-        elif re.search(r"^F\.?R\.?\s+", datestring):
-            datestring = re.sub(r"^F\.?R\.?\s+", "", datestring).strip()
-            calendar = "Calendar, French Revolutionary"
-
-        calendar_kwargs = {
-            'link_title' : calendar,
-            'set_URI'    : self.ix.simple_lookup("Calendars", CONCEPT),
-            'href_URI'   : self.ix.simple_lookup(calendar, CONCEPT)
-            } if calendar else None
-
-        return calendar_kwargs, datestring
-
-
-    def __parse_single(self, datestring, type_kwargs):
+    @classmethod
+    def __parse_single(cls, datestring, type_kwargs):
         """
         Parses a single date string (preprocessed by parse_date > __parse_for_double)
         into a TimeContentSingle object.
         """
-        tecb = TimeContentSingleBuilder()
+        tcsb = TimeContentSingleBuilder()
 
         # TYPE: Active/Born/Died
         if type_kwargs:
-            tecb.set_type(**type_kwargs)
+            tcsb.set_type(**type_kwargs)
 
         # CERTAINTY
         dts = datestring
@@ -390,7 +351,7 @@ class DateTimeParser:
         if dts.endswith('~'):
             dts = dts.rstrip('~').strip()
             certainty = "approximate"
-        tecb.set_certainty(certainty)
+        tcsb.set_certainty(certainty)
 
         # QUALITY
         quality = ""
@@ -399,7 +360,7 @@ class DateTimeParser:
                 dts = re.sub(r"^{}\s*".format(quality_candidate), "", dts, flags=re.I)
                 quality += " " + quality_candidate
         if quality:
-            tecb.set_quality(quality.strip())
+            tcsb.set_quality(quality.strip())
 
         # Other string normalization:
         # "AD" should only be dates that span from BC to AD, so not needed.
@@ -453,16 +414,68 @@ class DateTimeParser:
             return None
 
         # FINALLY: try to parse dts as ISO 8601, otherwise treat as a name
-        time_kwargs = self.__parse_as_iso_datetime(dts)
+        time_kwargs = cls.__parse_as_iso_datetime(dts)
         if time_kwargs:
-            tecb.set_time_contents(**time_kwargs)
+            tcsb.set_time_contents(**time_kwargs)
         else:
-            tecb.add_name(dts)
+            tcsb.add_name(dts)
 
-        return tecb.build()
+        return tcsb.build()
 
 
-    def __parse_as_iso_datetime(self, datestring):
+    @staticmethod
+    def __resolve_abbreviation(date1, date2):
+        """
+        Resolves cases of abbreviation in a pair of dates.
+        """
+        # 2012-09-02-28
+        if re.match(r"\d{4}-\d\d-\d\d$", date1) and re.match(r"\d\d?$", date2):
+            date2 = date1[:-2] + date2.zfill(2)
+        # "<1842/43>"
+        if re.match(r"<[^<>]+$", date1) and re.match(r"[^<>]+>$", date2):
+            date1, date2 = date1[1:], date2[:-1]
+            if date1.isdigit() and date2.isdigit():
+                if len(date1) > len(date2) and int(date1) > int(date2):
+                    date2 = date1[:-len(date2)] + date2
+            date1, date2 = f"<{date1}>", f"<{date2}>"
+        # "Nov./Dec. 1967"
+        m = re.match(r"[\w\.]+( \d+)$", date2)
+        if m and re.match(r"[\w\.]+$", date1):
+            date1 += m.group(1)
+        # "1996/7", "851-73"
+        elif date1.lstrip('-').isdigit() and date2.lstrip('-').isdigit():
+            if len(date1) > len(date2) and int(date1) > int(date2):
+                date2 = date1[:-len(date2)] + date2
+        return date1, date2
+
+
+    @staticmethod
+    def extract_calendar(datestring):
+        """
+        Input: Datetime string
+        Output: 1) Calendar as kwargs if applicable; None otherwise
+                2) Datetime string stripped of calendar indicator
+        """
+        # calendar = "Calendar, Gregorian"
+        calendar = ""
+        if re.search(r" A\.?H\.?$", datestring):
+            datestring = re.sub(r" A\.?H\.?$", "", datestring).strip()
+            calendar = "Calendar, Islamic"
+        elif re.search(r"^F\.?R\.?\s+", datestring):
+            datestring = re.sub(r"^F\.?R\.?\s+", "", datestring).strip()
+            calendar = "Calendar, French Revolutionary"
+
+        calendar_kwargs = {
+            'link_title' : calendar,
+            'set_URI'    : Indexer.simple_lookup("Calendars", CONCEPT),
+            'href_URI'   : Indexer.simple_lookup(calendar, CONCEPT)
+            } if calendar else None
+
+        return calendar_kwargs, datestring
+
+
+    @staticmethod
+    def __parse_as_iso_datetime(datestring):
         """
         Attempt to parse (partial or full) ISO datetime string into kwarg dict
         """
@@ -485,20 +498,26 @@ class DateTimeParser:
         return time_kwargs
 
 
-    def __type_string_to_kwargs(self, type_string):
+    default_type_kwargs = {}
+
+    @classmethod
+    def init_default_type_kwargs(cls):
+        """
+        Default starting and ending Time Types by PE type
+        """
+        for element_type, time_types in { None  : ("", ""),
+                                          WORK_AUT  : ("", ""),
+                                          WORK_INST  : ("", ""),
+                                          BEING : ("Born", "Died"),
+                                          EVENT : ("Began", "Ended"),
+                                          ORGANIZATION : ("Began", "Ended") }.items():
+            cls.default_type_kwargs[element_type] = ( cls.__time_type_string_to_kwargs(time_types[0]),
+                                                      cls.__time_type_string_to_kwargs(time_types[1]) )
+
+
+    @staticmethod
+    def __time_type_string_to_kwargs(type_string):
         return { 'link_title' : type_string,
-                 'set_URI'  : self.ix.simple_lookup("Time Type", CONCEPT),
-                 'href_URI' : self.ix.simple_lookup(type_string, RELATIONSHIP) }  \
+                 'set_URI'  : Indexer.simple_lookup("Time Type", CONCEPT),
+                 'href_URI' : Indexer.simple_lookup(type_string, RELATIONSHIP) }  \
                if type_string else {}
-
-
-    def __set_default_type_kwargs(self):
-        # turn class variable into full map
-        self.default_type_kwargs = {
-            element_type : (
-                self.__type_string_to_kwargs(time_types[0]),
-                self.__type_string_to_kwargs(time_types[1])
-            ) for element_type, time_types in self.DEFAULT_TIME_TYPES.items()
-        }
-        self.default_type_kwargs[ORGANIZATION] = self.default_type_kwargs[EVENT]
-        self.default_type_kwargs[WORK_AUT] = self.default_type_kwargs[WORK_INST] = self.default_type_kwargs[None]

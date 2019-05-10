@@ -3,8 +3,11 @@
 
 import unicodedata
 import regex as re
+
 from pymarc import Record, Field
-from .tf_common import *
+
+from .tf_constants import *
+
 
 class LaneMARCRecord(Record):
     """
@@ -210,6 +213,8 @@ class LaneMARCRecord(Record):
                                                              normalized )
             variant_types_and_ids.add((element_type, variant_id_string))
         return list(variant_types_and_ids)
+
+    RELATOR_SUBF_i_TAGS = ('246','411')
 
     NORMALIZED_SEP = ','
     UNNORMALIZED_SEP = '\t'

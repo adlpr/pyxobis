@@ -1,9 +1,13 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from .Transformer import Transformer
-from .Indexer import Indexer
 from .LaneMARCRecord import LaneMARCRecord
+from .RecordTransformer import RecordTransformer
+
+from .Indexer import Indexer
+Indexer.init_index()
+
 from .DateTimeParser import DateTimeParser
-from .NameParser import NameParser
-from .PlaceNormalizer import PlaceNormalizer
+DateTimeParser.init_default_type_kwargs()
+
+# from .NameParser import NameParser

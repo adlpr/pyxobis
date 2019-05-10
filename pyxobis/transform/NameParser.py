@@ -2,35 +2,47 @@
 # -*- coding: UTF-8 -*-
 
 import regex as re
+
 from pymarc import Field
-from pyxobis.builders import *
+
+from ..builders import *
+
+from .tf_constants import *
+from . import tf_common_methods as tfcm
+
 from .Indexer import Indexer
 from .DateTimeParser import DateTimeParser
-from .PlaceNormalizer import PlaceNormalizer
-from .tf_common import *
 
 
 class NameParser:
-    def __init__(self):
+    """
+    Methods for parsing MARC fields out into names + qualifiers
+    based on principal element.
+    """
+
+    @classmethod
+    def get_parser_for_element_type(cls, element_type):
         """
-        Methods for parsing MARC fields out into names + qualifiers
-        based on principal element.
+        Given a XOBIS element type,
+        return the appropriate method from this class to use on a field
+        representing that type.
         """
-        self.ix = Indexer()
-        self.dp = DateTimeParser()
-        self.pn = PlaceNormalizer()
+        return { WORK_INST    : cls.parse_work_instance_main_name,
+                 WORK_AUT     : cls.parse_work_authority_name,
+                 BEING        : cls.parse_being_name,
+                 CONCEPT      : cls.parse_concept_name,
+                 RELATIONSHIP : cls.parse_concept_name,
+                 EVENT        : cls.parse_event_name,
+                 LANGUAGE     : cls.parse_language_name,
+                 OBJECT       : cls.parse_object_main_name,
+                 ORGANIZATION : cls.parse_organization_name,
+                 PLACE        : cls.parse_place_name,
+                 STRING       : cls.parse_string_name,
+                 TIME         : lambda _: [] }.get(element_type, None)
 
-        # Build regex for method __strip_ending_punctuation
-        # Strip ending periods only when not part of a recognized abbreviation or initialism.
-        name_abbrs = [ r"\p{L}", r"-\p{L}", r"\p{L}\p{M}", r"\p{L}\p{M}\p{M}",
-            r"[DdFJMS]r", "Mrs", "Ms", "Mme", "Mons", "Esq", "Capt", "Col",
-            r"[LS]t", "Rev", "Bp", "Hrn", r"[Jj]unr", r"[Jj]un",
-            r"[Pp]rof", "Dn", r"[CS]en", "cit", "med", "phil", "nat", "pseud",
-            "Pharm" ]
-        self.name_abbr_pattern = re.compile(''.join(r"(?<!^{0})(?<![\s\.]{0})".format(nlb) for nlb in name_abbrs) + r"\.$")
 
-
-    def parse_being_name(self, field):
+    @classmethod
+    def parse_being_name(cls, field):
         """
         Parse a X00 field containing a Being name into:
         - a list of names as kwarg dicts, and
@@ -48,7 +60,7 @@ class NameParser:
 
             # Exception for anomalous "author of" entries: call these generic
             if "author of" in val.lower():
-                name_text = self.__strip_ending_punctuation(val)
+                name_text = cls.__strip_ending_punctuation(val)
                 being_names_and_qualifiers = [{ 'name_text': name_text,
                                                'type_'    : "generic",
                                                'lang'     : field_lang,
@@ -60,10 +72,10 @@ class NameParser:
             if code == 'a':
                 if field.indicator1 == '1':
                     # If surname entry, attempt to parse into typed parts
-                    being_name_parts = self.__parse_being_surname_entry(val)
+                    being_name_parts = cls.__parse_being_surname_entry(val)
                 else:
                     # Forename, family, and named peoples entries get type "generic"
-                    being_name_parts = [(self.__strip_ending_punctuation(val), "generic")]
+                    being_name_parts = [(cls.__strip_ending_punctuation(val), "generic")]
 
                 for i, being_name_part in enumerate(being_name_parts):
                     being_name_part_text, being_name_part_type = being_name_part
@@ -85,8 +97,8 @@ class NameParser:
                                                 'nonfiling' : 0 })
             # 100 ^q : Fuller form of name  (type "expansion")
             else:
-                being_name_expansion_text = self.__strip_ending_punctuation(val)
-                being_name_expansion_text = self.__strip_parens(being_name_expansion_text)
+                being_name_expansion_text = cls.__strip_ending_punctuation(val)
+                being_name_expansion_text = cls.__strip_parens(being_name_expansion_text)
                 being_names_and_qualifiers.append({ 'name_text': being_name_expansion_text,
                                             'type_'    : "expansion",
                                             'lang'     : field_lang,
@@ -98,9 +110,9 @@ class NameParser:
         # ^b Numeration + ^c Titles and other qualifying words  --> StringRef
         for val in field.get_subfields('b','c'):
             srb = StringRefBuilder()
-            val_norm = self.__strip_ending_punctuation(val)
+            val_norm = cls.__strip_ending_punctuation(val)
             srb.set_link(val_norm,
-                         href_URI = self.ix.simple_lookup(val_norm, STRING))
+                         href_URI = Indexer.simple_lookup(val_norm, STRING))
             srb.add_name(val_norm,
                          lang     = field_lang,
                          script   = field_script,
@@ -108,17 +120,18 @@ class NameParser:
             being_names_and_qualifiers.append(srb.build())
         # ^d : Qualifying dates  --> Time/DurationRef
         for val in field.get_subfields('d'):
-            being_names_and_qualifiers.append(self.dp.parse_as_ref(val, BEING))
+            being_names_and_qualifiers.append(DateTimeParser.parse_as_ref(val, BEING))
 
         return being_names_and_qualifiers
 
-    def __parse_being_surname_entry(self, namestring):
+    @classmethod
+    def __parse_being_surname_entry(cls, namestring):
         """
         100 1# ^a
         Parse a name string into a list of (name_part, type) tuples.
         """
         # Punctuation
-        ns = self.__strip_ending_punctuation(namestring)
+        ns = cls.__strip_ending_punctuation(namestring)
         # Arabic
         ns = ns.replace('،', ',')
 
@@ -131,8 +144,8 @@ class NameParser:
         return ns_parsed
 
 
-
-    def parse_concept_name(self, field):
+    @staticmethod
+    def parse_concept_name(field):
         """
         Parse a X50/X55/X80 field containing a Concept name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -178,7 +191,7 @@ class NameParser:
             for val in field.get_subfields(qualifier_code):
                 crb = ConceptRefBuilder()
                 crb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
+                              href_URI = Indexer.simple_lookup(val, CONCEPT) )
                 crb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -191,7 +204,8 @@ class NameParser:
     # known Org rather than Place names used in Event ^c
     event_subfc_orgs = ["Istituto superiore", "Ciba Foundation"]
 
-    def parse_event_name(self, field):
+    @classmethod
+    def parse_event_name(cls, field):
         """
         Parse a X11 field containing a Event name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -201,7 +215,7 @@ class NameParser:
 
         # PREQUALIFIER(S)
         # ---
-        event_names_and_qualifiers = self.__parse_event_prequalifiers(field)
+        event_names_and_qualifiers = cls.__parse_event_prequalifiers(field)
 
         # NAME(S)
         # ---
@@ -209,7 +223,7 @@ class NameParser:
         # UNLESS ^e Subordinate unit, in which case ^a is prequalifier
         name_code = 'e' if 'e' in field else 'a'
         for val in field.get_subfields(name_code):
-            val = self.__strip_ending_punctuation(val)
+            val = cls.__strip_ending_punctuation(val)
             event_names_and_qualifiers.append({ 'name_text': val,
                                         'lang'     : field_lang,
                                         'script'   : field_script,
@@ -220,14 +234,14 @@ class NameParser:
         for code, val in field.get_subfields('c','d','n', with_codes=True):
             # ^c Location of meeting  --> usually PlaceRef, sometimes OrgRef!
             if code == 'c':
-                val = self.__strip_ending_punctuation(val)
-                if any(val.startswith(org) for org in self.event_subfc_orgs):
+                val = cls.__strip_ending_punctuation(val)
+                if any(val.startswith(org) for org in cls.event_subfc_orgs):
                     qualifier_element, rb = ORGANIZATION, OrganizationRefBuilder()
                 else:
                     qualifier_element, rb = PLACE, PlaceRefBuilder()
-                    val = self.pn.normalize(val)
+                    val = tfcm.normalize_place(val)
                 rb.set_link( val,
-                             href_URI = self.ix.simple_lookup(val, qualifier_element) )
+                             href_URI = Indexer.simple_lookup(val, qualifier_element) )
                 rb.add_name( val,
                              lang   = field_lang,
                              script = field_script,
@@ -235,13 +249,13 @@ class NameParser:
                 event_names_and_qualifiers.append(rb.build())
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
-                event_names_and_qualifiers.append(self.dp.parse_as_ref(val, EVENT))
+                event_names_and_qualifiers.append(DateTimeParser.parse_as_ref(val, EVENT))
             # ^n Number of part/section/meeting  --> StringRef?
             elif code == 'n':
-                val = self.__strip_ending_punctuation(val).lstrip('( ')
+                val = cls.__strip_ending_punctuation(val).lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, STRING) )
+                              href_URI = Indexer.simple_lookup(val, STRING) )
                 srb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -250,7 +264,8 @@ class NameParser:
 
         return event_names_and_qualifiers
 
-    def __parse_event_prequalifiers(self, field):
+    @classmethod
+    def __parse_event_prequalifiers(cls, field):
         """
         Parse a X11 field for a list of prequalifiers (RefElements),
         to pass into a Builder.
@@ -267,11 +282,11 @@ class NameParser:
                 prequalifier_element, rb = EVENT, EventRefBuilder()
             # ^a
             for val in field.get_subfields('a'):
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 if prequalifier_element == PLACE:
-                    val = self.pn.normalize(val)
+                    val = tfcm.normalize_place(val)
                 rb.set_link( val,
-                             href_URI = self.ix.simple_lookup(val, prequalifier_element) )
+                             href_URI = Indexer.simple_lookup(val, prequalifier_element) )
                 rb.add_name( val,
                              lang   = field_lang,
                              script = field_script,
@@ -279,10 +294,10 @@ class NameParser:
                 event_prequalifiers.append(rb.build())
             # there aren't many if any of these. so just assume Event
             for val in field.get_subfields('e')[:-1]:
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 erb = EventRefBuilder()
                 erb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, EVENT) )
+                              href_URI = Indexer.simple_lookup(val, EVENT) )
                 erb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -291,7 +306,8 @@ class NameParser:
         return event_prequalifiers
 
 
-    def parse_language_name(self, field):
+    @staticmethod
+    def parse_language_name(field):
         """
         Parse a X50 field containing a Language name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -315,7 +331,8 @@ class NameParser:
         return language_names_and_qualifiers
 
 
-    def parse_organization_name(self, field):
+    @classmethod
+    def parse_organization_name(cls, field):
         """
         Parse a X10 field containing an Organization name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -325,7 +342,7 @@ class NameParser:
 
         # PREQUALIFIER(S)
         # ---
-        organization_names_and_qualifiers = self.__parse_organization_prequalifiers(field)
+        organization_names_and_qualifiers = cls.__parse_organization_prequalifiers(field)
 
         # NAME(S)
         # ---
@@ -334,7 +351,7 @@ class NameParser:
         #   (as well as any ^b except the last).
         subordinates = field.get_subfields('b')
         val = subordinates[-1] if subordinates else field['a']
-        val = self.__strip_ending_punctuation(val)
+        val = cls.__strip_ending_punctuation(val)
         organization_names_and_qualifiers.append({ 'name_text': val,
                                                   'lang'     : field_lang,
                                                   'script'   : field_script,
@@ -345,10 +362,10 @@ class NameParser:
         for code, val in field.get_subfields('c','d','n', with_codes=True):
             # ^c Location of meeting  --> PlaceRef
             if code == 'c':
-                val = self.pn.normalize(val)
+                val = tfcm.normalize_place(val)
                 prb = PlaceRefBuilder()
                 prb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, PLACE) )
+                              href_URI = Indexer.simple_lookup(val, PLACE) )
                 prb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -356,13 +373,13 @@ class NameParser:
                 organization_names_and_qualifiers.append(prb.build())
             # ^d Date of meeting  --> Time/DurationRef
             elif code == 'd':
-                organization_names_and_qualifiers.append(self.dp.parse_as_ref(val, ORGANIZATION))
+                organization_names_and_qualifiers.append(DateTimeParser.parse_as_ref(val, ORGANIZATION))
             # ^n Number of part/section/meeting  --> StringRef
             elif code == 'n' and field.tag != '710':
-                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                val = cls.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, STRING) )
+                              href_URI = Indexer.simple_lookup(val, STRING) )
                 srb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -371,7 +388,8 @@ class NameParser:
 
         return organization_names_and_qualifiers
 
-    def __parse_organization_prequalifiers(self, field):
+    @classmethod
+    def __parse_organization_prequalifiers(cls, field):
         """
         Parse a X10 field for
         - a list of prequalifiers as RefElement objects,
@@ -392,11 +410,11 @@ class NameParser:
             cumulative_subfields = []
             for val in field.get_subfields('a'):
                 if prequalifier_element == PLACE:
-                    val = self.pn.normalize(val)
-                val = self.__strip_ending_punctuation(val)
+                    val = tfcm.normalize_place(val)
+                val = cls.__strip_ending_punctuation(val)
                 cumulative_subfields.extend(['a', val])
                 rb.set_link( val,
-                             href_URI = self.ix.simple_lookup(val, prequalifier_element) )
+                             href_URI = Indexer.simple_lookup(val, prequalifier_element) )
                 rb.add_name( val,
                              lang   = field_lang,
                              script = field_script,
@@ -405,10 +423,10 @@ class NameParser:
             # ^b
             for val in field.get_subfields('b')[:-1]:
                 cumulative_subfields.extend(['b', val])
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 orb = OrganizationRefBuilder()
                 orb.set_link( val,
-                              href_URI = self.ix.lookup(Field('   ','  ',cumulative_subfields), ORGANIZATION) )
+                              href_URI = Indexer.lookup(Field('   ','  ',cumulative_subfields), ORGANIZATION) )
                 orb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -418,7 +436,8 @@ class NameParser:
         return org_prequalifiers
 
 
-    def parse_place_name(self, field):
+    @staticmethod
+    def parse_place_name(field):
         """
         Parse a X51 field containing a Place name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -443,7 +462,8 @@ class NameParser:
         return place_names_and_qualifiers
 
 
-    def parse_string_name(self, field):
+    @classmethod
+    def parse_string_name(cls, field):
         """
         Parse a X82 field containing a String name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -465,10 +485,10 @@ class NameParser:
         # ---
         # ^q Qualifier  [StringRef]
         for val in field.get_subfields('q'):
-            val = self.__strip_parens(val)
+            val = cls.__strip_parens(val)
             srb = StringRefBuilder()
             srb.set_link( val,
-                          href_URI = self.ix.simple_lookup(val, STRING) )
+                          href_URI = Indexer.simple_lookup(val, STRING) )
             srb.add_name( val,
                           lang   = field_lang,
                           script = field_script,
@@ -476,10 +496,10 @@ class NameParser:
             string_names_and_qualifiers.append(srb.build())
         # ^l Language [defunct] / ^3 Language of entry  [LanguageRef]
         for val in field.get_subfields('l','3'):
-            val = self.__strip_ending_punctuation(val)
+            val = cls.__strip_ending_punctuation(val)
             lrb = LanguageRefBuilder()
             lrb.set_link( val,
-                          href_URI = self.ix.simple_lookup(val, LANGUAGE) )
+                          href_URI = Indexer.simple_lookup(val, LANGUAGE) )
             lrb.add_name( val,
                           lang   = field_lang,
                           script = field_script,
@@ -489,7 +509,8 @@ class NameParser:
         return string_names_and_qualifiers
 
 
-    def parse_work_authority_name(self, field):
+    @classmethod
+    def parse_work_authority_name(cls, field):
         """
         Parse a X30 field containing a Work aut name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -510,7 +531,7 @@ class NameParser:
             if code in 'ap':
                 # ^a  Uniform title                     --> `generic` title
                 # ^p  Name of part/section of a work    --> `section` title
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 work_aut_names_and_qualifiers.append(
                     { 'name_text': val,
                       'type_'    : 'generic' if code == 'a' else 'section',
@@ -520,13 +541,13 @@ class NameParser:
             elif code in 'df':
                 # ^d  Date of treaty signing  --> TimeRef
                 # ^f  Date of a work          --> TimeRef
-                work_aut_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_AUT))
+                work_aut_names_and_qualifiers.append(DateTimeParser.parse_as_ref(val, WORK_AUT))
             elif code == 'k':
                 # ^k  Form subheading            --> ConceptRef
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 crb = ConceptRefBuilder()
                 crb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
+                              href_URI = Indexer.simple_lookup(val, CONCEPT) )
                 crb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -534,10 +555,10 @@ class NameParser:
                 work_aut_names_and_qualifiers.append(crb.build())
             elif code == 'l':
                 # ^l  Language of a work      --> LanguageRef
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 lrb = LanguageRefBuilder()
                 lrb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, LANGUAGE) )
+                              href_URI = Indexer.simple_lookup(val, LANGUAGE) )
                 lrb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -546,14 +567,14 @@ class NameParser:
             elif code in 'gq':
                 # ^q  Qualifier (Lane)  --> parse
                 # ^g  Miscellaneous information  --> parse
-                work_aut_names_and_qualifiers.extend(self.parse_generic_qualifier(val, field_lang, field_script))
+                work_aut_names_and_qualifiers.extend(cls.parse_generic_qualifier(val, field_lang, field_script))
             else:
                 # ^n  Number of part/section of a work  --> StringRef
                 # ^s  Version                    --> StringRef
-                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                val = cls.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, STRING) )
+                              href_URI = Indexer.simple_lookup(val, STRING) )
                 srb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -565,7 +586,8 @@ class NameParser:
         return work_aut_names_and_qualifiers
 
 
-    def __parse_work_instance_or_object_main_name(self, field, element_type):
+    @classmethod
+    def __parse_work_instance_or_object_main_name(cls, field, element_type):
         """
         Parse a 149/730/740/830/901 field containing a Work inst/Object main entry name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -590,7 +612,7 @@ class NameParser:
             if code in 'ap':
                 # ^a  Uniform title (NR)                    --> `generic` title
                 # ^p  Name of part/section of a work (R)    --> `section` title
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 name_kwargs = { 'name_text': val,
                                 'lang'     : field_lang,
                                 'script'   : field_script,
@@ -602,13 +624,13 @@ class NameParser:
                 # ^d  Date of a work (NR) / ^f Date of a work (NR) --> Time/DurationRef
                 if field.tag in ('830','901'):  # ^d should always be part of the Relationship in 830s
                     continue
-                work_inst_or_object_main_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
+                work_inst_or_object_main_names_and_qualifiers.append(DateTimeParser.parse_as_ref(val, WORK_INST))
             elif code == 'k':
                 # ^k  Form subheading (R)        --> ConceptRef
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 crb = ConceptRefBuilder()
                 crb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
+                              href_URI = Indexer.simple_lookup(val, CONCEPT) )
                 crb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -616,10 +638,10 @@ class NameParser:
                 work_inst_or_object_main_names_and_qualifiers.append(crb.build())
             elif code == 'l':
                 # ^l  Language of a work (NR)    --> LanguageRef
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 lrb = LanguageRefBuilder()
                 lrb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, LANGUAGE) )
+                              href_URI = Indexer.simple_lookup(val, LANGUAGE) )
                 lrb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -627,15 +649,15 @@ class NameParser:
                 work_inst_or_object_main_names_and_qualifiers.append(lrb.build())
             elif code in 'gq':
                 # ^q  Qualifier (NR)   --> parse
-                parsed = self.parse_generic_qualifier(val, field_lang, field_script)
+                parsed = cls.parse_generic_qualifier(val, field_lang, field_script)
                 work_inst_or_object_main_names_and_qualifiers.extend(parsed)
             else:
                 # ^n  Number of part/section of a work (R)  --> StringRef
                 # ^s  Version/edition (NR)                  --> StringRef
-                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                val = cls.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, STRING) )
+                              href_URI = Indexer.simple_lookup(val, STRING) )
                 srb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -646,7 +668,8 @@ class NameParser:
 
         return work_inst_or_object_main_names_and_qualifiers
 
-    def __parse_work_instance_or_object_variant_name(self, field, element_type):
+    @classmethod
+    def __parse_work_instance_or_object_variant_name(cls, field, element_type):
         """
         Parse a 210/245/246/247/249 field containing a
         Work inst/Object variant entry name
@@ -668,7 +691,7 @@ class NameParser:
             if code in 'ap':
                 # ^a  * title (NR)                        --> `generic` title
                 # ^p  Name of part/section of a work (R)  --> `section` title
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 name_kwargs = { 'name_text': val,
                                 'lang'     : field_lang,
                                 'script'   : field_script,
@@ -679,19 +702,19 @@ class NameParser:
             elif code == 'b':
                 if field.tag == '210':
                     # 210 ^b    Qualifying information (NR) --> parse
-                    parsed = self.parse_generic_qualifier(val, field_lang, field_script)
+                    parsed = cls.parse_generic_qualifier(val, field_lang, field_script)
                     work_inst_or_object_variant_names_and_qualifiers.extend(parsed)
             elif code in 'fg':
                 if field.tag == '245':
                     # 245 ^f    Inclusive dates (NR)        --> Time/DurationRef
                     # 245 ^g    Bulk dates (NR)             --> Time/DurationRef
-                    work_inst_or_object_variant_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
+                    work_inst_or_object_variant_names_and_qualifiers.append(DateTimeParser.parse_as_ref(val, WORK_INST))
             elif code == 'k':
                 # ^k  Form (R)             --> ConceptRef
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 crb = ConceptRefBuilder()
                 crb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
+                              href_URI = Indexer.simple_lookup(val, CONCEPT) )
                 crb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -699,15 +722,15 @@ class NameParser:
                 work_inst_or_object_variant_names_and_qualifiers.append(crb.build())
             elif code == 'q':
                 # ^q  Qualifier (Lane) (NR)  --> parse
-                parsed = self.parse_generic_qualifier(val, field_lang, field_script)
+                parsed = cls.parse_generic_qualifier(val, field_lang, field_script)
                 work_inst_or_object_variant_names_and_qualifiers.extend(parsed)
             else:
                 # ^n  Number of part/section of a work (R)   --> StringRef
                 # ^s  Version (Lane) (NR)   --> StringRef
-                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                val = cls.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, STRING) )
+                              href_URI = Indexer.simple_lookup(val, STRING) )
                 srb.add_name( val,
                               lang   = field_lang,
                               script = field_script,
@@ -716,7 +739,8 @@ class NameParser:
 
         return work_inst_or_object_variant_names_and_qualifiers
 
-    def __parse_author_title_work_name(self, field):
+    @classmethod
+    def __parse_author_title_work_name(cls, field):
         """
         Parse a 700/710 field containing a Work inst name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -732,42 +756,43 @@ class NameParser:
             if code in 'tp':
                 # ^t  Title of work (NR)                    --> `generic` title
                 # ^p  Name of part/section of a work (R)    --> `section` title
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 name_kwargs = { 'name_text': val,
                                 'type_': 'generic' if code == 't' else 'section' }
                 author_title_work_names_and_qualifiers.append(name_kwargs)
             elif code == 'f':
                 # ^f  Date of work (NR)          --> Time/DurationRef
-                author_title_work_names_and_qualifiers.append(self.dp.parse_as_ref(val, WORK_INST))
+                author_title_work_names_and_qualifiers.append(DateTimeParser.parse_as_ref(val, WORK_INST))
             elif code == 'k':
                 # ^k  Form subheading (R)        --> ConceptRef
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 crb = ConceptRefBuilder()
                 crb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, CONCEPT) )
+                              href_URI = Indexer.simple_lookup(val, CONCEPT) )
                 crb.add_name( val )
                 author_title_work_names_and_qualifiers.append(crb.build())
             elif code == 'l':
                 # ^l  Language of a work (NR)    --> LanguageRef
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 lrb = LanguageRefBuilder()
                 lrb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, LANGUAGE) )
+                              href_URI = Indexer.simple_lookup(val, LANGUAGE) )
                 lrb.add_name( val )
                 author_title_work_names_and_qualifiers.append(lrb.build())
             else:
                 # ^n  Number of part/section of a work (R)  --> StringRef
                 # ^s  Version/edition (NR)                  --> StringRef
-                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                val = cls.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, STRING) )
+                              href_URI = Indexer.simple_lookup(val, STRING) )
                 srb.add_name( val )
                 author_title_work_names_and_qualifiers.append(srb.build())
 
         return author_title_work_names_and_qualifiers
 
-    def __parse_linking_entry_work_name(self, field):
+    @classmethod
+    def __parse_linking_entry_work_name(cls, field):
         """
         Parse a 76X~78X field containing a Work inst main entry name
         into a list of either names (kwarg dicts) or qualifiers (RefElements),
@@ -781,40 +806,45 @@ class NameParser:
         for code, val in field.get_subfields(name_field_code,'b', with_codes=True):
             if code == name_field_code:
                 # ^t  Title of work             --> `generic` title  [p = abbr title]
-                val = self.__strip_ending_punctuation(val)
+                val = cls.__strip_ending_punctuation(val)
                 name_kwargs = { 'name_text': val,
                                 'type_': 'generic' }
                 linking_entry_work_names_and_qualifiers.append(name_kwargs)
             else:
                 # ^b  Edition                   --> StringRef
-                val = self.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
+                val = cls.__strip_ending_punctuation(val).rstrip('.').lstrip('( ')
                 srb = StringRefBuilder()
                 srb.set_link( val,
-                              href_URI = self.ix.simple_lookup(val, STRING) )
+                              href_URI = Indexer.simple_lookup(val, STRING) )
                 srb.add_name( val )
                 linking_entry_work_names_and_qualifiers.append(srb.build())
 
         return linking_entry_work_names_and_qualifiers
 
 
-    def parse_work_instance_main_name(self, field):
+    @classmethod
+    def parse_work_instance_main_name(cls, field):
         if field.tag in ('700','710'):
-            return self.__parse_author_title_work_name(field)
+            return cls.__parse_author_title_work_name(field)
         elif field.tag[:2] in ('76','77','78'):
-            return self.__parse_linking_entry_work_name(field)
-        return self.__parse_work_instance_or_object_main_name(field, WORK_INST)
+            return cls.__parse_linking_entry_work_name(field)
+        return cls.__parse_work_instance_or_object_main_name(field, WORK_INST)
 
-    def parse_object_main_name(self, field):
-        return self.__parse_work_instance_or_object_main_name(field, OBJECT)
+    @classmethod
+    def parse_object_main_name(cls, field):
+        return cls.__parse_work_instance_or_object_main_name(field, OBJECT)
 
-    def parse_work_instance_variant_name(self, field):
-        return self.__parse_work_instance_or_object_variant_name(field, WORK_INST)
+    @classmethod
+    def parse_work_instance_variant_name(cls, field):
+        return cls.__parse_work_instance_or_object_variant_name(field, WORK_INST)
 
-    def parse_object_variant_name(self, field):
-        return self.__parse_work_instance_or_object_variant_name(field, OBJECT)
+    @classmethod
+    def parse_object_variant_name(cls, field):
+        return cls.__parse_work_instance_or_object_variant_name(field, OBJECT)
 
 
-    def parse_generic_qualifier(self, val, lang=None, script=None):
+    @classmethod
+    def parse_generic_qualifier(cls, val, lang=None, script=None):
         """
         Use regex and Indexer to try to determine what type of reference to build
         from an unspecified qualifying element.
@@ -825,13 +855,13 @@ class NameParser:
         """
         ref_elements = []
         # 1. clean punctuation
-        val = self.__strip_parens(self.__strip_ending_punctuation(val))
+        val = cls.__strip_parens(cls.__strip_ending_punctuation(val))
         # 2. separate on ' : '
         for val_part in val.split(' : '):
             # 3. if \d{4} in part, attempt parse as date
             if re.search(r'\d{4}', val_part):
                 try:
-                    ref_elements.append(self.dp.parse_as_ref(val_part, None))
+                    ref_elements.append(DateTimeParser.parse_as_ref(val_part, None))
                     continue
                 except ValueError:
                     pass
@@ -839,13 +869,13 @@ class NameParser:
             if '. ' in val_part:
                 bespoke_subfields = [sf_part for i,val_subpart in enumerate(val_part.split('. ')) for sf_part in ('a' if i==0 else 'b', val_subpart)]
                 bespoke_field = Field('   ','  ',bespoke_subfields)
-                lookup_as_org = self.ix.lookup(bespoke_field, ORGANIZATION)
+                lookup_as_org = Indexer.lookup(bespoke_field, ORGANIZATION)
                 if lookup_as_org != Indexer.UNVERIFIED:
                     # yes, this is a subdivided org
                     orb = OrganizationRefBuilder()
                     orb.set_link( val_part,
                                   href_URI = lookup_as_org )
-                    for prequalifier in self.__parse_organization_prequalifiers(bespoke_field):
+                    for prequalifier in cls.__parse_organization_prequalifiers(bespoke_field):
                         orb.add_qualifier(prequalifier)
                     orb.add_name( bespoke_subfields[-1],
                                   lang   = lang,
@@ -861,7 +891,7 @@ class NameParser:
             val_part = re.sub(r"(^|[\s\(])Md\.([\s\)]|$)", r"\1Maryland\2", val_part, flags=re.I)
             val_part = re.sub(r"(^|[\s\(])Mass\.([\s\)]|$)", r"\1Massachusetts\2", val_part, flags=re.I)
             val_part = re.sub(r"(^|[\s\(])Dept\.?([\s\)]|$)", r"\1Department\2", val_part, flags=re.I)
-            element_type = self.ix.simple_element_type_from_value(val_part)
+            element_type = Indexer.simple_element_type_from_value(val_part)
             # 6. finally, if all else fails, treat as string
             if element_type == TIME: element_type = STRING
             element_type = element_type or STRING
@@ -881,7 +911,7 @@ class NameParser:
                        }.get(element_type)
             rb = rb_class()
             rb.set_link( val_part,
-                         href_URI = self.ix.simple_lookup(val_part, element_type) )
+                         href_URI = Indexer.simple_lookup(val_part, element_type) )
             ref_name_kwargs = { 'name_text' : val_part,
                                 'lang'      : lang,
                                 'script'    : script,
@@ -893,14 +923,26 @@ class NameParser:
         return ref_elements
 
 
-    def __strip_ending_punctuation(self, namestring):
+    # Build regex for method __strip_ending_punctuation
+    # Strip ending periods only when not part of a recognized abbreviation or initialism.
+    name_abbrs = [ r"\p{L}", r"-\p{L}", r"\p{L}\p{M}", r"\p{L}\p{M}\p{M}",
+        r"[DdFJMS]r", "Mrs", "Ms", "Mme", "Mons", "Esq", "Capt", "Col",
+        r"[LS]t", "Rev", "Bp", "Hrn", r"[Jj]unr", r"[Jj]un",
+        r"[Pp]rof", "Dn", r"[CS]en", "cit", "med", "phil", "nat", "pseud",
+        "Pharm" ]
+    name_abbr_pattern = re.compile(''.join(r"(?<!^{0})(?<![\s\.]{0})".format(nlb) for nlb in name_abbrs) + r"\.$")
+
+    @classmethod
+    def __strip_ending_punctuation(cls, namestring):
         """
         Strip punctuation, based on the particular considerations of personal names.
         """
-        ns = self.name_abbr_pattern.sub("", namestring.rstrip("،,:;/ \t").strip()).strip()
+        ns = cls.name_abbr_pattern.sub("", namestring.rstrip("،,:;/ \t").strip()).strip()
         return ns
 
-    def __strip_parens(self, namestring):
+
+    @staticmethod
+    def __strip_parens(namestring):
         """
         Strip enclosing parentheses.
         """

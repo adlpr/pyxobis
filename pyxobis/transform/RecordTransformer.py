@@ -1,27 +1,32 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-import regex as re
 import os, json
-import pyxobis
-from pyxobis.builders import *
-from .LaneMARCRecord import LaneMARCRecord
+import regex as re
+
+from pymarc import Field
+
+from ..builders import *
+
+from . import tf_common_methods as tfcm
+from .tf_constants import *
+
 from .Indexer import Indexer
 from .DateTimeParser import DateTimeParser
 from .NameParser import NameParser
-from .tf_variants import *
-from .tf_common import *
-from .tf_relationships_aut import *
-from .tf_relationships_bib import *
-from .tf_notes_aut import *
-from .tf_notes_bib import *
+from .LaneMARCRecord import LaneMARCRecord
+
+from .VariantTransformer import VariantTransformer
+from .RelationshipTransformer import RelationshipTransformer
+from .NoteTransformer import NoteTransformer
 
 
-class Transformer:
+class RecordTransformer:
+    """
+    Methods for transforming all bibliographic/authority/holdings records
+    at the highest level.
+    """
     def __init__(self):
-        self.ix = Indexer()
-        self.dp = DateTimeParser()
-        self.np = NameParser()
         self.init_builder_methods = {
             WORK_INST    : self.init_work_instance_builder,
             WORK_AUT     : self.init_work_authority_builder,
@@ -36,30 +41,24 @@ class Transformer:
             STRING       : self.init_string_builder,
             TIME         : self.init_time_builder
         }
-        self.name_parsers = {
-            WORK_INST    : self.np.parse_work_instance_main_name,
-            WORK_AUT     : self.np.parse_work_authority_name,
-            BEING        : self.np.parse_being_name,
-            CONCEPT      : self.np.parse_concept_name,
-            RELATIONSHIP : self.np.parse_concept_name,
-            EVENT        : self.np.parse_event_name,
-            LANGUAGE     : self.np.parse_language_name,
-            OBJECT       : self.np.parse_object_main_name,
-            ORGANIZATION : self.np.parse_organization_name,
-            PLACE        : self.np.parse_place_name,
-            STRING       : self.np.parse_string_name,
-            TIME         : lambda _: []
-        }
-        self.lane_org_ref = self.build_simple_ref("Lane Medical Library", ORGANIZATION)
-        self.lc_org_ref   = self.build_simple_ref("Library of Congress", ORGANIZATION)
-        self.nlm_org_ref  = self.build_simple_ref("National Library of Medicine (U.S.)", ORGANIZATION)
-        self.oclc_org_ref = self.build_simple_ref("OCLC", ORGANIZATION)
-        self.mesh_ref     = self.build_simple_ref("Medical subject headings", WORK_AUT)
-        # map of 043 geographic area codes to entry names for relationships
-        # with open(os.path.join(os.path.dirname(__file__), 'gacs.json'), 'r') as inf:
-        #     self.gacs_map = json.load(inf)
+
+        self.lane_org_ref = tfcm.build_simple_ref("Lane Medical Library", ORGANIZATION)
+        self.lc_org_ref   = tfcm.build_simple_ref("Library of Congress", ORGANIZATION)
+        self.nlm_org_ref  = tfcm.build_simple_ref("National Library of Medicine (U.S.)", ORGANIZATION)
+        self.oclc_org_ref = tfcm.build_simple_ref("OCLC", ORGANIZATION)
+
+        # subordinate Transformers
+        self.vt  = VariantTransformer()
+        self.rlt = RelationshipTransformer()
+        self.nt  = NoteTransformer()
+
 
     def transform(self, record):
+        """
+        Transform a pymarc Record object into a pyxobis Record object.
+
+        Returns None if unable to transform.
+        """
         record.__class__ = LaneMARCRecord
 
         # Ignore record if suppressed
@@ -79,14 +78,12 @@ class Transformer:
         # -------
         # LANGUAGE OF RECORD
         # -------
-
         # Normally this might come from the 040 ^b? But all ours are English
         rb.set_lang('en')
 
         # -------
         # IDs
         # -------
-
         # ID ORG
         # ---
         # is us, Lane
@@ -108,9 +105,6 @@ class Transformer:
         # ID ALTERNATES
         # ---
         self.transform_id_alternates(record, rb)
-        # AUT ONLY: 7XX LC/NLM forms
-        if record.get_record_type() == record.AUT:
-            self.transform_heading_linking_entries(record, rb)
 
         # -------
         # TYPES
@@ -170,7 +164,7 @@ class Transformer:
         # RECORD PROCESSING
         # ~~~~~~
         init_builder = self.init_builder_methods.get(element_type)
-        parse_name = self.name_parsers.get(element_type)
+        parse_name = NameParser.get_parser_for_element_type(element_type)
 
         # Initialize, perform PE-specific work on, and return Builder object.
         peb = init_builder(record)
@@ -186,31 +180,29 @@ class Transformer:
 
         # VARIANTS
         # -------
-        for variant in self.transform_variants(record):
+        for variant in self.vt.transform_variants(record):
             peb.add_variant(variant)
 
         # NOTES
         # -------
-        notes = self.transform_notes_bib(record)  \
-                    if element_type in (WORK_INST, OBJECT)  \
-                    else self.transform_notes_aut(record)
-        for note in notes:
+        for note in self.nt.transform_notes(record):
             peb.add_note(**note)
 
         rb.set_principal_element(peb.build())
 
         # RELATIONSHIPS
         # -------
-        relationships = self.transform_relationships_bib(record)  \
-                            if element_type in (WORK_INST, OBJECT)  \
-                            else self.transform_relationships_aut(record)
-        for relationship in relationships:
+        for relationship in self.rlt.transform_relationships(record):
             rb.add_relationship(relationship)
 
         return rb.build()
 
 
     def transform_record_types(self, record, rb):
+        """
+        For each field describing a Record Type (Subset) in record,
+        add to RecordBuilder rb.
+        """
         # Record "Types" = Subsets = 655 77
         # NB: Established aut "Record Type" (Z47381) actually refers
         #     to which PE a record is
@@ -219,8 +211,8 @@ class Transformer:
             if field.indicator1 in '7':
                 for val in field.get_subfields('a'):
                     rb.add_type(title = val,
-                                href  = "(CStL)" + field['0'] if '0' in field else self.ix.simple_lookup(val, CONCEPT),
-                                set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+                                href  = "(CStL)" + field['0'] if '0' in field else Indexer.simple_lookup(val, CONCEPT),
+                                set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
 
         # convert 903 NEW(E) to Subset
         for field in record.get_fields('903'):
@@ -233,8 +225,8 @@ class Transformer:
                 else:
                     title = f"Subset, New Resource {val[3:].strip()}"
                 rb.add_type(title = title,
-                            href  = self.ix.simple_lookup(title, CONCEPT),
-                            set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+                            href  = Indexer.simple_lookup(title, CONCEPT),
+                            set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
 
         # convert 906 ^a/^d (+ sometimes ^c) to Subset
         for field in record.get_fields('906'):
@@ -243,14 +235,14 @@ class Transformer:
                 if val == 'ASV': val = "Alpha Parent Visual"
                 title = f"Subset, Component, {val}"
                 rb.add_type(title = title,
-                            href  = self.ix.simple_lookup(title, CONCEPT),
-                            set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+                            href  = Indexer.simple_lookup(title, CONCEPT),
+                            set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
             for val in field.get_subfields('c'):
                 if val in ('LIB','REF'):
                     title = f"Subset, Component, {val}"
                     rb.add_type(title = title,
-                                href  = self.ix.simple_lookup(title, CONCEPT),
-                                set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
+                                href  = Indexer.simple_lookup(title, CONCEPT),
+                                set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
             for val in field.get_subfields('d'):
                 title = {'AB'     : "Subset, Component, Alpha Parents",
                          'AS'     : "Subset, Component, Alpha Parent",
@@ -264,9 +256,8 @@ class Transformer:
                          'pubmed2marc' : "Subset, Component, pubmed2marc" }.get(val)
                 assert title is not None, f"{record.get_control_number()}: invalid 906 $d: {field}"
                 rb.add_type(title = title,
-                            href  = self.ix.simple_lookup(title, CONCEPT),
-                            set_ref = self.ix.simple_lookup("Note Type", CONCEPT))
-
+                            href  = Indexer.simple_lookup(title, CONCEPT),
+                            set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
 
 
     def init_being_builder(self, record):
@@ -335,8 +326,9 @@ class Transformer:
 
         # ENTRY TYPE
         # ---
-        # Generic "entry type" is specific to Beings: birth name, pseudonym, etc.
-        entry_type_kwargs, entry_type_time_or_duration_ref = self.get_type_and_time_from_relator(record['100'])
+        # Generic entry type is routine for Variants, but specific to Beings
+        # on the main entry (birth name, pseudonym, etc.)
+        entry_type_kwargs, entry_type_time_or_duration_ref = tfcm.get_type_and_time_from_relator(record['100'])
         if entry_type_kwargs:
             bb.set_entry_type(**entry_type_kwargs)
             bb.set_time_or_duration_ref(entry_type_time_or_duration_ref)
@@ -386,7 +378,7 @@ class Transformer:
         return cb
 
 
-    # Defined in order of increasing priority.
+    # Defined in order of increasing priority
     event_type_map = {
         'miscellaneous' : ["Censuses", "Exhibitions", "Exhibits", "Experiments",
             "Special Events", "Trials", "Workshops"],
@@ -498,7 +490,7 @@ class Transformer:
 
         return ob
 
-    # Defined in order of increasing priority.
+    # Defined in order of increasing priority
     place_type_map = {
         'natural' : ["Bays", "Canals", "Caves", "Coasts", "Continents",
             "Deserts", "Forests", "Islands", "Lakes", "Minor Planets",
@@ -628,20 +620,20 @@ class Transformer:
         # ---
         entry_field = record.get_id_field()
         datestring = entry_field['a']
-        calendar_kwargs, datestring = self.dp.extract_calendar(datestring)
+        calendar_kwargs, datestring = DateTimeParser.extract_calendar(datestring)
         if calendar_kwargs:
             tb.set_calendar(**calendar_kwargs)
 
         # ENTRY CONTENT
         # ---
         # This is necessary for Time in place of a NameParser method
-        time_content_single = self.dp.parse_simple(datestring)
+        time_content_single = DateTimeParser.parse_simple(datestring)
         tb.set_time_content_single(time_content_single)
 
         return tb
 
 
-    # Possible primary categories of "artistic" type Works.
+    # Possible primary categories of "artistic" type Works
     work_cats_artistic = [
         "Animation", "Architectural Drawings", "Art Originals",
         "Art Reproductions", "Cartoons", "Drama", "Drawings",
@@ -665,6 +657,9 @@ class Transformer:
 
         # ROLE
         # ---
+        # if the aut has a 856 field I2=[0,1],
+        #   it should instead have a role of "authority instance"
+        #   to allow the generated hdg to be attached
         wb.set_role('authority')
 
         # CLASS
@@ -772,104 +767,6 @@ class Transformer:
         return ob
 
 
-
-    # def transform_holdings(self, record):
-    #     return None
-
-
-    # bring imported methods into class scope
-    # (temporary solution for the sake of organization)
-
-    transform_variants = transform_variants
-    transform_variant_being = transform_variant_being
-    transform_variant_concept = transform_variant_concept
-    transform_variant_event = transform_variant_event
-    transform_variant_language = transform_variant_language
-    transform_variant_organization = transform_variant_organization
-    transform_variant_place = transform_variant_place
-    transform_variant_string = transform_variant_string
-    transform_variant_time = transform_variant_time
-    transform_variant_work_instance = transform_variant_work_instance
-    transform_variant_work_authority = transform_variant_work_authority
-    transform_variant_object = transform_variant_object
-    transform_variant_work_instance_or_object = transform_variant_work_instance_or_object
-
-    transform_notes_aut = transform_notes_aut
-    transform_notes_bib = transform_notes_bib
-
-    transform_relationships_aut = transform_relationships_aut
-    transform_relationships_bib = transform_relationships_bib
-
-    ref_builders = {
-        WORK_INST    : WorkRefBuilder,
-        WORK_AUT     : WorkRefBuilder,
-        BEING        : BeingRefBuilder,
-        CONCEPT      : ConceptRefBuilder,
-        RELATIONSHIP : ConceptRefBuilder,
-        EVENT        : EventRefBuilder,
-        LANGUAGE     : LanguageRefBuilder,
-        OBJECT       : ObjectRefBuilder,
-        ORGANIZATION : OrganizationRefBuilder,
-        PLACE        : PlaceRefBuilder,
-        STRING       : StringRefBuilder
-    }
-
-    def build_simple_ref(self, name, element_type):
-        """
-        Build a ref based on only a single name string and its element type.
-        """
-        rb_class = self.ref_builders.get(element_type)
-        assert rb_class, f"invalid element type: {element_type}"
-        rb = rb_class()
-        rb.set_link(name, self.ix.simple_lookup(name, element_type))
-        rb.add_name(name)
-        return rb.build()
-
-
-    def build_ref_from_field(self, field, element_type):
-        """
-        Build a ref based on a parsable field and its element type.
-        Most useful for generating targets of Relationships.
-        """
-        rb_class = self.ref_builders.get(element_type)
-        name_parser = self.name_parsers.get(element_type)
-        assert rb_class and name_parser, f"invalid element type: {element_type}"
-        rb = rb_class()
-        # names/qualifiers
-        ref_names_and_qualifiers = name_parser(field)
-        for ref_name_or_qualifier in ref_names_and_qualifiers:
-            if isinstance(ref_name_or_qualifier, dict):
-                rb.add_name(**ref_name_or_qualifier)
-            else:
-                rb.add_qualifier(ref_name_or_qualifier)
-        # link attrs
-        if not (field.tag in ('700','710') and element_type == WORK_INST): # ignore author-title field works
-            rb.set_link(*self.get_linking_info(field, element_type))
-        # subdivisions
-        if element_type in (CONCEPT, LANGUAGE) and not field.tag.endswith('80'):
-            # ^vxyz should always be subdivisions in concept/language fields
-            for code, val in field.get_subfields('v','x','y','z', with_codes=True):
-                if code == 'v':
-                    # ^v = CONCEPT (i.e. form)
-                    subdiv_element_type = CONCEPT
-                elif code == 'x':
-                    # ^x = CONCEPT or LANGUAGE
-                    subdiv_element_type = CONCEPT if element_type == CONCEPT else LANGUAGE
-                elif code == 'y':
-                    # ^y = TIME
-                    subdiv_element_type = TIME
-                else:
-                    # ^z = PLACE
-                    subdiv_element_type = PLACE
-                val_href = self.ix.simple_lookup(val, subdiv_element_type)
-                rb.add_subdivision_link(val,
-                                        content_lang = None,
-                                        link_title = val,
-                                        href_URI = val_href,
-                                        substitute = None)
-        return rb.build()
-
-
     def transform_id_alternates(self, record, rb):
         # 010  Library of Congress Control Number (NR)
         for field in record.get_fields('010'):
@@ -921,7 +818,7 @@ class Transformer:
             if field.indicator1 == '7':
                 id_source = field['2'] if '2' in field else 'unknown'
                 if id_source.strip().lower() == 'doi':
-                    id_description = self.build_simple_ref("International DOI Foundation", ORGANIZATION)
+                    id_description = tfcm.build_simple_ref("International DOI Foundation", ORGANIZATION)
                 else:
                     id_description = "Standard identifier; source: " + id_source
             else:
@@ -998,17 +895,17 @@ class Transformer:
                     elif val_lower.startswith("(ocolc)"):
                         id_desc = self.oclc_org_ref
                     elif val_lower.startswith("(pmid)"):
-                        id_desc = self.build_simple_ref("PubMed", WORK_INST)
+                        id_desc = tfcm.build_simple_ref("PubMed", WORK_INST)
                     elif val_lower.startswith("(orcid)"):
-                        id_desc = self.build_simple_ref("ORCID Initiative", ORGANIZATION)
+                        id_desc = tfcm.build_simple_ref("ORCID Initiative", ORGANIZATION)
                     elif val_lower.startswith("(stanf)"):
-                        id_desc = self.build_simple_ref("Stanford University", ORGANIZATION)
+                        id_desc = tfcm.build_simple_ref("Stanford University", ORGANIZATION)
                     elif val_lower.startswith("(ssn)"):
-                        id_desc = self.build_simple_ref("United States Social Security Administration", ORGANIZATION)
+                        id_desc = tfcm.build_simple_ref("United States Social Security Administration", ORGANIZATION)
                     elif val_lower.startswith("(laneconnex)"):
-                        id_desc = self.build_simple_ref("LaneConnex", WORK_INST)
+                        id_desc = tfcm.build_simple_ref("LaneConnex", WORK_INST)
                     elif val_lower.startswith("(bassett)"):
-                        id_desc = self.build_simple_ref("Bassett collection of stereoscopic images of human anatomy", WORK_INST)
+                        id_desc = tfcm.build_simple_ref("Bassett collection of stereoscopic images of human anatomy", WORK_INST)
                     elif val_lower.startswith("(geonameid)"):
                         id_desc = "GeoNames"
                     elif val_lower.startswith("(isni)"):
@@ -1031,6 +928,38 @@ class Transformer:
 
         # 086   Government Document Classification Number (R)
         ...
+
+        # AUT ONLY: 7XX LC/NLM forms
+        if record.get_record_type() == record.AUT:
+            """
+                700  Established Heading Linking Entry, Personal Name (Lane: LC naf equiv) (R)
+                710  Established Heading Linking Entry, Organization Name (Lane: LC naf equiv) (R)
+                711  Established Heading Linking Entry, Event Name (Lane: LC naf equiv) (R)
+                730  Established Heading Linking Entry, Uniform Title (Lane: LC naf equiv) (R)
+                748  Established Heading Linking Entry, Chronological Term (Lane: NLM equiv) (R)
+                750  Established Heading Linking Entry, Topical Term (Lane: LCSH equiv) (R)
+                751  Established Heading Linking Entry, Geographic Name (Lane: LCSH equiv) (R)
+                755  Established Heading Linking Entry, Category Term (Lane: NLM PT equiv) (R)
+                780  Qualifier Heading Linking Entry, General Qualifier (Lane: pending) (R)
+                781  Qualifier Heading Linking Entry, Geographic Qualifier (Lane: pending) (R)
+                782  Qualifier Heading Linking Entry, Textword (Lane: pending. UMLS equiv?) (R)
+                785  Qualifier Heading Linking Entry, Category Qualifier (Lane: pending) (R)
+            """
+            for field in record.get_fields("700","710","711","730","748","750","751","755","780","781","782","785"):
+                if field.indicator2 == '9':
+                    # Lane topical equivalent to category.
+                    # Used on 155 "shadow records" of equivalent 150s for Voyager indexing purposes.
+                    # records with these shouldn't be transformed in the first place.
+                    raise ValueError(f"{record.get_control_number()}: 7XX I2=9: {field}")
+
+                id_description = self.nlm_org_ref if field.tag in ('748','755') or field.indicator2 == '2' else self.lc_org_ref
+                id_value = ' '.join(field.get_subfields('0')).strip() or "notyet"
+
+                field.delete_all_subfields('0')
+
+                rb.set_id_alternate(id_description, id_value, 'valid')
+                rb.add_id_alternate_note(str(field), "documentation")
+                rb.add_id_alternate()
 
         # 902   Expanded ISN Information (Lane) (R)
         for field in record.get_fields('902'):
@@ -1062,183 +991,12 @@ class Transformer:
                                     'cancelled')
 
 
-    def transform_heading_linking_entries(self, record, rb):
-        """
-            700  Established Heading Linking Entry, Personal Name (Lane: LC naf equiv) (R)
-            710  Established Heading Linking Entry, Organization Name (Lane: LC naf equiv) (R)
-            711  Established Heading Linking Entry, Event Name (Lane: LC naf equiv) (R)
-            730  Established Heading Linking Entry, Uniform Title (Lane: LC naf equiv) (R)
-            748  Established Heading Linking Entry, Chronological Term (Lane: NLM equiv) (R)
-            750  Established Heading Linking Entry, Topical Term (Lane: LCSH equiv) (R)
-            751  Established Heading Linking Entry, Geographic Name (Lane: LCSH equiv) (R)
-            755  Established Heading Linking Entry, Category Term (Lane: NLM PT equiv) (R)
-            780  Qualifier Heading Linking Entry, General Qualifier (Lane: pending) (R)
-            781  Qualifier Heading Linking Entry, Geographic Qualifier (Lane: pending) (R)
-            782  Qualifier Heading Linking Entry, Textword (Lane: pending. UMLS equiv?) (R)
-            785  Qualifier Heading Linking Entry, Category Qualifier (Lane: pending) (R)
-        """
-        for field in record.get_fields("700","710","711","730","748","750","751","755","780","781","782","785"):
-            if field.indicator2 == '9':
-                # Lane topical equivalent to category.
-                # Used on 155 "shadow records" of equivalent 150s for Voyager indexing purposes.
-                # records with these shouldn't be transformed in the first place.
-                raise ValueError(f"{record.get_control_number()}: 7XX I2=9: {field}")
-
-            id_description = self.nlm_org_ref if field.tag in ('748','755') or field.indicator2 == '2' else self.lc_org_ref
-            id_value = ' '.join(field.get_subfields('0')).strip() or "notyet"
-
-            field.delete_all_subfields('0')
-
-            rb.set_id_alternate(id_description, id_value, 'valid')
-            rb.add_id_alternate_note(str(field), "documentation")
-            rb.add_id_alternate()
-
-    relator_subf_i_tags = ['246','411']
-    def get_type_and_time_from_relator(self, field):
-        """
-        For 1XX and 4XX fields, the ^e "relator" and its time/duration qualifiers ^8 and ^9
-        aren't describing an actual relationship, but rather a "type" of main or variant entry.
-
-        Returns a Type kwarg dict and a Time/Duration Ref object, for use in a Builder.
-        """
-        type_kwargs = {}
-
-        # Entry Type
-        # Valid variant types include any Equivalence relationship concepts
-        if field.tag in self.relator_subf_i_tags:
-            # exceptions where ^e has other uses
-            entry_type = field['i']
-        else:
-            entry_type = field['e']
-        if entry_type and not entry_type.startswith('Includes'):
-            entry_type = entry_type.rstrip(':').strip()
-            type_kwargs = { 'link_title' : entry_type,
-                            'set_URI'    : self.ix.simple_lookup("Equivalence", CONCEPT),
-                            'href_URI'   : self.ix.simple_lookup(entry_type, RELATIONSHIP) }
-
-        return type_kwargs, self.get_field_chronology(field)
-
-
-    def get_field_chronology(self, field):
-        """
-        Extract chronology of variant type or relation from field (typically subfs 8/9).
-        Returns a Time/Duration Ref object.
-        """
-        type_time_or_duration_ref = None
-
-        # Time or Duration
-        if field.tag not in ['150','180','450','480']:  # exceptions for MeSH style fields
-            if field.tag in ['650','651','655'] and '7' in field:  # ^7 is start time rather than ID
-                start_type_datetime, end_type_datetime = field['7'], field['8'] or field['9']
-            else:
-                start_type_datetime, end_type_datetime = field['8'], field['9']
-            type_datetime = start_type_datetime + end_type_datetime  \
-                            if start_type_datetime and end_type_datetime  \
-                            else end_type_datetime or start_type_datetime
-            if type_datetime:
-                type_time_or_duration_ref = self.dp.parse_as_ref(type_datetime, element_type=None)
-
-        return type_time_or_duration_ref
-
-
-    def get_type_and_time_from_title_field(self, field):
-        """
-        For bib 2XX fields, take into account particular subfields and
-        indicator values to determine the type of title variant.
-
-        Returns a Type kwarg dict and a Time/Duration Ref object, for use in a Builder.
-        """
-        type_kwargs, type_time_or_duration_ref = {}, None
-
-        # Entry Type
-        entry_type = None
-
-        # 246 (or temp 245) ^i
-        if 'i' in field:
-            entry_type = field['i'].strip()
-
-        # if not otherwise specified, use tag/I2
-        if not entry_type:
-            if field.tag == '210':
-                entry_type = "Abbreviated title"
-            elif field.tag == '245':
-                # if 149 #8
-                entry_type = "Transcribed title"
-                # if 149 #9 should be "Descriptive title"
-            elif field.tag == '246':
-                entry_type = {
-                    '0': "Portion of title",
-                    '1': "Parallel title",
-                    '2': "Distinctive title",
-                    '4': "Cover title",
-                    '5': "Added title page title",
-                    '6': "Caption title",
-                    '7': "Running title",
-                    '8': "Spine title"
-                }.get(field.indicator2, "Other title")
-            elif field.tag == '247':
-                entry_type = "Former title"
-            elif field.tag == '249':
-                entry_type = "Added title for website"
-
-        type_kwargs = { 'link_title' : entry_type,
-                        'set_URI'    : self.ix.simple_lookup("Equivalence", CONCEPT),
-                        'href_URI'   : self.ix.simple_lookup(entry_type, RELATIONSHIP)
-                      } if entry_type else {}
-
-        # Time or Duration
-        if field.tag in ('246','247'):
-            for code, val in field.get_subfields('f','g', with_codes=True):
-                # only use this if solely parsable as Time/Duration.
-                # otherwise treat as Variant Note
-                parsed = self.np.parse_generic_qualifier(val, field['3'], field['4'])
-                if isinstance(parsed, pyxobis.classes.TimeRef) or isinstance(parsed, pyxobis.classes.DurationRef):
-                    type_time_or_duration_ref = parsed
-                    field.delete_subfield(code, val)
-
-        return type_kwargs, type_time_or_duration_ref
-
-
-    def extract_included_relation(self, field):
-        """
-        Input: PyMARC Field
-        Output: 1) Changed (if applicable) Field object
-                2) String value for "included" attribute for use in a VariantBuilder
-        """
-        subf_code = 'i' if field.tag in self.relator_subf_i_tags else 'e'
-        for val in field.get_subfields(subf_code):
-            if re.match(r"Includes broader", val, flags=re.I):
-                field.delete_subfield(subf_code, val)
-                return field, 'broader'
-            elif re.match(r"Includes related", val, flags=re.I):
-                field.delete_subfield(subf_code, val)
-                return field, 'related'
-            elif re.match(r"Includes[ :]*$", val, flags=re.I):
-                field.delete_subfield(subf_code, val)
-                return field, 'narrower'
-        return field, None
-
-
-    def extract_enumeration(self, field):
-        """
-        Returns a StringRef representing an enumeration
-        to pass into a RelationshipBuilder, or None.
-        """
-        enum = None
-        if '1' in field:
-            enum = str(int(''.join(d for d in field['1'] if d.isdigit())))
-        elif field.tag in ('551','651') and '6' in field:
-            enum = str(int(''.join(d for d in field['6'] if d.isdigit())))
-        elif field.tag in ('100','110','111'):
-            enum = '1'
-        return self.build_simple_ref(enum, STRING) if enum else None
-
-
     def __get_entry_group_id(self, field):
         if field.tag.endswith('50') or field.tag.endswith('80'):
             return field['3'] or field['7']
         else:
             return field['6'] or field['7']
+
 
     def __preprocess_sumptions(self, record):
         """
@@ -1258,6 +1016,7 @@ class Transformer:
                     field.add_subfield('e',sumptions_map[group_id])
         return record
 
+
     def __reconstruct_149_subf_1(self, record):
         """
         149 ^1 generated by RIM strips ending whitespace.
@@ -1268,6 +1027,7 @@ class Transformer:
                    f"{record.get_control_number()}: invalid 245 I2"
             record['149']['1'] = record['245']['a'][:int(record['245'].indicator2)]
         return record
+
 
     def __preprocess_041(self, record):
         """
@@ -1300,6 +1060,7 @@ class Transformer:
             print(record)
         return record
 
+
     def __preprocess_043(self, record):
         """
         Only use 043 geocode as variant on auts if exactly one.
@@ -1311,6 +1072,7 @@ class Transformer:
             record.remove_fields('043')
         return record
 
+
     def __translated_title_730_to_246(self, record):
         """
         Convert 730 variant (translated) titles to 246, for ease of processing.
@@ -1321,6 +1083,7 @@ class Transformer:
                 field.delete_all_subfields('l')
                 record.add_field(Field('246','  ',['i',"Translated title"] + field.subfields.copy()))
         return record
+
 
     def __preprocess_68X(self, record):
         """
@@ -1383,16 +1146,17 @@ class Transformer:
 
             org_rel_field = Field('610','24', ['e', relator] + org_rel_subfields)
 
-            lookup_result = self.ix.lookup(org_rel_field, ORGANIZATION)
+            lookup_result = Indexer.lookup(org_rel_field, ORGANIZATION)
             # print(f"{record.get_control_number()}\t{field}\t{org_rel_field}\t{lookup_result}",end='\t')
 
-            if lookup_result not in (self.ix.CONFLICT, self.ix.UNVERIFIED):
-                # print(''.join([val if i%2 else '$'+val for i, val in enumerate(self.ix.reverse_lookup(lookup_result))]))
+            if lookup_result not in (Indexer.CONFLICT, Indexer.UNVERIFIED):
+                # print(''.join([val if i%2 else '$'+val for i, val in enumerate(Indexer.reverse_lookup(lookup_result))]))
                 record.remove_field(field)
                 record.add_field(org_rel_field)
             # print()
 
         return record
+
 
     def __preprocess_785(self, record):
         """
@@ -1404,6 +1168,7 @@ class Transformer:
         if merged_with_entries:
             merged_with_entries[-1].indicator2 = '0'
         return record
+
 
     def __preprocess_880(self, record):
         """
@@ -1438,19 +1203,13 @@ class Transformer:
                 record.remove_field(field)
                 record.add_field(Field('246', field.indicators, new_subfields))
 
-            # ^6 130, 630, 730, 740, 830 --> note on relationship; deal with this during bib rel tf for those fields
+            # ^6 130, 630, 730, 740, 830 --> note on relationship; deal with this during bib rel transform for those fields
             # but print a warning here if there are multiple candidates
             if linked_field_tag in ('130','630','730','740','830') and len(record.get_fields(linked_field_tag)) > 1:
                 print(f"WARNING: {record.get_control_number()}: multiple candidates for 880 with linked tag {linked_field_tag}")
 
         return record
 
-    def add_linked_880s_as_notes(self, record, tag, rb):
-        # ^6 130, 630, 730, 740, 830 --> note on relationship
-        for field_880 in record.get_fields('880'):
-            if '6' in field_880 and field_880['6'][:3] == tag:
-                rb.add_note(concat_subfs(field_880),
-                            role = "transcription")
 
     def __preprocess_904(self, record):
         # convert 904 Title Sort/Shelving Version (Normalized) to equivalent 246 field
@@ -1462,6 +1221,7 @@ class Transformer:
                 if code == 'x':
                     new_subfields += ['@',"Exception to algorithm"]
                 record.add_field(Field('246','  ',new_subfields))
+
 
     def __preprocess_94X(self, record):
         # convert all 94X to equivalent Relationship field
@@ -1566,6 +1326,7 @@ class Transformer:
 
         return record
 
+
     def __get_relator_for_bib_943(self, record):
         """
         Default relator for (most types of) bib 943 date(s), based on fixed-field material type
@@ -1579,6 +1340,7 @@ class Transformer:
             else:
                 return "Printed"
         return "Produced"
+
 
     def __handle_943_insert_as_650(self, record, relator):
         """
@@ -1600,253 +1362,152 @@ class Transformer:
         record.add_field(Field('650','25',new_subfields))
 
 
-    # def __preprocess_w_only_linking_fields(self, record):
+    # language_name_to_rfc_3066_map = {
+    #     "Afrikaans": 'af',
+    #     "Albanian": 'sq',
+    #     "Amharic": 'am',
+    #     "Arabic": 'ar',
+    #     "Aramaic": 'arc',
+    #     "Armenian": 'hy',
+    #     "Azerbaijani": 'az',
+    #     "Baluchi": 'bal',
+    #     "Bashkir": 'ba',
+    #     "Basque": 'eu',
+    #     "Batak": 'btk',
+    #     "Bengali": 'bn',
+    #     "Bilingual": 'mul',
+    #     "Bosnian": 'bs',
+    #     "British English": 'en-GB',
+    #     "Bulgarian": 'bg',
+    #     "Burmese": 'my',
+    #     "Byelorussian": 'be',
+    #     "Catalan": 'ca',
+    #     "Central American Indian (Other)": 'cai',
+    #     "Chinese": 'zh',
+    #     "Coptic": 'cop',
+    #     "Croatian": 'hr',
+    #     "Czech": 'cs',
+    #     "Danish": 'da',
+    #     "Delaware (Language)": 'del',
+    #     "Dravidian": 'dra',
+    #     "Dutch": 'nl',
+    #     "Dutch, Middle": 'dum',
+    #     "Egyptian": 'egy',
+    #     "English": 'en',
+    #     "English, Middle (ca. 1100-1500)": 'enm',
+    #     "English, Old (ca. 450-1100)": 'ang',
+    #     "Eskimo-Aleut": 'esx',    # ISO 639-5 macro code, technically invalid under RFC
+    #     "Esperanto": 'eo',
+    #     "Estonian": 'et',
+    #     "Ethiopic": 'gez',
+    #     "Faroese": 'fo',
+    #     "Finnish": 'fi',
+    #     "French": 'fr',
+    #     "French, Middle": 'frm',
+    #     "French, Old": 'fro',
+    #     "Frisian": 'fy',
+    #     "Gaelic (Scots)": 'gd',
+    #     "Gallegan": 'gl',
+    #     "Georgian": 'ka',
+    #     "German": 'de',
+    #     "German, Middle High (ca. 1050-1500)": 'gmh',
+    #     "Greek, Ancient": 'grc',
+    #     "Greek, Modern": 'el',
+    #     "Gujarati": 'gu',
+    #     "Haitian French Creole": 'ht',
+    #     "Hausa": 'ha',
+    #     "Hawaiian": 'haw',
+    #     "Hebrew": 'he',
+    #     "Hindi": 'hi',
+    #     "Hungarian": 'hu',
+    #     "Icelandic": 'is',
+    #     "Igbo": 'ig',
+    #     "Indonesian": 'id',
+    #     "Interlingua": 'ia',
+    #     "Irish": 'ga',
+    #     "Italian": 'it',
+    #     "Japanese": 'ja',
+    #     "Javanese": 'jv',
+    #     "Kazakh": 'kk',
+    #     "Khmer": 'km',
+    #     "Korean": 'ko',
+    #     "Kurdish": 'ku',
+    #     "Langue d'oc": 'oc',
+    #     "Lao": 'lo',
+    #     "Latin": 'la',
+    #     "Latvian": 'lv',
+    #     "Lithuanian": 'lt',
+    #     "Luxembourgish": 'lb',
+    #     "Macedonian": 'mk',
+    #     "Malagasy": 'mg',
+    #     "Malay": 'ms',
+    #     "Malayalam": 'ml',
+    #     "Maltese": 'mt',
+    #     "Maori": 'mi',
+    #     "Marathi": 'mr',
+    #     "Masai": 'mas',
+    #     "Mixed": 'mul',
+    #     "Moldavian": 'ro-MD',
+    #     "Mongolian": 'mn',
+    #     "Multilingual": 'mul',
+    #     "Nahuatl": 'nah',
+    #     "Ndebele (Zimbabwe)": 'nd',
+    #     "Nepali": 'ne',
+    #     "No Linguistic Content": 'zxx',
+    #     "North American Indian (Other)": 'nai',
+    #     "Norwegian": 'nb',    # assumes bokmål
+    #     "Oirat": 'xal',
+    #     "Pali": 'pi',
+    #     "Panjabi": 'pa',
+    #     "Persian": 'fa',
+    #     "Persian, Middle": 'pal',
+    #     "Persian, Old": 'peo',
+    #     "Polish": 'pl',
+    #     "Portuguese": 'pt',
+    #     "Provençal": 'pro',
+    #     "Pushto": 'ps',
+    #     "Raeto-Romance": 'rm',
+    #     "Romanian": 'ro',
+    #     "Russian": 'ru',
+    #     "Sanskrit": 'sa',
+    #     "Serbian": 'sr',
+    #     "Shona": 'sn',
+    #     "Singhalese": 'si',
+    #     "Slavic (Other)": 'sla',
+    #     "Slovak": 'sk',
+    #     "Slovenian": 'sl',
+    #     "Somali": 'so',
+    #     "Spanish": 'es',
+    #     "Sundanese": 'su',
+    #     "Swahili": 'sw',
+    #     "Swedish": 'sv',
+    #     "Syriac": 'syr',
+    #     "Tagalog": 'tl',
+    #     "Tajik": 'tg',
+    #     "Tamil": 'ta',
+    #     "Tatar": 'tt',
+    #     "Telugu": 'te',
+    #     "Thai": 'th',
+    #     "Tibetan": 'bo',
+    #     "Tswana": 'tn',
+    #     "Turkish": 'tr',
+    #     "Turkish, Ottoman": 'ota',
+    #     "Uighur": 'ug',
+    #     "Ukrainian": 'uk',
+    #     "Undetermined": 'und',
+    #     "Urdu": 'ur',
+    #     "Uzbek": 'uz',
+    #     "Vietnamese": 'vi',
+    #     "Welsh": 'cy',
+    #     "Xhosa": 'xh',
+    #     "Yiddish": 'yi',
+    #     "Yoruba": 'yo',
+    #     "Zulu": 'zu'
+    # }
+    # def language_name_to_rfc_3066(self, language_name):
     #     """
-    #     If a 7XX linking field links only a control number,
-    #     pull title info into the field itself.
+    #     Convert Lane catalog Language heading to code specified by RFC 3066
+    #     (ISO 639-1 two-letter code where exists, else 639-2/T three-letter,
+    #     ISO 3166 alpha-2 country code as subtag where applicable)
     #     """
-    #     for field in record.get_fields():
-    #         if field.tag.startswith('7'):
-    #             if len(field.subfields) == 2 and 'w' in field:
-    #                 linking_ctrlno = "(CStL)" + field['w'].rstrip('. ')
-    #                 linking_work_subfields = self.ix.reverse_lookup(linking_ctrlno)
-    #                 if not linking_work_subfields:
-    #                     # add dummy title
-    #                     field.subfields.extend(['t', "Unknown title"])
-    #                 else:
-    #                     # convert subfield codes
-    #                     # linking_work_subfields = []
-    #                     print(record['001'].data, linking_ctrlno, linking_work_subfields)
-    #                 ...
-    #     return record
-
-    def get_relation_type(self, rel_name):
-        rel_types = self.ix.lookup_rel_types(rel_name)
-        if len(rel_types) == 1:
-            return rel_types.pop().lower()
-        return None
-
-    def get_linking_entry_field_default_relator(self, field):
-        if field.tag in ('780','785'):
-            return {'780': {'0': "Continues",
-                            '1': "Continues in part",
-                            '2': "Supersedes",
-                            '3': "Supersedes in part",
-                            '4': "Merger of",
-                            '5': "Absorbed",
-                            '6': "Absorbed in part",
-                            '7': "Separated from"},
-                    '785': {'0': "Continued by",
-                            '1': "Offshoot",
-                            '2': "Superseded by",
-                            '3': "Superseded in part by",
-                            '4': "Absorbed by",
-                            '5': "Absorbed in part by",
-                            '6': "Split into",
-                            '7': "Merged with", # @@@@@@!!!!!
-                            '8': "Continued by"}}.get(field.tag).get(field.indicator2, "Related title")
-        return {'760': "Main series",
-                '762': "Subseries",
-                '765': "Translation of",
-                '767': "Translated as",
-                '770': "Supplement",
-                '772': "Supplement to",
-                '773': "Component of",
-                '775': "Related edition",
-                '776': "Also issued as",
-                '777': "Issued with",
-                '787': "Related title",
-                '789': "Related title"}.get(field.tag)
-
-    link_field_w = ('130','510','530','730','760','762','765','767',
-        '770','772','773','775','776','777','780','785','787','789','830')
-    link_field_0 = ('100','110','111','500','510','511','550','551',
-        '555','580','582','600','610','611','650','651','653','655',
-        '700','710','711','748','750','751','987')
-    def get_linking_info(self, field, element_type):
-        """
-        Return a string representation of the authorized heading of the record
-        the given field refers to, and the record's control number,
-        if there is such a record (if not, generate a representation from the field).
-        """
-        ctrlno, id_subfs = None, None
-        # first try looking up the control number given
-        if field.tag in self.link_field_w:
-            if 'w' in field:
-                ctrlno = field['w']
-                if not ctrlno.startswith('('):
-                    ctrlno = "(CStL)" + ctrlno
-                id_subfs = self.ix.reverse_lookup(ctrlno)
-            elif '0' in field:
-                ctrlno = field['0']
-                if field.tag in self.link_field_0 and not ctrlno.startswith('('):
-                    ctrlno = "(CStL)" + ctrlno
-                id_subfs = self.ix.reverse_lookup(ctrlno)
-        elif field.tag in self.link_field_0 and '0' in field:
-            ctrlno = field['0']
-            if not ctrlno.startswith('('):
-                ctrlno = "(CStL)" + ctrlno
-            id_subfs = self.ix.reverse_lookup(ctrlno)
-        # if that's invalid, look it up based on the field and try again
-        if ctrlno is None or id_subfs is None:
-            ctrlno = ctrlno or self.ix.lookup(field, element_type)
-            id_subfs = self.ix.reverse_lookup(ctrlno)
-        # if still invalid, generate "heading" based on this field
-        if ctrlno in (Indexer.UNVERIFIED, Indexer.CONFLICT) or id_subfs is None:
-            id_from_field = LaneMARCRecord.get_identity_from_field(field, element_type, normalized=False)
-            assert id_from_field, f"ID generation failed for field: {field}"
-            id_subfs = id_from_field.split(LaneMARCRecord.UNNORMALIZED_SEP)
-        # @@@ this part could be altered to use e.g. ISBD punctuation?
-        id_repr = ' '.join(filter(None, id_subfs[1::2]))
-        return id_repr, ctrlno
-
-
-    language_name_to_rfc_3066_map = {
-        "Afrikaans": 'af',
-        "Albanian": 'sq',
-        "Amharic": 'am',
-        "Arabic": 'ar',
-        "Aramaic": 'arc',
-        "Armenian": 'hy',
-        "Azerbaijani": 'az',
-        "Baluchi": 'bal',
-        "Bashkir": 'ba',
-        "Basque": 'eu',
-        "Batak": 'btk',
-        "Bengali": 'bn',
-        "Bilingual": 'mul',
-        "Bosnian": 'bs',
-        "British English": 'en-GB',
-        "Bulgarian": 'bg',
-        "Burmese": 'my',
-        "Byelorussian": 'be',
-        "Catalan": 'ca',
-        "Central American Indian (Other)": 'cai',
-        "Chinese": 'zh',
-        "Coptic": 'cop',
-        "Croatian": 'hr',
-        "Czech": 'cs',
-        "Danish": 'da',
-        "Delaware (Language)": 'del',
-        "Dravidian": 'dra',
-        "Dutch": 'nl',
-        "Dutch, Middle": 'dum',
-        "Egyptian": 'egy',
-        "English": 'en',
-        "English, Middle (ca. 1100-1500)": 'enm',
-        "English, Old (ca. 450-1100)": 'ang',
-        "Eskimo-Aleut": 'esx',    # ISO 639-5 macro code, technically invalid under RFC
-        "Esperanto": 'eo',
-        "Estonian": 'et',
-        "Ethiopic": 'gez',
-        "Faroese": 'fo',
-        "Finnish": 'fi',
-        "French": 'fr',
-        "French, Middle": 'frm',
-        "French, Old": 'fro',
-        "Frisian": 'fy',
-        "Gaelic (Scots)": 'gd',
-        "Gallegan": 'gl',
-        "Georgian": 'ka',
-        "German": 'de',
-        "German, Middle High (ca. 1050-1500)": 'gmh',
-        "Greek, Ancient": 'grc',
-        "Greek, Modern": 'el',
-        "Gujarati": 'gu',
-        "Haitian French Creole": 'ht',
-        "Hausa": 'ha',
-        "Hawaiian": 'haw',
-        "Hebrew": 'he',
-        "Hindi": 'hi',
-        "Hungarian": 'hu',
-        "Icelandic": 'is',
-        "Igbo": 'ig',
-        "Indonesian": 'id',
-        "Interlingua": 'ia',
-        "Irish": 'ga',
-        "Italian": 'it',
-        "Japanese": 'ja',
-        "Javanese": 'jv',
-        "Kazakh": 'kk',
-        "Khmer": 'km',
-        "Korean": 'ko',
-        "Kurdish": 'ku',
-        "Langue d'oc": 'oc',
-        "Lao": 'lo',
-        "Latin": 'la',
-        "Latvian": 'lv',
-        "Lithuanian": 'lt',
-        "Luxembourgish": 'lb',
-        "Macedonian": 'mk',
-        "Malagasy": 'mg',
-        "Malay": 'ms',
-        "Malayalam": 'ml',
-        "Maltese": 'mt',
-        "Maori": 'mi',
-        "Marathi": 'mr',
-        "Masai": 'mas',
-        "Mixed": 'mul',
-        "Moldavian": 'ro-MD',
-        "Mongolian": 'mn',
-        "Multilingual": 'mul',
-        "Nahuatl": 'nah',
-        "Ndebele (Zimbabwe)": 'nd',
-        "Nepali": 'ne',
-        "No Linguistic Content": 'zxx',
-        "North American Indian (Other)": 'nai',
-        "Norwegian": 'nb',    # assumes bokmål
-        "Oirat": 'xal',
-        "Pali": 'pi',
-        "Panjabi": 'pa',
-        "Persian": 'fa',
-        "Persian, Middle": 'pal',
-        "Persian, Old": 'peo',
-        "Polish": 'pl',
-        "Portuguese": 'pt',
-        "Provençal": 'pro',
-        "Pushto": 'ps',
-        "Raeto-Romance": 'rm',
-        "Romanian": 'ro',
-        "Russian": 'ru',
-        "Sanskrit": 'sa',
-        "Serbian": 'sr',
-        "Shona": 'sn',
-        "Singhalese": 'si',
-        "Slavic (Other)": 'sla',
-        "Slovak": 'sk',
-        "Slovenian": 'sl',
-        "Somali": 'so',
-        "Spanish": 'es',
-        "Sundanese": 'su',
-        "Swahili": 'sw',
-        "Swedish": 'sv',
-        "Syriac": 'syr',
-        "Tagalog": 'tl',
-        "Tajik": 'tg',
-        "Tamil": 'ta',
-        "Tatar": 'tt',
-        "Telugu": 'te',
-        "Thai": 'th',
-        "Tibetan": 'bo',
-        "Tswana": 'tn',
-        "Turkish": 'tr',
-        "Turkish, Ottoman": 'ota',
-        "Uighur": 'ug',
-        "Ukrainian": 'uk',
-        "Undetermined": 'und',
-        "Urdu": 'ur',
-        "Uzbek": 'uz',
-        "Vietnamese": 'vi',
-        "Welsh": 'cy',
-        "Xhosa": 'xh',
-        "Yiddish": 'yi',
-        "Yoruba": 'yo',
-        "Zulu": 'zu'
-    }
-    def language_name_to_rfc_3066(self, language_name):
-        """
-        Convert Lane catalog Language heading to code specified by RFC 3066
-        (ISO 639-1 two-letter code where exists, else 639-2/T three-letter,
-        ISO 3166 alpha-2 country code as subtag where applicable)
-        """
-        return self.language_name_to_rfc_3066_map.get(language_name)
+    #     return self.language_name_to_rfc_3066_map.get(language_name)
