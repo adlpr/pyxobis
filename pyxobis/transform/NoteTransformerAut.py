@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from .tf_constants import *
 from . import tf_common_methods as tfcm
+from .tf_constants import *
 
 from .Indexer import Indexer
 

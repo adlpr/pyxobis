@@ -153,6 +153,8 @@ class RecordTransformer:
         self.__preprocess_785(record)
         # Juggle 880s based on linked field.
         self.__preprocess_880(record)
+        # Try to match up series fields
+        self.__resolve_490_830_901(record)
         # Treat 904 as 246
         self.__preprocess_904(record)
         # 94Xs need to take into account certain fixed-field bytes.
@@ -1073,7 +1075,8 @@ class RecordTransformer:
         return record
 
 
-    def __translated_title_730_to_246(self, record):
+    @staticmethod
+    def __translated_title_730_to_246(record):
         """
         Convert 730 variant (translated) titles to 246, for ease of processing.
         """
@@ -1085,7 +1088,8 @@ class RecordTransformer:
         return record
 
 
-    def __preprocess_68X(self, record):
+    @staticmethod
+    def __preprocess_68X(record):
         """
         Split any compound 683/684/685 into separate fields,
         then convert any with linkable ^a to 610 for mapping to Relationships.
@@ -1158,7 +1162,8 @@ class RecordTransformer:
         return record
 
 
-    def __preprocess_785(self, record):
+    @staticmethod
+    def __preprocess_785(record):
         """
         Relator on 785 #7 depends on position in record.
         Temporarily switch the indicator of the last one to 0,
@@ -1170,7 +1175,8 @@ class RecordTransformer:
         return record
 
 
-    def __preprocess_880(self, record):
+    @staticmethod
+    def __preprocess_880(record):
         """
         Change tags of certain bib 880s based on linked field.
         """
@@ -1211,7 +1217,67 @@ class RecordTransformer:
         return record
 
 
-    def __preprocess_904(self, record):
+    def __resolve_490_830_901(self, record):
+        # first, take every traced 490 with just one ^a/^v,
+        fields_490 = [field  if field.indicator1 == '1' and len(field.get_subfields('a')) <= 1 and len(field.get_subfields('v')) <= 1]
+        for field in record.get_fields('490'):
+
+        #   every nonlocal 830,
+        fields_830 = [field for field in record.get_fields('830') if field.indicator1 != '9']
+        #   and every 901
+        fields_901 = record.get_fields('901')
+        # if there's only one valid 830, the 490s and/or 901s should all match it
+        if len(fields_830) == 1:
+            for field_490 in fields_490:
+                self.__make_490_into_note_on_830(fields_830[0], field_490)
+                record.remove_field(field_490)
+            for field_901 in fields_901:
+                self.__split_830_based_on_901(record, fields_830[0], field_490)
+        else:
+            # otherwise, try to align them.
+            # first the 490s;
+            # create map for 490 matching
+            field_490_to_830 = {}
+            for field_830 in fields_830:
+                field_830_normalized_for_490 = re.sub(r'[\s;,.]+$', '', ' '.join(field_830.get_subfields('a','n','p'))).strip().lower()
+                if field_830_normalized_for_490 not in field_490_to_830:
+                    field_490_to_830[field_830_normalized_for_490] = []
+                field_490_to_830[field_830_normalized_for_490].append(field_830)
+            for field_490 in fields_490:
+                # normalization: try to get rid of dates in front of 490,
+                #   and strip punctuation after
+                series_statement_normalized = re.sub(r'(^[^:]+:\s+|[\s;,.]+$)', '', field_490['a']).strip().lower()
+                # print(f'{field_490}\n{series_statement_normalized}\n')
+                # now try to match to a SINGLE 830 ^anp
+                field_490_to_830_matches = field_490_to_830.get(series_statement_normalized, [])
+                if len(field_490_to_830_matches) == 1:
+                    # single match found, attach 490 as note and remove 490 from record
+                    self.__make_490_into_note_on_830(fields_830[0], field_490)
+                    record.remove_field(field_490)
+                else:
+                    # if no match to a single 830, turn the 490 into a record-level note, as if it were I1==0
+                    field_490.indicator1 = '0'
+            # then the 901s
+            for field_901 in fields_901:
+                # take every 901 ^anp to a SINGLE 830 ^aqnp [830 a+q is 901 a]
+                #   if they do match, insert as expansion of that 830.
+                #   if they don't match, treat as 490 0_; record level notes.
+                ...
+                ...
+                ...
+
+    @staticmethod
+    def __make_490_into_note_on_830(field_830, field_490):
+        # attach 490 as note (ad hoc subf @) on 830
+        field_830.add_subfield('@', tfcm.concat_subfs(field_490, with_codes=False))
+
+    @staticmethod
+    def __split_830_based_on_901(record, field_830, field_901):
+        ...
+
+
+    @staticmethod
+    def __preprocess_904(record):
         # convert 904 Title Sort/Shelving Version (Normalized) to equivalent 246 field
         for field in record.get_fields('904'):
             assert 'a' in field or 'x' in field, f"{record.get_control_number()}: 904 with no $a or $x: {field}"
@@ -1327,7 +1393,8 @@ class RecordTransformer:
         return record
 
 
-    def __get_relator_for_bib_943(self, record):
+    @staticmethod
+    def __get_relator_for_bib_943(record):
         """
         Default relator for (most types of) bib 943 date(s), based on fixed-field material type
         """
@@ -1342,7 +1409,8 @@ class RecordTransformer:
         return "Produced"
 
 
-    def __handle_943_insert_as_650(self, record, relator):
+    @staticmethod
+    def __handle_943_insert_as_650(record, relator):
         """
         Combine all 943 subfields into single 650 25 with single date ($a) or range ($a+$x)
         ("Unknown" if no 943 $a, empty string if no 943 $b)

@@ -183,6 +183,18 @@ class NoteTransformerBib:
                                'role' : 'annotation',
                                'type_link_title' : 'Description (Serial Enumeration/Chronology, Formatted) Note' if field.indicator1 == '0' else 'Description (Serial Enumeration/Chronology, Unformatted) Note' })
 
+        # Series Statement (Descriptive) (R)
+        for field in record.get_fields('490'):
+
+            # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            if field.indicator1!='0':
+                print(f"WARNING: {record.get_control_number()}: unmatched series note: {field}")
+            # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+            notes.append({ 'content_text' : tfcm.concat_subfs(field, with_codes=False),
+                           'role' : 'transcription',
+                           'type_link_title' : 'Series Note' })
+
         # General Note (R)
         for field in record.get_fields('500'):
             for val in field.get_subfields('a'):

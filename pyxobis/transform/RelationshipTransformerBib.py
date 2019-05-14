@@ -105,7 +105,6 @@ class RelationshipTransformerBib:
                 # Notes
                 for code, val in field.get_subfields('u','v','z', with_codes=True):
                     rb.add_note(val,
-                                content_lang = None,
                                 role = "transcription")
 
                 relationships.append(rb.build())
@@ -136,7 +135,6 @@ class RelationshipTransformerBib:
                 # Notes
                 for code, val in field.get_subfields('j','u','v','z', with_codes=True):
                     rb.add_note(val,
-                                content_lang = None,
                                 role = "transcription" if code != 'j' else "annotation")
 
                 relationships.append(rb.build())
@@ -255,10 +253,6 @@ class RelationshipTransformerBib:
 
             relationships.append(rb.build())
 
-        ...
-        ...
-        ...
-
         # Citation/References Note (R)
         for field in record.get_fields('510'):
             if 'w' not in field:
@@ -297,10 +291,6 @@ class RelationshipTransformerBib:
             relationships.append(rb.build())
 
 
-        ...
-        ...
-        ...
-
         # Personal Name as Subject (R)
         for field in record.get_fields('600'):
             # Relationship Name(s)
@@ -325,7 +315,6 @@ class RelationshipTransformerBib:
                 # Notes:
                 for val in field.get_subfields('j'):
                     rb.add_note(val,
-                                content_lang = None,
                                 role = "annotation")
 
                 relationships.append(rb.build())
@@ -354,7 +343,6 @@ class RelationshipTransformerBib:
                 # Notes:
                 for val in field.get_subfields('j'):
                     rb.add_note(val,
-                                content_lang = None,
                                 role = "annotation")
 
                 relationships.append(rb.build())
@@ -475,7 +463,6 @@ class RelationshipTransformerBib:
                 # Notes:
                 for val in field.get_subfields('j'):
                     rb.add_note(val,
-                                content_lang = None,
                                 role = "annotation")
 
                 relationships.append(rb.build())
@@ -499,7 +486,6 @@ class RelationshipTransformerBib:
                 # Notes:
                 for val in field.get_subfields('c'):
                     rb.add_note(val,
-                                content_lang = None,
                                 role = "documentation")
 
                 # Target(s)
@@ -589,7 +575,6 @@ class RelationshipTransformerBib:
                 # Notes
                 for code, val in field.get_subfields('u','v','z', with_codes=True):
                     rb.add_note(val,
-                                content_lang = None,
                                 role = "transcription")
 
                 if 't' in field:
@@ -629,6 +614,13 @@ class RelationshipTransformerBib:
             # Notes
             # linked alternate script field(s)
             self.__add_linked_880s_as_notes(record, field.tag, rb)
+            # ad hoc subfields for series notes
+            for val in field.get_subfields('@'):
+                rb.add_note(val,
+                            role = "transcription",
+                            type_link_title = "Series Note",
+                            type_href_URI = Indexer.simple_lookup("Series Note", CONCEPT),
+                            type_set_URI = Indexer.simple_lookup("Note Types", CONCEPT))
 
             rb.set_target(self.build_ref_from_field(field, WORK_AUT if field.tag == '730' else WORK_INST))
 
@@ -737,18 +729,13 @@ class RelationshipTransformerBib:
                     note_type = { 'p': 'Abbreviated title',
                                   's': 'Uniform title' }.get(code, None)
                     rb.add_note(val,
-                                content_lang = None,
                                 role = "documentation" if code == 'n' and field.indicator1 != '0' else "annotation",
                                 type_link_title = note_type,
-                                type_href_URI = Indexer.simple_lookup(note_type, RELATIONSHIP) if note_type else None,
+                                type_href_URI = Indexer.simple_lookup(note_type, CONCEPT) if note_type else None,
                                 type_set_URI = Indexer.simple_lookup("Note Types", CONCEPT) if note_type else None)  # what should this set be??
 
                 relationships.append(rb.build())
 
-        #
-        ...
-        ...
-        ...
 
         return relationships
 
@@ -778,7 +765,6 @@ class RelationshipTransformerBib:
     #                     # convert subfield codes
     #                     # linking_work_subfields = []
     #                     print(record['001'].data, linking_ctrlno, linking_work_subfields)
-    #                 ...
     #     return record
 
 
