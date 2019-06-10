@@ -174,7 +174,7 @@ class Indexer:
                     # if relationship, add to rel type index
                     if record.get_broad_category() == 'Relationships':
                         rel_types = sorted(list(all_rel_types & set(record.get_all_categories())))
-                        rel_name = record['155']['a']
+                        rel_name = record['155']['a'].rstrip(': ')
                         index_rel_type[rel_name] = rel_types
 
                     # main indices

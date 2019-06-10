@@ -384,13 +384,14 @@ class RecordTransformer:
     event_type_map = {
         'miscellaneous' : ["Censuses", "Exhibitions", "Exhibits", "Experiments",
             "Special Events", "Trials", "Workshops"],
-        'natural' : ["Cyclonic Storms", "Earthquakes", "Fires", "Floods", "Tsunamis"],
         'meeting' : ["Congresses", "Legislative Sessions"],
         'journey' : ["Expeditions", "Medical Missions, Official"],
+        # Riots are occurrences even if they contain Fires (see Z58192 Tulsa Race Riot)
         'occurrence' : ["Armed Conflicts", "Biohazard Release",
             "Chemical Hazard Release", "Civil Disorders", "Disasters",
             "Disease Outbreaks", "Explosions", "Mass Casualty Incidents",
-            "Radioactive Hazard Release", "Riots"]
+            "Radioactive Hazard Release", "Riots"],
+        'natural' : ["Cyclonic Storms", "Earthquakes", "Fires", "Floods", "Tsunamis"]
     }
 
     def init_event_builder(self, record):
@@ -1218,63 +1219,105 @@ class RecordTransformer:
 
 
     def __resolve_490_830_901(self, record):
-        # first, take every traced 490 with just one ^a/^v,
-        fields_490 = [field  if field.indicator1 == '1' and len(field.get_subfields('a')) <= 1 and len(field.get_subfields('v')) <= 1]
-        for field in record.get_fields('490'):
-
+        # first, take every traced 490,
+        fields_490 = [field for field in record.get_fields('490') if field.indicator1 == '1']
         #   every nonlocal 830,
         fields_830 = [field for field in record.get_fields('830') if field.indicator1 != '9']
         #   and every 901
         fields_901 = record.get_fields('901')
-        # if there's only one valid 830, the 490s and/or 901s should all match it
+        # if there's only one relevant 830, the 490s and/or 901s should all match it
         if len(fields_830) == 1:
             for field_490 in fields_490:
                 self.__make_490_into_note_on_830(fields_830[0], field_490)
                 record.remove_field(field_490)
             for field_901 in fields_901:
-                self.__split_830_based_on_901(record, fields_830[0], field_490)
+                self.__split_830_over_901(record, fields_830[0], field_901)
         else:
             # otherwise, try to align them.
-            # first the 490s;
-            # create map for 490 matching
+            # 490s:
+            #   create map for 490 matching
             field_490_to_830 = {}
             for field_830 in fields_830:
                 field_830_normalized_for_490 = re.sub(r'[\s;,.]+$', '', ' '.join(field_830.get_subfields('a','n','p'))).strip().lower()
                 if field_830_normalized_for_490 not in field_490_to_830:
                     field_490_to_830[field_830_normalized_for_490] = []
                 field_490_to_830[field_830_normalized_for_490].append(field_830)
+
             for field_490 in fields_490:
-                # normalization: try to get rid of dates in front of 490,
-                #   and strip punctuation after
+                # normalization: strip dates in front and punctuation at end of 490 ^a
+                #   (first ^a only, may not work well for multiple ^a)
                 series_statement_normalized = re.sub(r'(^[^:]+:\s+|[\s;,.]+$)', '', field_490['a']).strip().lower()
-                # print(f'{field_490}\n{series_statement_normalized}\n')
                 # now try to match to a SINGLE 830 ^anp
                 field_490_to_830_matches = field_490_to_830.get(series_statement_normalized, [])
                 if len(field_490_to_830_matches) == 1:
                     # single match found, attach 490 as note and remove 490 from record
-                    self.__make_490_into_note_on_830(fields_830[0], field_490)
+                    self.__make_490_into_note_on_830(field_490_to_830_matches[0], field_490)
                     record.remove_field(field_490)
                 else:
                     # if no match to a single 830, turn the 490 into a record-level note, as if it were I1==0
                     field_490.indicator1 = '0'
-            # then the 901s
+            # 901s:
+            #   create map for 901 matching (830 ^aqnp [830 a+q is 901 a])
+            field_901_to_830 = {}
+            for field_830 in fields_830:
+                field_830_normalized_for_901 = re.sub(r'[\s;,.]+$', '', ' '.join(field_830.get_subfields('a','q','n','p'))).strip().lower()
+                if field_830_normalized_for_901 not in field_901_to_830:
+                    field_901_to_830[field_830_normalized_for_901] = []
+                field_901_to_830[field_830_normalized_for_901].append(field_830)
+
             for field_901 in fields_901:
-                # take every 901 ^anp to a SINGLE 830 ^aqnp [830 a+q is 901 a]
-                #   if they do match, insert as expansion of that 830.
-                #   if they don't match, treat as 490 0_; record level notes.
-                ...
-                ...
-                ...
+                # normalization: 901 ^anp
+                series_statement_normalized = re.sub(r'[\s;,.]+$', '', ' '.join(field_901.get_subfields('a','n','p'))).strip().lower()
+                # now try to match to a SINGLE 830 ^anp
+                field_490_to_830_matches = field_901_to_830.get(series_statement_normalized, [])
+                if len(field_490_to_830_matches) == 1:
+                    # single match found, insert as expansion of that 830
+                    self.__split_830_over_901(record, field_490_to_830_matches[0], field_901)
+                    record.remove_field(field_901)
+                else:
+                    # if no match to a single 830, keep the 901 to transform to a record-level note
+                    print(f"WARNING: {record.get_control_number()}: no 830 match for 901, default to Series Note: {field_901}")
 
     @staticmethod
     def __make_490_into_note_on_830(field_830, field_490):
         # attach 490 as note (ad hoc subf @) on 830
         field_830.add_subfield('@', tfcm.concat_subfs(field_490, with_codes=False))
 
-    @staticmethod
-    def __split_830_based_on_901(record, field_830, field_901):
-        ...
+    def __split_830_over_901(self, record, field_830, field_901):
+        """
+        For each ^v, build separate series entry:
+        Title:  ^anpqs ^d <supply> ^v <transform> ^w <if present>
+        Override ^d date with parenthetic in ^v; default to date in fixed field
+        """
+        # 830 might have been split and removed from the record already,
+        #   so only do this once
+        if field_830 in record.fields:
+            record.remove_field(field_830)
+        shared_subfields = [code_or_val for code, val in zip(field_830.subfields[::2], field_830.subfields[1::2]) for code_or_val in (code, val) if code not in 'dv']
+        default_date = field_830['d'] or record['008'].data[7:10].strip() or 'uuuu'
+        for val in field_901.get_subfields('v'):
+            # print(f"{record.get_control_number()}\t{val}")
+            enum, date = self.__parse_901_v(val)
+            record.add_field(Field('830', '  ', shared_subfields + ['d', date or default_date, 'v', enum]))
 
+    @staticmethod
+    def __parse_901_v(val):
+        """
+        Normalization of enum/chron applied retrospectively for 830, but not to 901.
+        For consistency, needs to be applied to ^v
+        Omit initial enum labels ("v."/"no."/etc), and parse out parenthetic dates
+        """
+        # series + number -> ss(nn)
+        val = re.sub(r'^ser\.?\s*(\d+),?\s*no\.?\s*(\d+)', r'\1(\2)', val.strip('.,;: '))
+        # other enum labels
+        val = re.sub(r'^(report register )?no\.?\s*', r'', val.strip('.,;: '))
+        ...
+        ...
+        ...
+        ...
+        ...
+        ...
+        return val, None
 
     @staticmethod
     def __preprocess_904(record):

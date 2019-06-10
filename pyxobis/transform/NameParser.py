@@ -70,6 +70,9 @@ class NameParser:
 
             # 100 ^a : Personal name
             if code == 'a':
+                # remove leading asterisks, from bslw project (should be covered in subsets)
+                val = re.sub(r'(^|\s)\*\*?(\w)', r'\1\2', val)
+
                 if field.indicator1 == '1':
                     # If surname entry, attempt to parse into typed parts
                     being_name_parts = cls.__parse_being_surname_entry(val)

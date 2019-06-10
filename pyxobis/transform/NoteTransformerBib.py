@@ -442,6 +442,13 @@ class NoteTransformerBib:
                                'role' : 'transcription',
                                'type_link_title' : 'Colophon Note' })
 
+        # Expanded Series Information (Lane) (R)
+        for field in record.get_fields('901'):
+            # for 901s unable to be matched to an 830
+            notes.append({ 'content_text' : tfcm.concat_subfs(field),
+                           'role' : 'documentation',
+                           'type_link_title' : 'Series Note' })
+
         # Sub-Encoding Level (Lane) (R)
         for field in record.get_fields('906'):
             # treat ^b and sometimes ^c as 990
