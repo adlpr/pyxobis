@@ -478,95 +478,95 @@ class OptEntryGroupAttributes(Component):
         return attrs
 
 
-class VersionsHoldingsOpt(Component):
-    """
-    versionsHoldingsOpt |=
-        (element xobis:versions {
-             element xobis:version {
-                 element xobis:entry {
-                     element xobis:name { nameContent },
-                     qualifiersOpt
-                 },
-                 optNoteList,
-                 holdings
-             }+
-         }
-         | holdings)?
-    """
-    def __init__(self, versions=None):
-        self.is_none = not bool(versions)
-        self.is_holdings = isinstance(versions, Holdings)
-        if not (self.is_holdings or self.is_none):
-            assert len(versions) > 0
-            assert all(isinstance(v, Version) for v in versions)
-        self.versions = versions
-    def serialize_xml(self):
-        # Returns an Element or None.
-        if self.is_none:
-            return None
-        if self.is_holdings:
-            return self.versions.serialize_xml()
-        # List of versions
-        versions_e = E('versions')
-        versions_e.extend([v.serialize_xml() for v in self.versions])
-        return versions_e
-
-
-class Version(Component):
-    """
-    element xobis:version {
-        element xobis:entry {
-            element xobis:name { nameContent },
-            qualifiersOpt
-        },
-        optNoteList,
-        holdings
-    }
-    """
-    def __init__(self, name_content, holdings, qualifiers_opt=QualifiersOpt(), opt_note_list=OptNoteList()):
-        assert isinstance(name_content, NameContent)
-        self.name_content = name_content
-        assert isinstance(holdings, Holdings)
-        self.holdings = holdings
-        assert isinstance(qualifiers_opt, QualifiersOpt)
-        self.qualifiers_opt = qualifiers_opt
-        assert isinstance(opt_note_list, OptNoteList)
-        self.opt_note_list = opt_note_list
-    def serialize_xml(self):
-        # Returns an Element.
-        version_e = E('version')
-        entry_e = E('entry')
-        name_content_text, name_content_attrs = self.name_content.serialize_xml()
-        name_e = E('name', **name_content_attrs)
-        name_e.text = name_content_text
-        entry_e.append(name_e)
-        qualifiers_e = self.qualifiers_opt.serialize_xml()
-        if qualifiers_e is not None:
-            entry_e.append(qualifiers_e)
-        version_e.append(entry_e)
-        opt_note_list_e = self.opt_note_list.serialize_xml()
-        if opt_note_list_e is not None:
-            version_e.append(opt_note_list_e)
-        holdings_e = self.holdings.serialize_xml()
-        if holdings_e is not None:
-            version_e.append(holdings_e)
-        return version_e
-
-
-class Holdings(Component):
-    """
-    ### PLACEHOLDER FOR A BETTER SCHEMA FOR HOLDINGS ###
-    holdings |= element xobis:holdings { genericContent }
-    """
-    def __init__(self, content):
-        assert isinstance(content, GenericContent)
-        self.content = content
-    def serialize_xml(self):
-        # Returns an Element.
-        content_text, content_attrs = self.content.serialize_xml()
-        holdings_e = E('holdings', **content_attrs)
-        holdings_e.text = content_text
-        return holdings_e
+# class VersionsHoldingsOpt(Component):
+#     """
+#     versionsHoldingsOpt |=
+#         (element xobis:versions {
+#              element xobis:version {
+#                  element xobis:entry {
+#                      element xobis:name { nameContent },
+#                      qualifiersOpt
+#                  },
+#                  optNoteList,
+#                  holdings
+#              }+
+#          }
+#          | holdings)?
+#     """
+#     def __init__(self, versions=None):
+#         self.is_none = not bool(versions)
+#         self.is_holdings = isinstance(versions, Holdings)
+#         if not (self.is_holdings or self.is_none):
+#             assert len(versions) > 0
+#             assert all(isinstance(v, Version) for v in versions)
+#         self.versions = versions
+#     def serialize_xml(self):
+#         # Returns an Element or None.
+#         if self.is_none:
+#             return None
+#         if self.is_holdings:
+#             return self.versions.serialize_xml()
+#         # List of versions
+#         versions_e = E('versions')
+#         versions_e.extend([v.serialize_xml() for v in self.versions])
+#         return versions_e
+#
+# 
+# class Version(Component):
+#     """
+#     element xobis:version {
+#         element xobis:entry {
+#             element xobis:name { nameContent },
+#             qualifiersOpt
+#         },
+#         optNoteList,
+#         holdings
+#     }
+#     """
+#     def __init__(self, name_content, holdings, qualifiers_opt=QualifiersOpt(), opt_note_list=OptNoteList()):
+#         assert isinstance(name_content, NameContent)
+#         self.name_content = name_content
+#         assert isinstance(holdings, Holdings)
+#         self.holdings = holdings
+#         assert isinstance(qualifiers_opt, QualifiersOpt)
+#         self.qualifiers_opt = qualifiers_opt
+#         assert isinstance(opt_note_list, OptNoteList)
+#         self.opt_note_list = opt_note_list
+#     def serialize_xml(self):
+#         # Returns an Element.
+#         version_e = E('version')
+#         entry_e = E('entry')
+#         name_content_text, name_content_attrs = self.name_content.serialize_xml()
+#         name_e = E('name', **name_content_attrs)
+#         name_e.text = name_content_text
+#         entry_e.append(name_e)
+#         qualifiers_e = self.qualifiers_opt.serialize_xml()
+#         if qualifiers_e is not None:
+#             entry_e.append(qualifiers_e)
+#         version_e.append(entry_e)
+#         opt_note_list_e = self.opt_note_list.serialize_xml()
+#         if opt_note_list_e is not None:
+#             version_e.append(opt_note_list_e)
+#         holdings_e = self.holdings.serialize_xml()
+#         if holdings_e is not None:
+#             version_e.append(holdings_e)
+#         return version_e
+#
+#
+# class Holdings(Component):
+#     """
+#     ### PLACEHOLDER FOR A BETTER SCHEMA FOR HOLDINGS ###
+#     holdings |= element xobis:holdings { genericContent }
+#     """
+#     def __init__(self, content):
+#         assert isinstance(content, GenericContent)
+#         self.content = content
+#     def serialize_xml(self):
+#         # Returns an Element.
+#         content_text, content_attrs = self.content.serialize_xml()
+#         holdings_e = E('holdings', **content_attrs)
+#         holdings_e.text = content_text
+#         return holdings_e
 
 
 # representations of XS datatypes

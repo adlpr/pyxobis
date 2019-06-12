@@ -646,6 +646,12 @@ class RecordTransformer:
         "Sculpture", "Visual Materials", "Video Games"
     ]
 
+    work_aut_cats_collective = [
+        'Databases', 'Databases, Bibliographic', 'Databases, Factual',
+        'Libraries, Digital', 'Monographic Series', 'Online Systems',
+        'Programming Languages', 'Series', 'Software', 'Video Games',
+        'Vocabulary, Controlled', 'XML Schema'
+    ]
     def init_work_authority_builder(self, record):
         wb = WorkBuilder()
 
@@ -653,14 +659,14 @@ class RecordTransformer:
         # ---
         # intellectual, artistic
         primary_cats = record.get_primary_categories()
-        if any(cat in self.work_cats_artistic for cat in primary_cats):
+        if any(cat.rstrip(' .') in self.work_cats_artistic for cat in primary_cats):
             wb.set_type('artistic')
         else:
             wb.set_type('intellectual')
 
         # ROLE
         # ---
-        # if the aut has a 856 field I2=[0,1],
+        # @@@@@@ if the aut has a 856 I2 in '01',
         #   it should instead have a role of "authority instance"
         #   to allow the generated hdg to be attached
         wb.set_role('authority')
@@ -672,8 +678,8 @@ class RecordTransformer:
             wb.set_class('referential')
         else:
             broad_cat = record.get_broad_category()
-            if broad_cat == "Series":
-                # 130s should all be unnumbered series, NOT "serial"
+            if broad_cat == "Series" or any(cat.rstrip(' .') in self.work_aut_cats_collective for cat in primary_cats):
+                # 130 Series should all be unnumbered series, NOT "serial"
                 wb.set_class('collective')
             else:
                 wb.set_class('individual')
@@ -696,7 +702,7 @@ class RecordTransformer:
         # ---
         # intellectual, artistic
         primary_cats = record.get_primary_categories()
-        if any(cat in self.work_cats_artistic for cat in primary_cats):
+        if any(cat.rstrip(' .') in self.work_cats_artistic for cat in primary_cats):
             wb.set_type('artistic')
         else:
             wb.set_type('intellectual')
@@ -711,25 +717,20 @@ class RecordTransformer:
         if record.is_referential():
             wb.set_class('referential')
         else:
-            broad_cat = record.get_broad_category()
-
-            # collections should have "collective"
-            # ......
+            broad_cat = record.get_broad_category().rstrip(' .')
 
             if broad_cat == "Serials":
                 wb.set_class('serial')
+            elif broad_cat in ("Collections", "Databases", "Websites"):
+                # only bother with broad cat when it comes to bibs
+                # (any exceptions that would necessitate looking at primaries?)
+                wb.set_class('collective')
             else:
                 wb.set_class('individual')
 
         # ENTRY GROUP
         # ---
         # n/a
-
-        # HOLDINGS
-        # ---
-        ...
-        ...
-        ...
 
         return wb
 
@@ -760,12 +761,6 @@ class RecordTransformer:
         # ---
         # = Lane for all our items
         ob.set_organization(self.lane_org_ref)
-
-        # HOLDINGS
-        # ---
-        ...
-        ...
-        ...
 
         return ob
 

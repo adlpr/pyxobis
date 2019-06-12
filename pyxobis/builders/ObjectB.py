@@ -11,22 +11,16 @@ class ObjectBuilder(PrincipalElementBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: set_scheme, set_usage
-    # ADDITIONAL: set_organization, set_holdings
+    # ADDITIONAL: set_organization
     def __init__(self):
         super().__init__()
         self.org_ref = None
-        self.holdings = VersionsHoldingsOpt()
     def set_scheme(self, *args, **kwargs):
         raise AttributeError("Object element does not have property 'scheme'")
     def set_usage(self, *args, **kwargs):
         raise AttributeError("Object element does not have property 'usage'")
     def set_organization(self, org_ref):
         self.org_ref = org_ref
-    def set_holdings(self, versions_holdings_opt):
-        # input should be a VersionsHoldingsOpt object (TEMPORARY UNTIL BETTER SCHEME).
-        # use VersionsHoldingsBuilder to build.
-        # assert isinstance(versions_holdings_opt, VersionsHoldingsOpt)
-        self.holdings = versions_holdings_opt
     def build(self):
         name_content = self.name_content[0]               \
                        if len(self.name_content) == 1     \
@@ -45,8 +39,7 @@ class ObjectBuilder(PrincipalElementBuilder):
                    ),
                    role   = self.role,
                    class_ = self.class_,
-                   opt_class = OptClass(self.class_),
-                   versions_holdings_opt = self.holdings
+                   opt_class = OptClass(self.class_)
                )
 
 

@@ -15,8 +15,7 @@ class Object(PrincipalElement):
         element xobis:object {
             (attribute role { string "instance" | string "authority instance" },
              attribute class { string "individual" | string "collective" }?,
-             objectContent,
-             versionsHoldingsOpt)
+             objectContent)
             | (attribute role { string "authority" },
                optClass,
                objectContent)
@@ -27,8 +26,7 @@ class Object(PrincipalElement):
     CLASSES_1 = ["individual", "collective", None]
     def __init__(self, object_content, role,
                        class_=None, \
-                       opt_class=OptClass(), \
-                       versions_holdings_opt=VersionsHoldingsOpt()):
+                       opt_class=OptClass()):
         # attributes
         self.is_authority = role in Object.ROLES_2
         if self.is_authority:
@@ -43,8 +41,6 @@ class Object(PrincipalElement):
         # content
         assert isinstance(object_content, ObjectContent)
         self.object_content = object_content
-        assert isinstance(versions_holdings_opt, VersionsHoldingsOpt)
-        self.versions_holdings_opt = versions_holdings_opt
     def serialize_xml(self):
         # Returns an Element.
         # attributes
@@ -61,10 +57,6 @@ class Object(PrincipalElement):
         object_attrs.update(object_content_attrs)
         object_e = E('object', **object_attrs)
         object_e.extend(object_content_elements)
-        if not self.is_authority:
-            versions_holdings_opt_e = self.versions_holdings_opt.serialize_xml()
-            if versions_holdings_opt_e is not None:
-                object_e.append(versions_holdings_opt_e)
         return object_e
 
 

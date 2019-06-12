@@ -12,11 +12,9 @@ class WorkBuilder(PrincipalElementBuilder):
     #  METHODS DEVIATION FROM SUPER
     #  ALTERNATE: add_name (--> add_name_tuple + extra)
     #    MISSING: set_scheme, set_usage
-    # ADDITIONAL: set_holdings
+    # ADDITIONAL: -
     def __init__(self):
         super().__init__()
-        # holdings
-        self.holdings = VersionsHoldingsOpt()
         self.contents = []
     def add_name(self, *args, **kwargs):
         # If already a name, dump name(s) + qualifier(s) to self.contents
@@ -27,11 +25,6 @@ class WorkBuilder(PrincipalElementBuilder):
         raise AttributeError("Work element does not have property 'scheme'")
     def set_usage(self, *args, **kwargs):
         raise AttributeError("Work element does not have property 'usage'")
-    def set_holdings(self, versions_holdings_opt):
-        # input should be a VersionsHoldingsOpt object (TEMPORARY UNTIL BETTER SCHEME).
-        # use VersionsHoldingsBuilder to build.
-        # assert isinstance(versions_holdings_opt, VersionsHoldingsOpt)
-        self.holdings = versions_holdings_opt
     def __dump_to_content(self):
         # Put name(s) + qualifier(s) into self.contents and reset them
         if self.name_content:
@@ -54,8 +47,7 @@ class WorkBuilder(PrincipalElementBuilder):
                        opt_note_list = OptNoteList(self.note_list)
                    ),
                    role  = self.role,
-                   type_ = self.type,
-                   versions_holdings_opt = self.holdings
+                   type_ = self.type
                )
 
 

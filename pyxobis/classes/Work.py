@@ -14,31 +14,21 @@ class Work(PrincipalElement):
     workPE |=
         element xobis:work {
             attribute type { string "intellectual" | string "artistic" }?,
-            ((attribute role { string "instance" | string "authority instance" },
-              workContent,
-              versionsHoldingsOpt)
-             | (attribute role { string "authority" },
-                workContent))
+            attribute role { string "instance" | string "authority instance" | string "authority" },
+            workContent
         }
     """
     TYPES = ["intellectual", "artistic", None]
-    ROLES_1 = ["instance", "authority instance"]
-    ROLES_2 = ["authority"]
-    def __init__(self, work_content, role, type_=None, \
-                       versions_holdings_opt=VersionsHoldingsOpt()):
+    ROLES = ["instance", "authority instance", "authority"]
+    def __init__(self, work_content, role, type_=None):
         # attributes
         assert type_ in Work.TYPES, f"Work type ({type_}) must be in: {Work.TYPES}"
-        self.is_authority = role in Work.ROLES_2
-        if not self.is_authority:
-            assert role in Work.ROLES_1, \
-                f"Non-authority Work role ({role}) must be in: {Work.ROLES_1}"
         self.type = type_
+        assert role in Work.ROLES, f"Work role ({role}) must be in: {Work.ROLES}"
         self.role = role
         # content
         assert isinstance(work_content, WorkContent)
         self.work_content = work_content
-        assert isinstance(versions_holdings_opt, VersionsHoldingsOpt)
-        self.versions_holdings_opt = versions_holdings_opt
     def serialize_xml(self):
         # Returns an Element.
         # attributes
@@ -51,10 +41,6 @@ class Work(PrincipalElement):
         work_e = E('work', **work_attrs)
         work_content_elements = self.work_content.serialize_xml()
         work_e.extend(work_content_elements)
-        if not self.is_authority:
-            versions_holdings_opt_e = self.versions_holdings_opt.serialize_xml()
-            if versions_holdings_opt_e is not None:
-                work_e.append(versions_holdings_opt_e)
         return work_e
 
 
