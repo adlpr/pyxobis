@@ -187,9 +187,9 @@ class LanguageRef(RefElement):
             attrs.update(link_attributes_attrs)
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         attrs.update(opt_substitute_attribute_attrs)
-        variant_e = E('language', **attrs)
+        language_ref_e = E('language', **attrs)
         language_entry_content_elements = self.language_entry_content.serialize_xml()
-        variant_e.extend(language_entry_content_elements)
+        language_ref_e.extend(language_entry_content_elements)
         opt_subdivision_elements = self.opt_subdivision.serialize_xml()
-        variant_e.extend(opt_subdivision_elements)
-        return variant_e
+        language_ref_e.extend(opt_subdivision_elements)
+        return language_ref_e

@@ -18,7 +18,7 @@ from .LaneMARCRecord import LaneMARCRecord
 # @@@@@@ TEMPORARY, ONLY WORKS FROM DIR WITH THESE FILES,
 #        DO SOMETHING BETTER WITH INPUT FILENAMES
 BIB_INF_NAME = "../lmldb/bib"
-AUT_INF_NAME = "../lmldb/aut"
+AUT_INF_NAME = "../lmldb/auth"
 
 
 class Indexer:

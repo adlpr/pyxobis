@@ -203,7 +203,7 @@ class StringRef(RefElement):
             attrs.update(link_attributes_attrs)
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         attrs.update(opt_substitute_attribute_attrs)
-        variant_e = E('string', **attrs)
+        string_ref_e = E('string', **attrs)
         string_entry_content_elements = self.string_entry_content.serialize_xml()
-        variant_e.extend(string_entry_content_elements)
-        return variant_e
+        string_ref_e.extend(string_entry_content_elements)
+        return string_ref_e

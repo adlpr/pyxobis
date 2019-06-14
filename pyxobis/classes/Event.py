@@ -200,7 +200,7 @@ class EventRef(PreQualifierRefElement):
             attrs.update(link_attributes_attrs)
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         attrs.update(opt_substitute_attribute_attrs)
-        variant_e = E('event', **attrs)
+        event_ref_e = E('event', **attrs)
         event_entry_content_elements = self.event_entry_content.serialize_xml()
-        variant_e.extend(event_entry_content_elements)
-        return variant_e
+        event_ref_e.extend(event_entry_content_elements)
+        return event_ref_e

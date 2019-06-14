@@ -284,7 +284,7 @@ class WorkRef(RefElement):
             attrs.update(link_attributes_attrs)
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         attrs.update(opt_substitute_attribute_attrs)
-        variant_e = E('work', **attrs)
+        work_ref_e = E('work', **attrs)
         work_entry_content_elements = self.work_entry_content.serialize_xml()
-        variant_e.extend(work_entry_content_elements)
-        return variant_e
+        work_ref_e.extend(work_entry_content_elements)
+        return work_ref_e

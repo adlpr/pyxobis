@@ -240,7 +240,7 @@ class ObjectRef(RefElement):
             attrs.update(link_attributes_attrs)
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         attrs.update(opt_substitute_attribute_attrs)
-        variant_e = E('object', **attrs)
+        object_ref_e = E('object', **attrs)
         object_entry_content_elements = self.object_entry_content.serialize_xml()
-        variant_e.extend(object_entry_content_elements)
-        return variant_e
+        object_ref_e.extend(object_entry_content_elements)
+        return object_ref_e

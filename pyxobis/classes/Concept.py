@@ -200,9 +200,9 @@ class ConceptRef(RefElement):
             attrs.update(link_attributes_attrs)
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         attrs.update(opt_substitute_attribute_attrs)
-        variant_e = E('concept', **attrs)
+        concept_ref_e = E('concept', **attrs)
         concept_entry_content_elements = self.concept_entry_content.serialize_xml()
-        variant_e.extend(concept_entry_content_elements)
+        concept_ref_e.extend(concept_entry_content_elements)
         opt_subdivision_elements = self.opt_subdivision.serialize_xml()
-        variant_e.extend(opt_subdivision_elements)
-        return variant_e
+        concept_ref_e.extend(opt_subdivision_elements)
+        return concept_ref_e

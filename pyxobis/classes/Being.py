@@ -269,7 +269,7 @@ class BeingRef(RefElement):
             attrs.update(link_attributes_attrs)
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         attrs.update(opt_substitute_attribute_attrs)
-        variant_e = E('being', **attrs)
+        being_ref_e = E('being', **attrs)
         being_entry_content_elements = self.being_entry_content.serialize_xml()
-        variant_e.extend(being_entry_content_elements)
-        return variant_e
+        being_ref_e.extend(being_entry_content_elements)
+        return being_ref_e

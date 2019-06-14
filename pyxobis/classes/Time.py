@@ -565,7 +565,7 @@ class Calendar(Component):
     _hour   |= element xobis:hour { xsd:positiveInteger }
     _minute |= element xobis:minute { xsd:positiveInteger }
     _second |= element xobis:second { xsd:positiveInteger }
-    _milliseconds |= element xobis:millisecs { xsd:positiveInteger }
+    _millisecond |= element xobis:millisecond { xsd:positiveInteger }
     _tzHour |= element xobis:tzHour { xsd:integer }
     _tzMinute |= element xobis:tzMinute { xsd:integer }
 """
@@ -574,9 +574,9 @@ class TimePart(Component):
     def __init__(self, value, zf=2):
         assert is_non_negative_int(value)
         self.value = str(int(value)).zfill(zf)
-    def serialize_xml(self, tag):
+    def serialize_xml(self, tag_name):
         # Returns an Element.
-        e = E(tag)
+        e = E(tag_name)
         e.text = self.value
         return e
 

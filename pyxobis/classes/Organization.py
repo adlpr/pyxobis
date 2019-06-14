@@ -196,9 +196,9 @@ class OrganizationRef(PreQualifierRefElement):
             attrs.update(link_attributes_attrs)
         opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
         attrs.update(opt_substitute_attribute_attrs)
-        variant_e = E('organization', **attrs)
+        org_ref_e = E('organization', **attrs)
         organization_entry_content_elements = self.organization_entry_content.serialize_xml()
-        variant_e.extend(organization_entry_content_elements)
+        org_ref_e.extend(organization_entry_content_elements)
         opt_subdivision_elements = self.opt_subdivision.serialize_xml()
-        variant_e.extend(opt_subdivision_elements)
-        return variant_e
+        org_ref_e.extend(opt_subdivision_elements)
+        return org_ref_e
