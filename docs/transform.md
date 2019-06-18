@@ -42,9 +42,3 @@ list_conflicts ( )
 ## NameParser
 ```python
 ```
-
-------------------------------------------------------
-
-## LaneMARCRecord
-```python
-```

@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from .LaneMARCRecord import LaneMARCRecord
 from .RecordTransformer import RecordTransformer
 
 from .Indexer import Indexer

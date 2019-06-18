@@ -5,10 +5,11 @@ import regex as re
 
 from pymarc import Field
 
+from lmldb.xobis_constants import *
+
 from ..builders import RelationshipBuilder
 
 from . import tf_common_methods as tfcm
-from .tf_constants import *
 
 from .Indexer import Indexer
 from .DateTimeParser import DateTimeParser as dp

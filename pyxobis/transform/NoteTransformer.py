@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from .tf_constants import *
+from lmldb.xobis_constants import *
 
 from .NoteTransformerAut import NoteTransformerAut
 from .NoteTransformerBib import NoteTransformerBib

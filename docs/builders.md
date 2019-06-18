@@ -1255,4 +1255,22 @@ set_target ( element_ref )
 
 ## Holdings
 
-**TODO** -- implements (subset of?) [ISO 20775](https://www.loc.gov/standards/iso20775/)
+### HoldingsBuilder
+```python
+set_work_or_object_ref(  )
+
+set_concept_ref(  )
+
+add_qualifier ( qualifier )  # RefElement
+
+...
+...
+...
+```
+
+### HoldingsRefBuilder
+```python
+...
+...
+...
+```

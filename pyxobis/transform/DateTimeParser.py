@@ -3,9 +3,9 @@
 
 import regex as re
 
-from ..builders import TimeContentSingleBuilder, TimeRefBuilder, DurationRefBuilder
+from lmldb.xobis_constants import *
 
-from .tf_constants import *
+from ..builders import TimeContentSingleBuilder, TimeRefBuilder, DurationRefBuilder
 
 from .Indexer import Indexer
 

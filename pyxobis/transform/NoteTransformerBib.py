@@ -4,7 +4,7 @@
 from pymarc import Field
 
 from . import tf_common_methods as tfcm
-from .tf_constants import *
+from lmldb.xobis_constants import *
 
 from .Indexer import Indexer
 

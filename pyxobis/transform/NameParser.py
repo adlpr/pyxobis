@@ -5,9 +5,10 @@ import regex as re
 
 from pymarc import Field
 
+from lmldb.xobis_constants import *
+
 from ..builders import *
 
-from .tf_constants import *
 from . import tf_common_methods as tfcm
 
 from .Indexer import Indexer

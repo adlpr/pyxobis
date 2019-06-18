@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
+from lmldb import LaneMARCRecord
+from lmldb.xobis_constants import *
+
 from . import tf_common_methods as tfcm
-from .tf_constants import *
 
 from .Indexer import Indexer
 from .NameParser import NameParser
-from .LaneMARCRecord import LaneMARCRecord
 
 from .RelationshipTransformerAut import RelationshipTransformerAut
 from .RelationshipTransformerBib import RelationshipTransformerBib

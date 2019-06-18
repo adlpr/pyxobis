@@ -5,23 +5,24 @@
 Enables lookup between record IDs and identities.
 """
 
-# import os
+import json
+from pathlib import Path
+
 from tqdm import tqdm
 
 from pymarc import MARCReader, Field
 
-from .tf_constants import *
-
-from .LaneMARCRecord import LaneMARCRecord
-
-
-# @@@@@@ TEMPORARY, ONLY WORKS FROM DIR WITH THESE FILES,
-#        DO SOMETHING BETTER WITH INPUT FILENAMES
-BIB_INF_NAME = "../lmldb/bib"
-AUT_INF_NAME = "../lmldb/auth"
+from lmldb import LaneMARCRecord, LMLDB
+from lmldb.xobis_constants import *
 
 
 class Indexer:
+    # index file paths
+    INDEX_DIR = Path("../lib/lmldb")
+    INDEX_FILE = INDEX_DIR / "index.json"
+    INDEX_REVERSE_FILE = INDEX_DIR / "index_reverse.json"
+    INDEX_REL_TYPE_FILE = INDEX_DIR / "index_rel_type.json"
+
     # constants for lookups unable to be resolved,
     # either due to conflict or having no match
     CONFLICT   = "conflict"
@@ -127,31 +128,30 @@ class Indexer:
     index, index_reverse, index_rel_type = None, None, None
 
     @classmethod
-    def init_index(cls, inf_names=(BIB_INF_NAME, AUT_INF_NAME)):
+    def init_index(cls):
         # Store index as json (for now, maybe change to pickle later?)
         if not all((cls.index, cls.index_reverse, cls.index_rel_type)):
             # read index from file, or generate it
-            import json
             try:
-                with open("../lmldb/index.json",'r') as inf:
+                with cls.INDEX_FILE.open('r') as inf:
                     cls.index = json.load(inf)
-                with open("../lmldb/index_reverse.json",'r') as inf:
+                with cls.INDEX_REVERSE_FILE.open('r') as inf:
                     cls.index_reverse = json.load(inf)
-                with open("../lmldb/index_rel_type.json",'r') as inf:
+                with cls.INDEX_REL_TYPE_FILE.open('r') as inf:
                     cls.index_rel_type = json.load(inf)
             except:
-                cls.__generate_index(inf_names)
-                with open("../lmldb/index.json",'w') as outf:
+                cls.__generate_index()
+                with cls.INDEX_FILE.open('w') as outf:
                     json.dump(cls.index, outf)
-                with open("../lmldb/index_reverse.json",'w') as outf:
+                with cls.INDEX_REVERSE_FILE.open('w') as outf:
                     json.dump(cls.index_reverse, outf)
-                with open("../lmldb/index_rel_type.json",'w') as outf:
+                with cls.INDEX_REL_TYPE_FILE.open('w') as outf:
                     json.dump(cls.index_rel_type, outf)
 
     @classmethod
-    def __generate_index(cls, inf_names):
+    def __generate_index(cls):
         # Generate index from given input MARC files.
-        print("generating indices...")
+        print("generating indices")
 
         # forward index (main or variant identity string --> ctrl number/conflict)
         index, index_variants = {}, {}
@@ -160,17 +160,13 @@ class Indexer:
         index_reverse = { cls.UNVERIFIED: None, cls.CONFLICT: None }
         # relationship type index (relationship name --> list of types)
         index_rel_type = {}
-        all_rel_types = set(["Subordinate", "Superordinate", "Preordinate",
-            "Postordinate", "Associative", "Dissociative", "Equivalence"])
+        all_rel_types = set(("Subordinate", "Superordinate", "Preordinate",
+            "Postordinate", "Associative", "Dissociative", "Equivalence"))
 
-        for inf_name in inf_names:
-            with open(inf_name, 'rb') as inf:
-                print(f"reading {inf_name}")
-                reader = MARCReader(inf)
-                for record in tqdm(reader):
-                # for record in reader:
-                    record.__class__ = LaneMARCRecord
-
+        with LMLDB() as db:
+            for record_type, db_query in (('bib',db.get_bibs),('auth',db.get_auts)):
+                print(f"  reading {record_type}s...")
+                for _, record in tqdm(db_query()):
                     # if relationship, add to rel type index
                     if record.get_broad_category() == 'Relationships':
                         rel_types = sorted(list(all_rel_types & set(record.get_all_categories())))

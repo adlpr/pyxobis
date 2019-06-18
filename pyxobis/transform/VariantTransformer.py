@@ -3,17 +3,18 @@
 
 import regex as re
 
+from lmldb import LaneMARCRecord
+from lmldb.xobis_constants import *
+
 from ..classes import TimeRef, DurationRef
 
 from ..builders import *
 
 from . import tf_common_methods as tfcm
-from .tf_constants import *
 
 from .Indexer import Indexer
 from .DateTimeParser import DateTimeParser
 from .NameParser import NameParser
-from .LaneMARCRecord import LaneMARCRecord
 
 
 class VariantTransformer:
