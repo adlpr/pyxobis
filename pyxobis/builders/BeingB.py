@@ -22,37 +22,38 @@ class BeingBuilder(PrincipalElementBuilder):
     def set_usage(self, *args, **kwargs):
         raise AttributeError("Being element does not have property 'usage'")
     def set_entry_type(self, link_title, set_URI, href_URI=None):
+        href = XSDAnyURI(href_URI) if href_URI is not None else None
+        set_ref = XSDAnyURI(set_URI) if set_URI is not None else None
         self.entry_type = GenericType(
                               LinkAttributes(
                                   link_title,
-                                  href = XSDAnyURI( href_URI ) \
-                                               if href_URI else None
+                                  href = href
                               ),
-                              set_ref = XSDAnyURI( set_URI ) \
-                                           if set_URI else None
+                              set_ref = set_ref
                           )
     def set_time_or_duration_ref(self, time_or_duration_ref):
         # assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
     def build(self):
-        name_content = self.name_content[0][1]                       \
-                       if len(self.name_content) == 1                \
-                           and self.name_content[0][0] == "generic"  \
-                       else self.name_content
+        name_content = self.name_content
+        if len(self.name_content) == 1 and self.name_content[0][0] == "generic":
+            name_content = name_content[0][1]
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        note_list = NoteList(self.note_list) if self.note_list else None
         return Being(
                    RoleAttributes(self.role),
                    BeingEntryContent(
                        name_content,
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
                    type_  = self.type,
                    class_ = self.class_,
-                   opt_scheme = OptScheme(self.scheme),
-                   opt_entry_group_attributes = self.opt_entry_group_attributes,
+                   scheme_attribute = self.scheme,
+                   entry_group_attributes = self.entry_group_attributes,
                    entry_type = self.entry_type,
                    time_or_duration_ref = self.time_or_duration_ref,
                    variants = self.variants,
-                   opt_note_list = OptNoteList(self.note_list)
+                   note_list = note_list
                )
 
 
@@ -69,22 +70,23 @@ class BeingVariantBuilder(PrincipalElementVariantBuilder):
     def add_name(self, *args, **kwargs):
         super().add_name_tuple(*args, **kwargs)
     def build(self):
-        name_content = self.name_content[0][1]                       \
-                       if len(self.name_content) == 1                \
-                           and self.name_content[0][0] == "generic"  \
-                       else self.name_content
+        name_content = self.name_content
+        if len(self.name_content) == 1 and self.name_content[0][0] == "generic":
+            name_content = name_content[0][1]
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        note_list = NoteList(self.note_list) if self.note_list else None
         return BeingVariantEntry(
                    BeingEntryContent(
                        name_content,
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
-                   opt_variant_attributes = self.opt_variant_attributes,
+                   variant_attributes = self.variant_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
-                   opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
-                   opt_scheme = OptScheme(self.scheme),
-                   opt_entry_group_attributes = self.opt_entry_group_attributes,
-                   opt_note_list = OptNoteList(self.note_list)
+                   substitute_attribute = self.substitute_attribute,
+                   scheme_attribute = self.scheme,
+                   entry_group_attributes = self.entry_group_attributes,
+                   note_list = note_list
                )
 
 
@@ -103,14 +105,14 @@ class BeingRefBuilder(PrincipalElementRefBuilder):
     def add_subdivision_link(self, *args, **kwargs):
         raise AttributeError("Being element ref does not have subdivisions")
     def build(self):
-        name_content = self.name_content[0][1]                       \
-                       if len(self.name_content) == 1                \
-                           and self.name_content[0][0] == "generic"  \
-                       else self.name_content
+        name_content = self.name_content
+        if len(self.name_content) == 1 and self.name_content[0][0] == "generic":
+            name_content = name_content[0][1]
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
         return BeingRef(
                    BeingEntryContent(
                        name_content,
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
                    link_attributes = self.link_attributes
                )

@@ -29,20 +29,22 @@ class StringBuilder(PrincipalElementBuilder):
             )
         )
     def build(self):
-        name_content = self.name_content[0]               \
-                       if len(self.name_content) == 1     \
-                       else self.name_content
+        name_content = self.name_content
+        if len(name_content) == 1:
+            name_content = name_content[0]
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        note_list = NoteList(self.note_list) if self.note_list else None
         return String(
                    StringEntryContent(
                        GenericName(name_content),
                        self.parts_of_speech,
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
-                   type_    = self.type,
-                   class_   = self.class_,
-                   opt_entry_group_attributes = self.opt_entry_group_attributes,
-                   variants = self.variants,
-                   opt_note_list = OptNoteList(self.note_list)
+                   type_     = self.type,
+                   class_    = self.class_,
+                   entry_group_attributes = self.entry_group_attributes,
+                   variants  = self.variants,
+                   note_list = note_list
                )
 
 
@@ -66,21 +68,23 @@ class StringVariantBuilder(PrincipalElementVariantBuilder):
             )
         )
     def build(self):
-        name_content = self.name_content[0]               \
-                       if len(self.name_content) == 1     \
-                       else self.name_content
+        name_content = self.name_content
+        if len(name_content) == 1:
+            name_content = name_content[0]
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        note_list = NoteList(self.note_list) if self.note_list else None
         return StringVariantEntry(
                    StringEntryContent(
                        GenericName(name_content),
                        self.parts_of_speech,
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
-                   opt_variant_attributes = self.opt_variant_attributes,
+                   variant_attributes = self.variant_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
-                   opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
-                   opt_entry_group_attributes = self.opt_entry_group_attributes,
-                   opt_note_list = OptNoteList(self.note_list)
+                   substitute_attribute = self.substitute_attribute,
+                   entry_group_attributes = self.entry_group_attributes,
+                   note_list = note_list
                )
 
 
@@ -104,14 +108,15 @@ class StringRefBuilder(PrincipalElementRefBuilder):
             )
         )
     def build(self):
-        name_content = self.name_content[0]               \
-                       if len(self.name_content) == 1     \
-                       else self.name_content
+        name_content = self.name_content
+        if len(name_content) == 1:
+            name_content = name_content[0]
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
         return StringRef(
                    StringEntryContent(
                        GenericName(name_content),
                        self.parts_of_speech,
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
                    link_attributes = self.link_attributes
                )

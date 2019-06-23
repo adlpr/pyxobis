@@ -23,24 +23,22 @@ class Being(PrincipalElement):
                 | string "referential"
             }?,
             element xobis:entry {
-                optScheme,
-                optEntryGroupAttributes,
+                schemeAttribute?,
+                entryGroupAttributes?,
                 genericType?,
                 (timeRef | durationRef)?,
                 beingEntryContent
             },
             element xobis:variants { anyVariant+ }?,
-            optNoteList
+            noteList?
         }
     """
     TYPES = ["human", "nonhuman", "special", None]
     CLASSES = ["individual", "familial", "collective", "undifferentiated", "referential", None]
     def __init__(self, role_attributes, being_entry_content, \
-                       type_=None, class_=None, \
-                       opt_scheme=OptScheme(), \
-                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
-                       entry_type=None, time_or_duration_ref=None, \
-                       variants=[], opt_note_list=OptNoteList()):
+                       type_=None, class_=None, scheme_attribute=None, \
+                       entry_group_attributes=None, entry_type=None,
+                       time_or_duration_ref=None, variants=[], note_list=None):
         # attributes
         assert isinstance(role_attributes, RoleAttributes)
         self.role_attributes = role_attributes
@@ -49,14 +47,16 @@ class Being(PrincipalElement):
         assert class_ in Being.CLASSES, f"Being class ({type_}) must be in: {Being.CLASSES}"
         self.class_ = class_
         # for entry element
-        assert isinstance(opt_scheme, OptScheme)
-        self.opt_scheme = opt_scheme
-        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
-        self.opt_entry_group_attributes = opt_entry_group_attributes
+        if scheme_attribute is not None:
+            assert isinstance(scheme_attribute, SchemeAttribute)
+        self.scheme_attribute = scheme_attribute
+        if entry_group_attributes is not None:
+            assert isinstance(entry_group_attributes, EntryGroupAttributes)
+        self.entry_group_attributes = entry_group_attributes
         if entry_type is not None:
             assert isinstance(entry_type, GenericType)
         self.entry_type = entry_type
-        if time_or_duration_ref:
+        if time_or_duration_ref is not None:
             assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
         assert isinstance(being_entry_content, BeingEntryContent)
@@ -66,8 +66,9 @@ class Being(PrincipalElement):
             f"Invalid type(s) for variant: {', '.join(repr(variant) for variant in variants if not isinstance(variant, VariantEntry))}"
         self.variants = variants
         # for note list
-        assert isinstance(opt_note_list, OptNoteList)
-        self.opt_note_list = opt_note_list
+        if note_list is not None:
+            assert isinstance(note_list, NoteList)
+        self.note_list = note_list
     def serialize_xml(self):
         # Returns an Element.
         # attributes
@@ -81,10 +82,12 @@ class Being(PrincipalElement):
         being_e = E('being', **being_attrs)
         # entry element
         entry_attrs = {}
-        opt_scheme_attrs = self.opt_scheme.serialize_xml()
-        entry_attrs.update(opt_scheme_attrs)
-        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
-        entry_attrs.update(opt_entry_group_attributes_attrs)
+        if self.scheme_attribute is not None:
+            scheme_attribute_attrs = self.scheme_attribute.serialize_xml()
+            entry_attrs.update(scheme_attribute_attrs)
+        if self.entry_group_attributes is not None:
+            entry_group_attributes_attrs = self.entry_group_attributes.serialize_xml()
+            entry_attrs.update(entry_group_attributes_attrs)
         entry_e = E('entry', **entry_attrs)
         if self.entry_type is not None:
             type_e = self.entry_type.serialize_xml()
@@ -102,9 +105,9 @@ class Being(PrincipalElement):
             variants_e.extend(variant_elements)
             being_e.append(variants_e)
         # note list
-        opt_note_list_e = self.opt_note_list.serialize_xml()
-        if opt_note_list_e is not None:
-            being_e.append(opt_note_list_e)
+        if self.note_list is not None:
+            note_list_e = self.note_list.serialize_xml()
+            being_e.append(note_list_e)
         return being_e
 
 
@@ -122,7 +125,7 @@ class BeingEntryContent(Component):
                 nameContent
               }+
         },
-        qualifiersOpt
+        qualifiers?
     beingNamePartTypes1 |=
         attribute type {
           string "given"
@@ -145,7 +148,7 @@ class BeingEntryContent(Component):
     """
     PART_TYPES_1 = ["given", "surname", "patronym", "matronym", "teknonym", "expansion"]
     PART_TYPES_2 = ["given", "paternal surname", "maternal surname", "patronym", "matronym", "teknonym", "expansion"]
-    def __init__(self, name_content, qualifiers_opt=QualifiersOpt()):
+    def __init__(self, name_content, qualifiers=None):
         # name_content should be either NameContent,
         # or a list of tuples of form (type string, NameContent)
         self.is_parts = not isinstance(name_content, NameContent)
@@ -156,8 +159,9 @@ class BeingEntryContent(Component):
                 f"Invalid part type set: {', '.join(t[0] for t in name_content)}"
             assert all(isinstance(t[1], NameContent) for t in name_content)
         self.name_content = name_content
-        assert isinstance(qualifiers_opt, QualifiersOpt)
-        self.qualifiers_opt = qualifiers_opt
+        if qualifiers is not None:
+            assert isinstance(qualifiers, Qualifiers)
+        self.qualifiers = qualifiers
     def serialize_xml(self):
         # Returns list of one or two Elements.
         if self.is_parts:
@@ -173,8 +177,8 @@ class BeingEntryContent(Component):
             name_e = E('name', **name_content_attrs)
             name_e.text = name_content_text
         elements = [name_e]
-        qualifiers_e = self.qualifiers_opt.serialize_xml()
-        if qualifiers_e is not None:
+        if self.qualifiers is not None:
+            qualifiers_e = self.qualifiers.serialize_xml()
             elements.append(qualifiers_e)
         return elements
 
@@ -183,43 +187,48 @@ class BeingVariantEntry(VariantEntry):
     """
     beingVariant |=
         element xobis:being {
-            optVariantAttributes,
+            variantAttributes?,
             genericType?,
             (timeRef | durationRef)?,
-            element xobis:entry { optSubstituteAttribute, optScheme, optEntryAttributes, beingEntryContent },
-            optNoteList
+            element xobis:entry { substituteAttribute?, schemeAttribute?, entryGroupAttributes?, beingEntryContent },
+            noteList?
         }
     """
     def __init__(self, being_entry_content, \
-                       opt_variant_attributes=OptVariantAttributes(), \
-                       type_=None, time_or_duration_ref=None, \
-                       opt_substitute_attribute=OptSubstituteAttribute(), \
-                       opt_scheme=OptScheme(), \
-                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
-                       opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_attributes, OptVariantAttributes)
-        self.opt_variant_attributes = opt_variant_attributes
+                       variant_attributes=None, type_=None, \
+                       time_or_duration_ref=None, \
+                       substitute_attribute=None, scheme_attribute=None, \
+                       entry_group_attributes=None, note_list=None):
+        if variant_attributes is not None:
+            assert isinstance(variant_attributes, VariantAttributes)
+        self.variant_attributes = variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
-        if time_or_duration_ref:
+        if time_or_duration_ref is not None:
             assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
-        assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
-        self.opt_substitute_attribute = opt_substitute_attribute
-        assert isinstance(opt_scheme, OptScheme)
-        self.opt_scheme = opt_scheme
-        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
-        self.opt_entry_group_attributes = opt_entry_group_attributes
+        if substitute_attribute is not None:
+            assert isinstance(substitute_attribute, SubstituteAttribute)
+        self.substitute_attribute = substitute_attribute
+        if scheme_attribute is not None:
+            assert isinstance(scheme_attribute, SchemeAttribute)
+        self.scheme_attribute = scheme_attribute
+        if entry_group_attributes is not None:
+            assert isinstance(entry_group_attributes, EntryGroupAttributes)
+        self.entry_group_attributes = entry_group_attributes
         assert isinstance(being_entry_content, BeingEntryContent)
         self.being_entry_content = being_entry_content
-        assert isinstance(opt_note_list, OptNoteList)
-        self.opt_note_list = opt_note_list
+        if note_list is not None:
+            assert isinstance(note_list, NoteList)
+        self.note_list = note_list
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
-        variant_e = E('being', **opt_variant_attributes_attrs)
+        variant_attributes_attrs = {}
+        if self.variant_attributes is not None:
+            variant_attributes_attrs = self.variant_attributes.serialize_xml()
+        variant_e = E('being', **variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -231,44 +240,50 @@ class BeingVariantEntry(VariantEntry):
         # entry element
         # --> attrs
         entry_attrs = {}
-        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
-        entry_attrs.update(opt_substitute_attribute_attrs)
-        opt_scheme_attrs = self.opt_scheme.serialize_xml()
-        entry_attrs.update(opt_scheme_attrs)
-        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
-        entry_attrs.update(opt_entry_group_attributes_attrs)
+        if self.substitute_attribute is not None:
+            substitute_attribute_attrs = self.substitute_attribute.serialize_xml()
+            entry_attrs.update(substitute_attribute_attrs)
+        if self.scheme_attribute is not None:
+            scheme_attribute_attrs = self.scheme_attribute.serialize_xml()
+            entry_attrs.update(scheme_attribute_attrs)
+        if self.entry_group_attributes is not None:
+            entry_group_attributes_attrs = self.entry_group_attributes.serialize_xml()
+            entry_attrs.update(entry_group_attributes_attrs)
         entry_e = E('entry', **entry_attrs)
         # --> content
         being_entry_content_elements = self.being_entry_content.serialize_xml()
         entry_e.extend(being_entry_content_elements)
         variant_e.append(entry_e)
         # notelist
-        opt_note_list_e = self.opt_note_list.serialize_xml()
-        if opt_note_list_e is not None:
-            variant_e.append(opt_note_list_e)
+        if self.note_list is not None:
+            note_list_e = self.note_list.serialize_xml()
+            variant_e.append(note_list_e)
         return variant_e
 
 
 class BeingRef(RefElement):
     """
-    beingRef |= element xobis:being { linkAttributes?, optSubstituteAttribute, beingEntryContent }
+    beingRef |= element xobis:being { linkAttributes?, substituteAttribute?, beingEntryContent }
     """
-    def __init__(self, being_entry_content, link_attributes=None, opt_substitute_attribute=OptSubstituteAttribute()):
-        if link_attributes:
+    def __init__(self, being_entry_content, \
+                       link_attributes=None, substitute_attribute=None):
+        if link_attributes is not None:
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
-        assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
-        self.opt_substitute_attribute = opt_substitute_attribute
+        if substitute_attribute is not None:
+            assert isinstance(substitute_attribute, SubstituteAttribute)
+        self.substitute_attribute = substitute_attribute
         assert isinstance(being_entry_content, BeingEntryContent)
         self.being_entry_content = being_entry_content
     def serialize_xml(self):
         # Returns an Element.
         attrs = {}
-        if self.link_attributes:
+        if self.link_attributes is not None:
             link_attributes_attrs = self.link_attributes.serialize_xml()
             attrs.update(link_attributes_attrs)
-        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
-        attrs.update(opt_substitute_attribute_attrs)
+        if self.substitute_attribute is not None:
+            substitute_attribute_attrs = self.substitute_attribute.serialize_xml()
+            attrs.update(substitute_attribute_attrs)
         being_ref_e = E('being', **attrs)
         being_entry_content_elements = self.being_entry_content.serialize_xml()
         being_ref_e.extend(being_entry_content_elements)

@@ -59,6 +59,7 @@ class RelationshipBuilder:
         # assert isinstance(element_ref, RefElement)
         self.element_ref = element_ref
     def build(self):
+        note_list = NoteList(self.note_list) if self.note_list else None
         return Relationship(
                    RelationshipContent(
                        RelationshipName(
@@ -71,6 +72,6 @@ class RelationshipBuilder:
                        degree = self.degree,
                        enumeration = self.enumeration,
                        time_or_duration_ref = self.time_or_duration_ref,
-                       opt_note_list = OptNoteList(self.note_list)
+                       note_list = note_list
                    )
                )

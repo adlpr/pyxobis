@@ -22,21 +22,23 @@ class ConceptBuilder(PrincipalElementBuilder):
     def set_subtype(self, new_subtype):
         self.subtype = new_subtype
     def build(self):
-        name_content = self.name_content[0]               \
-                       if len(self.name_content) == 1     \
-                       else self.name_content
+        name_content = self.name_content
+        if len(self.name_content) == 1:
+            name_content = name_content[0]
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        note_list = NoteList(self.note_list) if self.note_list else None
         return Concept(
                    ConceptEntryContent(
                        GenericName(name_content),
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
                    type_ = self.type,
                    usage = self.usage,
                    subtype = self.subtype,
-                   opt_scheme = OptScheme(self.scheme),
-                   opt_entry_group_attributes = self.opt_entry_group_attributes,
+                   scheme_attribute = self.scheme,
+                   entry_group_attributes = self.entry_group_attributes,
                    variants = self.variants,
-                   opt_note_list = OptNoteList(self.note_list)
+                   note_list = note_list
                )
 
 
@@ -50,21 +52,23 @@ class ConceptVariantBuilder(PrincipalElementVariantBuilder):
     def __init__(self):
         super().__init__()
     def build(self):
-        name_content = self.name_content[0]               \
-                       if len(self.name_content) == 1     \
-                       else self.name_content
+        name_content = self.name_content
+        if len(self.name_content) == 1:
+            name_content = name_content[0]
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        note_list = NoteList(self.note_list) if self.note_list else None
         return ConceptVariantEntry(
                    ConceptEntryContent(
                        GenericName(name_content),
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
-                   opt_variant_attributes = self.opt_variant_attributes,
+                   variant_attributes = self.variant_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
-                   opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
-                   opt_scheme = OptScheme(self.scheme),
-                   opt_entry_group_attributes = self.opt_entry_group_attributes,
-                   opt_note_list = OptNoteList(self.note_list)
+                   substitute_attribute = self.substitute_attribute,
+                   scheme_attribute = self.scheme,
+                   entry_group_attributes = self.entry_group_attributes,
+                   note_list = note_list
                )
 
 
@@ -78,14 +82,17 @@ class ConceptRefBuilder(PrincipalElementRefBuilder):
     def __init__(self):
         super().__init__()
     def build(self):
-        name_content = self.name_content[0]               \
-                       if len(self.name_content) == 1     \
-                       else self.name_content
+        name_content = self.name_content
+        if len(self.name_content) == 1:
+            name_content = name_content[0]
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        subdivisions = Subdivisions(self.subdivision_link_contents) \
+            if self.subdivision_link_contents else None
         return ConceptRef(
                    ConceptEntryContent(
                        GenericName(name_content),
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
                    link_attributes = self.link_attributes,
-                   opt_subdivision = OptSubdivisions(self.subdivision_link_contents)
+                   subdivisions = subdivisions
                )

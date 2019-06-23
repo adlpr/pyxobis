@@ -40,7 +40,7 @@ self.role
 self.scheme
 self.class_
 self.usage
-self.opt_entry_group_attributes
+self.entry_group_attributes
 self.versions_holdings_opt
 
 COMMON METHODS
@@ -71,8 +71,8 @@ class PrincipalElementBuilder(Builder):
         self.class_ = None
         self.usage  = None
         # should PE main entry be preferred=true unless otherwise noted?
-        # self.opt_entry_group_attributes = OptEntryGroupAttributes(id=None, group=None, preferred=True)
-        self.opt_entry_group_attributes = OptEntryGroupAttributes()
+        # self.entry_group_attributes = EntryGroupAttributes(id=None, group=None, preferred=True)
+        self.entry_group_attributes = EntryGroupAttributes()
     # def add_qualifier(self, *args, **kwargs):
     #     # assert isinstance(qualifier, RefElement)
     #     super().add_qualifier(*args, **kwargs)
@@ -104,13 +104,13 @@ class PrincipalElementBuilder(Builder):
     def set_role(self, new_role):
         self.role = new_role
     def set_scheme(self, new_scheme):
-        self.scheme = new_scheme
+        self.scheme = SchemeAttribute(new_scheme)
     def set_class(self, new_class):
         self.class_ = new_class
     def set_usage(self, new_usage):
         self.usage = new_usage
     def set_entry_group_attributes(self, id=None, group=None, preferred=None):
-        self.opt_entry_group_attributes = OptEntryGroupAttributes(id, group, preferred)
+        self.entry_group_attributes = EntryGroupAttributes(id, group, preferred)
 
 
 """
@@ -124,8 +124,8 @@ self.time_or_duration_ref
 self.substitute_attribute
 self.scheme
 self.note_list
-self.opt_variant_attributes
-self.opt_entry_group_attributes
+self.variant_attributes
+self.entry_group_attributes
 
 COMMON METHODS
 * add_name  [+ add_name_tuple]
@@ -145,36 +145,37 @@ class PrincipalElementVariantBuilder(Builder):
     """
     def __init__(self):
         super().__init__()
-        self.opt_variant_attributes = OptVariantAttributes()
-        self.opt_entry_group_attributes = OptEntryGroupAttributes()
+        self.variant_attributes = None
+        self.entry_group_attributes = EntryGroupAttributes()
         self.type = None
         self.time_or_duration_ref = None
         self.substitute_attribute = None
         self.scheme = None
         self.note_list = []     # Note objs
     def set_included(self, included):
-        self.opt_variant_attributes = OptVariantAttributes(included)
+        if included is not None:
+            self.variant_attributes = VariantAttributes(included)
     def set_entry_group_attributes(self, id=None, group=None, preferred=None):
-        self.opt_entry_group_attributes = OptEntryGroupAttributes(id, group, preferred)
+        self.entry_group_attributes = EntryGroupAttributes(id, group, preferred)
     def set_type(self, link_title, set_URI, href_URI=None):
+        href = XSDAnyURI(href_URI) if href_URI is not None else None
+        set_ref = XSDAnyURI(set_URI) if set_URI is not None else None
         self.type = GenericType(
                         LinkAttributes(
                             link_title,
-                            href = XSDAnyURI( href_URI ) \
-                                         if href_URI else None
+                            href = href
                         ),
-                        set_ref = XSDAnyURI( set_URI ) \
-                                     if set_URI else None
+                        set_ref = set_ref
                     )
     def set_time_or_duration_ref(self, time_or_duration_ref):
         # assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
     def set_substitute_attribute(self, substitute_attribute):
-        # string
-        self.substitute_attribute = substitute_attribute
+        # str
+        self.substitute_attribute = SubstituteAttribute(substitute_attribute)
     def set_scheme(self, new_scheme):
-        # string
-        self.scheme = new_scheme
+        # str
+        self.scheme = SchemeAttribute(new_scheme)
     def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None, source=[]):
         if not isinstance(source, list):
             source = [source]
@@ -220,7 +221,7 @@ class PrincipalElementRefBuilder(Builder):
     """
     def __init__(self):
         super().__init__()
-        self.link_attributes = None  # LinkAttributes
+        self.link_attributes = None    # LinkAttributes
         self.subdivision_link_contents = []
     def set_link(self, link_title, href_URI=None):
         self.link_attributes = LinkAttributes(
@@ -228,13 +229,15 @@ class PrincipalElementRefBuilder(Builder):
                                    XSDAnyURI(href_URI) if href_URI else None
                                )
     def add_subdivision_link(self, content_text, content_lang=None, link_title=None, href_URI=None, substitute=None):
+        link_attributes = LinkAttributes( \
+                              link_title, \
+                              XSDAnyURI(href_URI) if href_URI else None \
+                          ) if link_title else None
+        substitute_attribute = SubstituteAttribute(substitute) if substitute is not None else None
         self.subdivision_link_contents.append(
             SubdivisionContent(
                 GenericContent(content_text, content_lang),
-                link_attributes = LinkAttributes(
-                                      link_title,
-                                      XSDAnyURI(href_URI) if href_URI else None
-                                  ) if link_title else None,
-                opt_substitute_attribute = OptSubstituteAttribute(substitute)
+                link_attributes = link_attributes,
+                substitute_attribute = substitute_attribute
             )
         )

@@ -27,8 +27,9 @@ class WorkBuilder(PrincipalElementBuilder):
         raise AttributeError("Work element does not have property 'usage'")
     def __dump_to_content(self):
         # Put name(s) + qualifier(s) into self.contents and reset them
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
         if self.name_content:
-            self.contents.append((self.name_content, QualifiersOpt(self.qualifiers)))
+            self.contents.append((self.name_content, qualifiers))
             self.name_content, self.qualifiers = [], []
     def build(self):
         # Dump current name(s)/qualifier(s) to content
@@ -38,13 +39,14 @@ class WorkBuilder(PrincipalElementBuilder):
             content = WorkEntryContentSingleGeneric(self.contents[0][0][0][1], self.contents[0][1])
         else:
             content = [WorkEntryContentPart(*content_part) for content_part in self.contents]
+        note_list = NoteList(self.note_list) if self.note_list else None
         return Work(
                    WorkContent(
                        WorkEntryContent( content ),
                        class_ = self.class_,
-                       opt_entry_group_attributes = self.opt_entry_group_attributes,
+                       entry_group_attributes = self.entry_group_attributes,
                        variants = self.variants,
-                       opt_note_list = OptNoteList(self.note_list)
+                       note_list = note_list
                    ),
                    role  = self.role,
                    type_ = self.type
@@ -70,7 +72,8 @@ class WorkVariantBuilder(PrincipalElementVariantBuilder):
     def __dump_to_content(self):
         # Put name(s) + qualifier(s) into self.contents and reset them
         if self.name_content:
-            self.contents.append((self.name_content, QualifiersOpt(self.qualifiers)))
+            qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+            self.contents.append((self.name_content, qualifiers))
             self.name_content, self.qualifiers = [], []
     def build(self):
         # Dump current name(s)/qualifier(s) to content
@@ -80,15 +83,16 @@ class WorkVariantBuilder(PrincipalElementVariantBuilder):
             content = WorkEntryContentSingleGeneric(self.contents[0][0][0][1], self.contents[0][1])
         else:
             content = [WorkEntryContentPart(*content_part) for content_part in self.contents]
+        note_list = NoteList(self.note_list) if self.note_list else None
         return WorkVariantEntry(
                    WorkEntryContent( content ),
-                   opt_variant_attributes = self.opt_variant_attributes,
+                   variant_attributes = self.variant_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
-                   opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
-                   opt_scheme = OptScheme(self.scheme),
-                   opt_entry_group_attributes = self.opt_entry_group_attributes,
-                   opt_note_list = OptNoteList(self.note_list)
+                   substitute_attribute = self.substitute_attribute,
+                   scheme_attribute = self.scheme,
+                   entry_group_attributes = self.entry_group_attributes,
+                   note_list = note_list
                )
 
 
@@ -111,7 +115,8 @@ class WorkRefBuilder(PrincipalElementRefBuilder):
     def __dump_to_content(self):
         # Put name(s) + qualifier(s) into self.contents and reset them
         if self.name_content:
-            self.contents.append((self.name_content, QualifiersOpt(self.qualifiers)))
+            qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+            self.contents.append((self.name_content, qualifiers))
             self.name_content, self.qualifiers = [], []
     def add_subdivision_link(self, *args, **kwargs):
         raise AttributeError("Work element ref does not have subdivisions")

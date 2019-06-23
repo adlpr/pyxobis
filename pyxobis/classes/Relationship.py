@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from .common import Component, GenericContent, RefElement, OptNoteList
+from .common import Component, GenericContent, RefElement, NoteList
 from .Time import TimeRef, DurationRef
 from .Concept import ConceptRef
 from .String import StringRef
@@ -60,13 +60,13 @@ class RelationshipContent(Component):
             }
           )
         ),
-        optNoteList
+        noteList?
     """
     TYPES = ["subordinate", "superordinate", "preordinate", "postordinate", "associative", "dissociative", None]
     # DEGREES_CONCEPT = ["primary", "secondary", "tertiary", "broad", None]
     # DEGREES_NONCONCEPT = ["primary", "secondary", None]
     DEGREES = ["primary", "secondary", "tertiary", "broad", None]
-    def __init__(self, relationship_name, element_ref, type=None, degree=None, enumeration=None, time_or_duration_ref=None, opt_note_list=OptNoteList()):
+    def __init__(self, relationship_name, element_ref, type=None, degree=None, enumeration=None, time_or_duration_ref=None, note_list=None):
         assert type in RelationshipContent.TYPES
         self.type = type
         assert isinstance(element_ref, RefElement), f"invalid target type: {type(element_ref)}"
@@ -86,8 +86,9 @@ class RelationshipContent(Component):
             assert isinstance(time_or_duration_ref, TimeRef) or isinstance(time_or_duration_ref, DurationRef)
         self.time_or_duration_ref = time_or_duration_ref
         self.element_ref = element_ref
-        assert isinstance(opt_note_list, OptNoteList)
-        self.opt_note_list = opt_note_list
+        if note_list is not None:
+            assert isinstance(note_list, NoteList)
+        self.note_list = note_list
     def serialize_xml(self):
         # Returns a list of two to five Elements and a dict of parent attributes.
         elements, attrs = [], {}
@@ -108,9 +109,9 @@ class RelationshipContent(Component):
         target_e.append(element_ref_e)
         elements.append(target_e)
         # note list
-        opt_note_list_e = self.opt_note_list.serialize_xml()
-        if opt_note_list_e is not None:
-            elements.append(opt_note_list_e)
+        if self.note_list is not None:
+            note_list_e = self.note_list.serialize_xml()
+            elements.append(note_list_e)
         return elements, attrs
 
 

@@ -1307,13 +1307,12 @@ class RecordTransformer:
         val = re.sub(r'^ser\.?\s*(\d+),?\s*no\.?\s*(\d+)', r'\1(\2)', val.strip('.,;: '))
         # other enum labels
         val = re.sub(r'^(report register )?no\.?\s*', r'', val.strip('.,;: '))
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
-        return val, None
+        # finally parse out date
+        val_parse_out_parenthetic_date = re.match(r"([^(]+)\((\d+)\)$", val)
+        if val_parse_out_parenthetic_date:
+            val, date = val_parse_out_parenthetic_date.groups()
+            return val.strip(), date.strip()
+        return val.strip(), None
 
     @staticmethod
     def __preprocess_904(record):

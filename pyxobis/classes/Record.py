@@ -160,12 +160,12 @@ class IDContent(Component):
         }?,
         ( orgRef | workRef | element xobis:description { text } )+,
         element xobis:value { text },
-        optNoteList
+        noteList?
     """
     STATUSES = ["valid", "invalid", "cancelled", "incorrect",
                 "valid linking", "invalid linking",
                 "cancelled linking", "incorrect linking", None]
-    def __init__(self, descriptions, id_value, status=None, opt_note_list=OptNoteList()):
+    def __init__(self, descriptions, id_value, status=None, note_list=None):
         assert status in IDContent.STATUSES
         self.status = status
         assert descriptions
@@ -174,8 +174,9 @@ class IDContent(Component):
         self.descriptions = descriptions
         assert isinstance(id_value, str), f"id_value is {type(id_value)}, must be str"
         self.id_value = id_value
-        assert isinstance(opt_note_list, OptNoteList)
-        self.opt_note_list = opt_note_list
+        if note_list is not None:
+            assert isinstance(note_list, NoteList)
+        self.note_list = note_list
     def serialize_xml(self):
         # Returns a list of two or more Elements, and a dict of parent attributes.
         attrs = {}
@@ -195,7 +196,7 @@ class IDContent(Component):
         value_e.text = self.id_value
         elements.append(value_e)
         # note list
-        opt_note_list_e = self.opt_note_list.serialize_xml()
-        if opt_note_list_e is not None:
-            elements.append(opt_note_list_e)
+        if self.note_list is not None:
+            note_list_e = self.note_list.serialize_xml()
+            elements.append(note_list_e)
         return elements, attrs

@@ -14,29 +14,30 @@ class Time(PrincipalElement):
 
     timeInstancePE |=
         element xobis:time {
-            optClass,
+            classAttribute?,
             attribute usage { "subdivision" }?,
             timeInstanceEntry,
             element xobis:variants { anyVariant+ }?,
-            optNoteList
+            noteList?
         }
 
     durationPE |=
         element xobis:duration {
-            optClass,
+            classAttribute?,
             attribute usage { "subdivision" }?,
             durationEntry,
             element xobis:variants { anyVariant+ }?,
-            optNoteList
+            noteList?
         }
     """
     USAGES = ["subdivision", None]
     def __init__(self, time_or_duration_entry, \
-                       opt_class=OptClass(), usage=None, \
-                       variants=[], opt_note_list=OptNoteList()):
+                       class_attribute=None, usage=None, \
+                       variants=[], note_list=None):
         # attributes
-        assert isinstance(opt_class, OptClass)
-        self.opt_class = opt_class
+        if class_attribute is not None:
+            assert isinstance(class_attribute, ClassAttribute)
+        self.class_attribute = class_attribute
         assert usage in Time.USAGES
         self.usage = usage
         # for entry element
@@ -47,16 +48,18 @@ class Time(PrincipalElement):
         assert all(isinstance(variant, VariantEntry) for variant in variants)
         self.variants = variants
         # for note list
-        assert isinstance(opt_note_list, OptNoteList)
-        self.opt_note_list = opt_note_list
+        if note_list is not None:
+            assert isinstance(note_list, NoteList)
+        self.note_list = note_list
     def is_nominal(self):
         return self.time_or_duration_entry.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         # attributes
         time_attrs = {}
-        opt_class_attrs = self.opt_class.serialize_xml()
-        time_attrs.update(opt_class_attrs)
+        if self.class_attribute is not None:
+            class_attribute_attrs = self.class_attribute.serialize_xml()
+            time_attrs.update(class_attribute_attrs)
         if self.usage:
             time_attrs['usage'] = self.usage
         time_e = E('duration' if self.is_duration else 'time', **time_attrs)
@@ -70,9 +73,9 @@ class Time(PrincipalElement):
             variants_e.extend(variant_elements)
             time_e.append(variants_e)
         # note list
-        opt_note_list_e = self.opt_note_list.serialize_xml()
-        if opt_note_list_e is not None:
-            time_e.append(opt_note_list_e)
+        if self.note_list is not None:
+            note_list_e = self.note_list.serialize_xml()
+            time_e.append(note_list_e)
         return time_e
 
 
@@ -80,21 +83,23 @@ class TimeInstanceEntry(Component):
     """
     timeInstanceEntry |=
         element xobis:entry {
-            optScheme,
-            optEntryGroupAttributes,
+            schemeAttribute?,
+            entryGroupAttributes?,
             calendar?,
             timeContentSingle
         }
     """
-    def __init__(self, time_content_single, opt_scheme=OptScheme(), \
-                       opt_entry_group_attributes=OptEntryGroupAttributes(), \
+    def __init__(self, time_content_single, scheme_attribute=None, \
+                       entry_group_attributes=None, \
                        calendar=None):
         assert isinstance(time_content_single, TimeContentSingle)
         self.time_content_single = time_content_single
-        assert isinstance(opt_scheme, OptScheme)
-        self.opt_scheme = opt_scheme
-        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
-        self.opt_entry_group_attributes = opt_entry_group_attributes
+        if scheme_attribute is not None:
+            assert isinstance(scheme_attribute, SchemeAttribute)
+        self.scheme_attribute = scheme_attribute
+        if entry_group_attributes is not None:
+            assert isinstance(entry_group_attributes, EntryGroupAttributes)
+        self.entry_group_attributes = entry_group_attributes
         if calendar is not None:
             assert isinstance(calendar, Calendar)
         self.calendar = calendar
@@ -104,10 +109,12 @@ class TimeInstanceEntry(Component):
         # Returns an Element.
         # attributes
         entry_attrs = {}
-        opt_scheme_attrs = self.opt_scheme.serialize_xml()
-        entry_attrs.update(opt_scheme_attrs)
-        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
-        entry_attrs.update(opt_entry_group_attributes_attrs)
+        if self.scheme_attribute is not None:
+            scheme_attribute_attrs = self.scheme_attribute.serialize_xml()
+            entry_attrs.update(scheme_attribute_attrs)
+        if self.entry_group_attributes is not None:
+            entry_group_attributes_attrs = self.entry_group_attributes.serialize_xml()
+            entry_attrs.update(entry_group_attributes_attrs)
         # contents
         time_content_single_elements, time_content_single_attrs = self.time_content_single.serialize_xml()
         entry_attrs.update(time_content_single_attrs)
@@ -277,14 +284,15 @@ class TimeContent(Component):
 class TimeContentPart(Component):
     """
     timeContentPart |=
-        linkAttributes?, optSubstituteAttribute, timeContentSingle
+        linkAttributes?, substituteAttribute?, timeContentSingle
     """
-    def __init__(self, time_content_single, link_attributes=None, opt_substitute_attribute=OptSubstituteAttribute()):
+    def __init__(self, time_content_single, link_attributes=None, substitute_attribute=None):
         if link_attributes is not None:
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
-        assert isinstance(opt_substitute_attribute, OptSubstituteAttribute)
-        self.opt_substitute_attribute = opt_substitute_attribute
+        if substitute_attribute is not None:
+            assert isinstance(substitute_attribute, SubstituteAttribute)
+        self.substitute_attribute = substitute_attribute
         assert isinstance(time_content_single, TimeContentSingle), f"expected TimeContentSingle, got type: {type(time_content_single)}"
         self.time_content_single = time_content_single
     def is_nominal(self):
@@ -295,8 +303,9 @@ class TimeContentPart(Component):
         if self.link_attributes is not None:
             link_attributes_attrs = self.link_attributes.serialize_xml()
             attrs.update(link_attributes_attrs)
-        opt_substitute_attribute_attrs = self.opt_substitute_attribute.serialize_xml()
-        attrs.update(opt_substitute_attribute_attrs)
+        if self.substitute_attribute is not None:
+            substitute_attribute_attrs = self.substitute_attribute.serialize_xml()
+            attrs.update(substitute_attribute_attrs)
         time_content_elements, time_content_attrs = self.time_content_single.serialize_xml()
         attrs.update(time_content_attrs)
         return time_content_elements, attrs
@@ -305,27 +314,31 @@ class TimeContentPart(Component):
 class TimeVariant(VariantEntry):
     """
     timeVariant |=
-        element xobis:time { optVariantAttributes, genericType?, timeInstanceEntry, optNoteList }
+        element xobis:time { variantAttributes?, genericType?, timeInstanceEntry, noteList? }
     """
     def __init__(self, time_instance_entry, \
-                       opt_variant_attributes=OptVariantAttributes(), \
-                       type_=None, opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_attributes, OptVariantAttributes)
-        self.opt_variant_attributes = opt_variant_attributes
+                       variant_attributes=None, \
+                       type_=None, note_list=None):
+        if variant_attributes is not None:
+            assert isinstance(variant_attributes, VariantAttributes)
+        self.variant_attributes = variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
         assert isinstance(time_instance_entry, TimeInstanceEntry)
         self.time_instance_entry = time_instance_entry
-        assert isinstance(opt_note_list, OptNoteList)
-        self.opt_note_list = opt_note_list
+        if note_list is not None:
+            assert isinstance(note_list, NoteList)
+        self.note_list = note_list
     def is_nominal(self):
         return self.time_instance_entry.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
-        variant_e = E('time', **opt_variant_attributes_attrs)
+        variant_attributes_attrs = {}
+        if self.variant_attributes is not None:
+            variant_attributes_attrs = self.variant_attributes.serialize_xml()
+        variant_e = E('time', **variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -334,9 +347,9 @@ class TimeVariant(VariantEntry):
         time_instance_entry_e = self.time_instance_entry.serialize_xml()
         variant_e.append(time_instance_entry_e)
         # note list
-        opt_note_list_e = self.opt_note_list.serialize_xml()
-        if opt_note_list_e is not None:
-            variant_e.append(opt_note_list_e)
+        if self.note_list is not None:
+            note_list_e = self.note_list.serialize_xml()
+            variant_e.append(note_list_e)
         return variant_e
 
 
@@ -372,23 +385,24 @@ class DurationEntry(Component):
     """
     durationEntry |=
         element xobis:entry {
-            optEntryGroupAttributes,
+            entryGroupAttributes?,
             element xobis:time {
-              optScheme,
+              schemeAttribute?,
               calendar?,
               timeContent
             },
             element xobis:time {
-              optScheme,
+              schemeAttribute?,
               calendar?,
               timeContent
             }
         }
     """
     def __init__(self, time_duration_entry_part1, time_duration_entry_part2,
-                       opt_entry_group_attributes=OptEntryGroupAttributes()):
-        assert isinstance(opt_entry_group_attributes, OptEntryGroupAttributes)
-        self.opt_entry_group_attributes = opt_entry_group_attributes
+                       entry_group_attributes=None):
+        if entry_group_attributes is not None:
+            assert isinstance(entry_group_attributes, EntryGroupAttributes)
+        self.entry_group_attributes = entry_group_attributes
         assert isinstance(time_duration_entry_part1, DurationEntryPart)
         self.time_duration_entry_part1 = time_duration_entry_part1
         assert isinstance(time_duration_entry_part2, DurationEntryPart)
@@ -398,8 +412,11 @@ class DurationEntry(Component):
     def serialize_xml(self):
         # Returns an Element.
         # attributes
-        opt_entry_group_attributes_attrs = self.opt_entry_group_attributes.serialize_xml()
-        entry_e = E('entry', **opt_entry_group_attributes_attrs)
+        entry_attrs = {}
+        if self.entry_group_attributes is not None:
+            entry_group_attributes_attrs = self.entry_group_attributes.serialize_xml()
+            entry_attrs.update(entry_group_attributes_attrs)
+        entry_e = E('entry', **entry_attrs)
         # contents
         time_duration_entry_part1_e = self.time_duration_entry_part1.serialize_xml()
         entry_e.append(time_duration_entry_part1_e)
@@ -411,16 +428,17 @@ class DurationEntry(Component):
 class DurationEntryPart(Component):
     """
     element xobis:time {
-        optScheme,
+        schemeAttribute?,
         calendar?,
         timeContent
     }
     """
-    def __init__(self, time_content, opt_scheme=OptScheme(), calendar=None):
+    def __init__(self, time_content, scheme_attribute=None, calendar=None):
         assert isinstance(time_content, TimeContent)
         self.time_content = time_content
-        assert isinstance(opt_scheme, OptScheme)
-        self.opt_scheme = opt_scheme
+        if scheme_attribute is not None:
+            assert isinstance(scheme_attribute, SchemeAttribute)
+        self.scheme_attribute = scheme_attribute
         if calendar is not None:
             assert isinstance(calendar, Calendar)
         self.calendar = calendar
@@ -430,8 +448,9 @@ class DurationEntryPart(Component):
         # Returns an Element.
         # attributes
         time_attrs = {}
-        opt_scheme_attrs = self.opt_scheme.serialize_xml()
-        time_attrs.update(opt_scheme_attrs)
+        if self.scheme_attribute is not None:
+            scheme_attribute_attrs = self.scheme_attribute.serialize_xml()
+            time_attrs.update(scheme_attribute_attrs)
         # contents
         time_content_elements, time_content_attrs = self.time_content.serialize_xml()
         time_attrs.update(time_content_attrs)
@@ -446,27 +465,31 @@ class DurationEntryPart(Component):
 class DurationVariant(VariantEntry):
     """
     durationVariant |=
-        element xobis:duration { optVariantAttributes, genericType?, durationEntry, optNoteList }
+        element xobis:duration { variantAttributes?, genericType?, durationEntry, noteList? }
     """
     def __init__(self, duration_entry, \
-                       opt_variant_attributes=OptVariantAttributes(), \
-                       type_=None, opt_note_list=OptNoteList()):
-        assert isinstance(opt_variant_attributes, OptVariantAttributes)
-        self.opt_variant_attributes = opt_variant_attributes
+                       variant_attributes=None, \
+                       type_=None, note_list=None):
+        if variant_attributes is not None:
+            assert isinstance(variant_attributes, VariantAttributes)
+        self.variant_attributes = variant_attributes
         if type_ is not None:
             assert isinstance(type_, GenericType)
         self.type = type_
         assert isinstance(duration_entry, DurationEntry)
         self.duration_entry = duration_entry
-        assert isinstance(opt_note_list, OptNoteList)
-        self.opt_note_list = opt_note_list
+        if note_list is not None:
+            assert isinstance(note_list, NoteList)
+        self.note_list = note_list
     def is_nominal(self):
         return self.duration_entry.is_nominal()
     def serialize_xml(self):
         # Returns an Element.
         # variant attributes
-        opt_variant_attributes_attrs = self.opt_variant_attributes.serialize_xml()
-        variant_e = E('duration', **opt_variant_attributes_attrs)
+        variant_attributes_attrs = {}
+        if self.variant_attributes is not None:
+            variant_attributes_attrs = self.variant_attributes.serialize_xml()
+        variant_e = E('duration', **variant_attributes_attrs)
         # type
         if self.type is not None:
             type_e = self.type.serialize_xml()
@@ -475,9 +498,9 @@ class DurationVariant(VariantEntry):
         duration_entry_e = self.duration_entry.serialize_xml()
         variant_e.append(duration_entry_e)
         # note list
-        opt_note_list_e = self.opt_note_list.serialize_xml()
-        if opt_note_list_e is not None:
-            variant_e.append(opt_note_list_e)
+        if self.note_list is not None:
+            note_list_e = self.note_list.serialize_xml()
+            variant_e.append(note_list_e)
         return variant_e
 
 

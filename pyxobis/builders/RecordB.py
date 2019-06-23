@@ -62,6 +62,8 @@ class RecordBuilder:
         if not isinstance(source, list):
             source = [source]
         assert all(any(isinstance(source_part, valid_type) for valid_type in (OrganizationRef, WorkRef, str)) for source_part in source)
+        href = XSDAnyURI( type_href_URI ) if type_href_URI else None
+        set_ref = XSDAnyURI( type_set_URI ) if type_set_URI else None
         self.current_id_alternate_notes.append(Note(
             GenericContent(content_text, content_lang),
             role = role,  # ["transcription", "annotation", "documentation", "description", None]
@@ -71,11 +73,9 @@ class RecordBuilder:
             generic_type = GenericType(
                                LinkAttributes(
                                    type_link_title,
-                                   href = XSDAnyURI( type_href_URI ) \
-                                                if type_href_URI else None
+                                   href = href
                                ),
-                               set_ref = XSDAnyURI( type_set_URI ) \
-                                         if type_set_URI else None
+                               set_ref = set_ref
                            ) if type_link_title else None,
             source = source if isinstance(source, list) else [source]
         ))
@@ -85,10 +85,11 @@ class RecordBuilder:
             self.set_id_alternate(*args)
             self.add_id_alternate()
         else:
+            note_list = NoteList(self.current_id_alternate_notes) if self.current_id_alternate_notes else None
             self.id_alternates.append( IDContent(self.current_id_alternate_descriptions,
                                                  self.current_id_alternate_value,
                                                  self.current_id_alternate_status,
-                                                 OptNoteList(self.current_id_alternate_notes) ) )
+                                                 note_list ) )
             self.current_id_alternate_descriptions = []
             self.current_id_alternate_value = None
             self.current_id_alternate_status = None
@@ -117,12 +118,13 @@ class RecordBuilder:
         # assert isinstance(relationship, Relationship)
         self.relationships.append(relationship)
     def build(self):
+        note_list = NoteList(self.note_list) if self.note_list else None
         return Record(
                    ControlData(
                        IDContent( self.id_descriptions,
                                   self.id_value,
                                   self.id_status,
-                                  OptNoteList(self.note_list) ),
+                                  note_list ),
                        self.id_alternates,
                        self.types,
                        self.actions

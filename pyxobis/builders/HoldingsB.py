@@ -25,13 +25,15 @@ class HoldingsBuilder(Builder):
     def set_concept_ref(self, concept_ref):
         self.concept_ref = concept_ref
     def build(self):
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        note_list = NoteList(self.note_list) if self.note_list else None
         return Holdings(
                    HoldingsEntryContent(
                        self.work_or_object_ref,
                        self.concept_ref,
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
-                   opt_note_list = OptNoteList(self.note_list)
+                   note_list = note_list
                )
 
 
@@ -61,11 +63,12 @@ class HoldingsRefBuilder(Builder):
                                    XSDAnyURI(href_URI) if href_URI else None
                                )
     def build(self):
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
         return HoldingsRef(
                    HoldingsEntryContent(
                        self.work_or_object_ref,
                        self.concept_ref,
-                       QualifiersOpt(self.qualifiers)
+                       qualifiers
                    ),
                    link_attributes = self.link_attributes
                )

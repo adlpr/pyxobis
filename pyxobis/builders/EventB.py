@@ -28,21 +28,25 @@ class EventBuilder(PrincipalElementBuilder):
         else:
             self.qualifiers.append(qualifier)
     def build(self):
-        name_content = self.name_content[0]               \
-                       if len(self.name_content) == 1     \
-                       else self.name_content
+        name_content = self.name_content
+        if len(name_content) == 1:
+            name_content = name_content[0]
+        prequalifiers = Prequalifiers(self.prequalifiers) if self.prequalifiers else None
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        class_attribute = None if self.class_ is None else ClassAttribute(self.class_)
+        note_list = NoteList(self.note_list) if self.note_list else None
         return Event(
                    EventEntryContent(
                        GenericName(name_content),
-                       PreQualifiersOpt(self.prequalifiers),
-                       QualifiersOpt(self.qualifiers)
+                       prequalifiers,
+                       qualifiers
                    ),
                    type_ = self.type,
-                   opt_class  = OptClass(self.class_),
-                   opt_scheme = OptScheme(self.scheme),
-                   opt_entry_group_attributes = self.opt_entry_group_attributes,
+                   class_attribute  = class_attribute,
+                   scheme_attribute = self.scheme,
+                   entry_group_attributes = self.entry_group_attributes,
                    variants   = self.variants,
-                   opt_note_list = OptNoteList(self.note_list)
+                   note_list = note_list
                )
 
 
@@ -65,22 +69,25 @@ class EventVariantBuilder(PrincipalElementVariantBuilder):
         else:
             self.qualifiers.append(qualifier)
     def build(self):
-        name_content = self.name_content[0]               \
-                       if len(self.name_content) == 1     \
-                       else self.name_content
+        name_content = self.name_content
+        if len(name_content) == 1:
+            name_content = name_content[0]
+        prequalifiers = Prequalifiers(self.prequalifiers) if self.prequalifiers else None
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
+        note_list = NoteList(self.note_list) if self.note_list else None
         return EventVariantEntry(
                    EventEntryContent(
                        GenericName(name_content),
-                       PreQualifiersOpt(self.prequalifiers),
-                       QualifiersOpt(self.qualifiers)
+                       prequalifiers,
+                       qualifiers
                    ),
-                   opt_variant_attributes = self.opt_variant_attributes,
+                   variant_attributes = self.variant_attributes,
                    type_ = self.type,
                    time_or_duration_ref = self.time_or_duration_ref,
-                   opt_substitute_attribute = OptSubstituteAttribute(self.substitute_attribute),
-                   opt_scheme    = OptScheme(self.scheme),
-                   opt_entry_group_attributes = self.opt_entry_group_attributes,
-                   opt_note_list = OptNoteList(self.note_list)
+                   substitute_attribute = self.substitute_attribute,
+                   scheme_attribute = self.scheme,
+                   entry_group_attributes = self.entry_group_attributes,
+                   note_list = note_list
                )
 
 
@@ -105,14 +112,16 @@ class EventRefBuilder(PrincipalElementRefBuilder):
         else:
             self.qualifiers.append(qualifier)
     def build(self):
-        name_content = self.name_content[0]               \
-                       if len(self.name_content) == 1     \
-                       else self.name_content
+        name_content = self.name_content
+        if len(name_content) == 1:
+            name_content = name_content[0]
+        prequalifiers = Prequalifiers(self.prequalifiers) if self.prequalifiers else None
+        qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
         return EventRef(
                    EventEntryContent(
                        GenericName(name_content),
-                       PreQualifiersOpt(self.prequalifiers),
-                       QualifiersOpt(self.qualifiers)
+                       prequalifiers,
+                       qualifiers
                    ),
                    link_attributes = self.link_attributes
                )
