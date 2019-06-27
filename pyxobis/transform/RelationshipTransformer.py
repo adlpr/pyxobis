@@ -22,13 +22,20 @@ class RelationshipTransformer:
         # subordinate Transformers
         self.reltaut = RelationshipTransformerAut(self)
         self.reltbib = RelationshipTransformerBib(self)
+        # self.relthdg = RelationshipTransformerHdg(self)
 
     def transform_relationships(self, record):
         """
         Delegate transformation to subordinate Transformer.
         """
-        if record.get_xobis_element_type() in (WORK_INST, OBJECT):
+        element_type = record.get_xobis_element_type()
+        if element_type in (WORK_INST, OBJECT):
             return self.reltbib.transform_relationships(record)
+        elif element_type == HOLDINGS:
+            # @@@@@@@@@@@@@@@@@@@
+            # return self.relthdg.transform_relationships(record)
+            return []
+            # @@@@@@@@@@@@@@@@@@@
         return self.reltaut.transform_relationships(record)
 
     def get_relation_type(self, rel_name):

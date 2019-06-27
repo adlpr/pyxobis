@@ -30,20 +30,6 @@ class NoteTransformerAut:
                                'role' : 'annotation',
                                'type_link_title' : 'Place Note' })
 
-        ...
-        ...
-        ...
-
-        # See Also From Reference, Topical/Language/Time Term (R)
-        # for field in record.get_fields('550'):
-        #     if 'a' not in field:
-        #         # @@@@@@@@@@ TEMPORARY TEMPORARY TEMPORARY TEMPORARY @@@@@@@@@@
-        #         # @@@@@@@@@@ concatenate all subfields @@@@@@@@@@
-        #         notes.append({ 'content_text' : tfcm.concat_subfs(field),
-        #                        'role' : 'annotation',
-        #                         # 'type_link_title' : 'Generic phrase, pre-coordinated qualifier, or obsolete descriptor note'
-        #                         })
-
         # Series Dates of Publication and/or Volume Designation (R) (Lane)
         for field in record.get_fields('640'):
             for val in field.get_subfields('a'):
@@ -145,10 +131,6 @@ class NoteTransformerAut:
                                'type_link_title' : 'Scope Note',
                                'source' : self.mesh_ref if field.indicator1=='8' else 'External' })
 
-        ...
-        ...
-        ...
-
         # Source Data Found (LC: 670) (R)
         for field in record.get_fields('970'):
             notes.append({ 'content_text' : tfcm.concat_subfs(field),
@@ -185,10 +167,6 @@ class NoteTransformerAut:
             notes.append({ 'content_text' : content,
                            'role' : 'documentation',
                            'type_link_title' : 'Undisplayed/Unindexed Term Note' })
-
-        ...
-        ...
-        ...
 
         # Staff Note (Lane) (R)
         for field in record.get_fields('990'):

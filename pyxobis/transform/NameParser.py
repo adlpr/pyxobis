@@ -805,8 +805,12 @@ class NameParser:
         # NAME(S) & QUALIFIER(S)
         # ---
         linking_entry_work_names_and_qualifiers = []
-        # use abbr title if real title not available
-        name_field_code = 'p' if field.tag == '773' and 't' not in field else 't'
+        name_field_code = 't'
+        if name_field_code not in field:
+            name_field_code = 'a'
+            # if real title not available on 773, use abbr title (p)
+            if name_field_code not in field and field.tag == '773':
+                name_field_code = 'p'
         for code, val in field.get_subfields(name_field_code,'b', with_codes=True):
             if code == name_field_code:
                 # ^t  Title of work             --> `generic` title  [p = abbr title]

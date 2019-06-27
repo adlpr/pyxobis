@@ -40,7 +40,8 @@ class RecordTransformer:
             ORGANIZATION : self.init_organization_builder,
             PLACE        : self.init_place_builder,
             STRING       : self.init_string_builder,
-            TIME         : self.init_time_builder
+            TIME         : self.init_time_builder,
+            HOLDINGS     : self.init_holdings_builder
         }
 
         self.lane_org_ref = tfcm.build_simple_ref("Lane Medical Library", ORGANIZATION)
@@ -66,7 +67,7 @@ class RecordTransformer:
         if record.is_suppressed():
             return None
 
-        # @@@@@ TEMPORARY: IGNORE IMMI RECS @@@@@
+        # @@@@@ TEMPORARY: IGNORE IMMI RECORDS @@@@@
         if '040' in record and record['040']['a'] == "IMMI":
             return None
 
@@ -80,7 +81,7 @@ class RecordTransformer:
         # LANGUAGE OF RECORD
         # -------
         # Normally this might come from the 040 ^b? But all ours are English
-        rb.set_lang('en')
+        rb.set_lang('English')
 
         # -------
         # IDs
@@ -131,60 +132,66 @@ class RecordTransformer:
         # Determine which function to delegate PE building based on record type
 
         element_type = record.get_xobis_element_type()
-        # assert element_type, f"{record.get_control_number()}: could not determine type of record"
-        # @@@@@ TEMPORARY @@@@@
-        if not element_type or element_type == HOLDINGS:
-            # don't transform
-            return None
+        assert element_type is not None, \
+            f"{record.get_control_number()}: could not determine type of record"
 
         # ~~~~~~
         # RECORD PREPROCESSING
         # ~~~~~~
-        # Preprocessing for entry groups/sumptions
-        self.__preprocess_sumptions(record)
-        # Fix 149 ^1 on bib records if necessary
-        self.__reconstruct_149_subf_1(record)
-        # Only use 043 geocode as variant on auts if exactly one
-        self.__preprocess_043(record)
-        # Convert 730 variant (translated) titles to 246, for ease of processing
-        self.__translated_title_730_to_246(record)
-        # Split aut 68X (education/affiliation) fields, and/or convert to 610 (Organizational Relationship).
-        self.__preprocess_68X(record)
-        # Relator on 785 #7 depends on position in record.
-        self.__preprocess_785(record)
-        # Juggle 880s based on linked field.
-        self.__preprocess_880(record)
-        # Try to match up series fields
-        self.__resolve_490_830_901(record)
-        # Treat 904 as 246
-        self.__preprocess_904(record)
-        # 94Xs need to take into account certain fixed-field bytes.
-        self.__preprocess_94X(record)
-        # If a linking field just links a control number, pull info into the field itself.
-        # self.__preprocess_w_only_linking_fields(record)
+        # bib
+        if element_type in (WORK_INST, OBJECT):
+            # Fix 149 ^1 if necessary.
+            self.__reconstruct_bib_149_subf_1(record)
+            # Convert 730 variant (translated) titles to 246, for ease of processing.
+            self.__translated_title_730_to_246(record)
+            # Relator on 785 #7 depends on position in record.
+            self.__preprocess_bib_785(record)
+            # Juggle 880s based on linked field.
+            self.__preprocess_bib_880(record)
+            # Treat 904 as 246.
+            self.__preprocess_bib_904(record)
+            # Try to match up series fields.
+            self.__resolve_bib_490_830_901(record)
+            # 94Xs need to take into account certain fixed-field bytes.
+            self.__preprocess_bib_94X(record)
+        # aut
+        elif element_type != HOLDINGS:
+            # Entry groups/sumptions
+            self.__preprocess_sumptions(record)
+            # Only use 043 geocode as variant if exactly one.
+            self.__preprocess_aut_043(record)
+            # Split aut 68X (education/affiliation) fields,
+            #   and/or convert to 610 (Organizational Relationship).
+            self.__preprocess_aut_68X(record)
+            # 94Xs need to take into account certain fixed-field bytes.
+            self.__preprocess_aut_94X(record)
+        # hdg
+        else:
+            ...
 
         # ~~~~~~
         # RECORD PROCESSING
         # ~~~~~~
         init_builder = self.init_builder_methods.get(element_type)
-        parse_name = NameParser.get_parser_for_element_type(element_type)
 
         # Initialize, perform PE-specific work on, and return Builder object.
         peb = init_builder(record)
 
-        # ENTRY NAME(S) AND QUALIFIERS
-        # -------
-        entry_names_and_qualifiers = parse_name(record.get_id_field())
-        for entry_name_or_qualifier in entry_names_and_qualifiers:
-            if isinstance(entry_name_or_qualifier, dict):
-                peb.add_name(**entry_name_or_qualifier)
-            else:
-                peb.add_qualifier(entry_name_or_qualifier)
+        if element_type != HOLDINGS:
+            # ENTRY NAME(S) AND QUALIFIERS
+            # -------
+            parse_name = NameParser.get_parser_for_element_type(element_type)
+            entry_names_and_qualifiers = parse_name(record.get_id_field())
+            for entry_name_or_qualifier in entry_names_and_qualifiers:
+                if isinstance(entry_name_or_qualifier, dict):
+                    peb.add_name(**entry_name_or_qualifier)
+                else:
+                    peb.add_qualifier(entry_name_or_qualifier)
 
-        # VARIANTS
-        # -------
-        for variant in self.vt.transform_variants(record):
-            peb.add_variant(variant)
+            # VARIANTS
+            # -------
+            for variant in self.vt.transform_variants(record):
+                peb.add_variant(variant)
 
         # NOTES
         # -------
@@ -766,6 +773,45 @@ class RecordTransformer:
         return ob
 
 
+    def init_holdings_builder(self, record):
+        hb = HoldingsBuilder()
+
+        # WORK/OBJECT REF
+        # ---
+        # get bib number from 004
+        bib_ctrlno = record['004'].data
+        # full ctrlno has prepended L or Q
+        target_identity = Indexer.reverse_lookup(f"(CStL)L{bib_ctrlno}") or \
+                          Indexer.reverse_lookup(f"(CStL)Q{bib_ctrlno}")
+        assert target_identity is not None, \
+            f"{record.get_control_number()}: could not look up linked bib id: {bib_ctrlno}"
+        work_or_object_ref = self.rlt.build_ref_from_field(Field('149','  ',target_identity), WORK_INST)
+        hb.set_work_or_object_ref(work_or_object_ref)
+
+        # CONCEPT REF
+        # ---
+        # i.e. category/material type
+        ...
+        ...
+        ...
+        # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+        concept_ref = tfcm.build_simple_ref("...", CONCEPT)
+        # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+        ...
+        ...
+        ...
+        hb.set_concept_ref(concept_ref)
+
+        # SUMMARY
+        # ---
+        # from 866
+        ...
+        ...
+        ...
+
+        return hb
+
+
     def transform_id_alternates(self, record, rb):
         # 010  Library of Congress Control Number (NR)
         for field in record.get_fields('010'):
@@ -851,9 +897,8 @@ class RecordTransformer:
                                '4': "Video recording publisher number",
                                '5': "Publisher number",
                                '6': "Distributor number"
-                               }.get(field.indicator1)
-            if not id_description:
-                id_description = "Unspecified standard identifier"
+                             }.get(field.indicator1, \
+                                   "Unspecified standard identifier")
             id_description += f" ({field['b'] if 'b' in field else 'source unknown'})"
             id_alternate_notes = field.get_subfields('q')
             for code, val in field.get_subfields('a', with_codes=True):
@@ -993,8 +1038,7 @@ class RecordTransformer:
     def __get_entry_group_id(self, field):
         if field.tag.endswith('50') or field.tag.endswith('80'):
             return field['3'] or field['7']
-        else:
-            return field['6'] or field['7']
+        return field['6'] or field['7']
 
 
     def __preprocess_sumptions(self, record):
@@ -1016,14 +1060,14 @@ class RecordTransformer:
         return record
 
 
-    def __reconstruct_149_subf_1(self, record):
+    def __reconstruct_bib_149_subf_1(self, record):
         """
         149 ^1 generated by RIM strips ending whitespace.
         Look at the 245 to add the whitespace back if necessary.
         """
         if '149' in record and '1' in record['149'] and '245' in record:
             assert record['245'].indicator2.isdigit(), \
-                   f"{record.get_control_number()}: invalid 245 I2"
+                f"{record.get_control_number()}: invalid 245 I2"
             record['149']['1'] = record['245']['a'][:int(record['245'].indicator2)]
         return record
 
@@ -1060,13 +1104,13 @@ class RecordTransformer:
         return record
 
 
-    def __preprocess_043(self, record):
+    def __preprocess_aut_043(self, record):
         """
         Only use 043 geocode as variant on auts if exactly one.
         Add ad-hoc 451 and supply the variant type.
         """
         geocodes = record.get_subfields('043','a')
-        if len(geocodes) == 1 and record.get_record_type() == record.AUT:
+        if len(geocodes) == 1:
             record.add_ordered_field(Field('451','  ',['e',"MARC geographic area code",'a',geocodes[0]]))
             record.remove_fields('043')
         return record
@@ -1086,7 +1130,7 @@ class RecordTransformer:
 
 
     @staticmethod
-    def __preprocess_68X(record):
+    def __preprocess_aut_68X(record):
         """
         Split any compound 683/684/685 into separate fields,
         then convert any with linkable ^a to 610 for mapping to Relationships.
@@ -1160,9 +1204,9 @@ class RecordTransformer:
 
 
     @staticmethod
-    def __preprocess_785(record):
+    def __preprocess_bib_785(record):
         """
-        Relator on 785 #7 depends on position in record.
+        Relator on bib 785 #7 depends on position in record.
         Temporarily switch the indicator of the last one to 0,
         to be assigned relator "Continued by:"
         """
@@ -1173,7 +1217,7 @@ class RecordTransformer:
 
 
     @staticmethod
-    def __preprocess_880(record):
+    def __preprocess_bib_880(record):
         """
         Change tags of certain bib 880s based on linked field.
         """
@@ -1214,7 +1258,7 @@ class RecordTransformer:
         return record
 
 
-    def __resolve_490_830_901(self, record):
+    def __resolve_bib_490_830_901(self, record):
         # first, take every traced 490,
         fields_490 = [field for field in record.get_fields('490') if field.indicator1 == '1']
         #   every nonlocal 830,
@@ -1274,10 +1318,12 @@ class RecordTransformer:
                     # if no match to a single 830, keep the 901 to transform to a record-level note
                     print(f"WARNING: {record.get_control_number()}: no 830 match for 901, default to Series Note: {field_901}")
 
+
     @staticmethod
     def __make_490_into_note_on_830(field_830, field_490):
-        # attach 490 as note (ad hoc subf @) on 830
+        # Attach 490 as note (ad hoc subf @) on 830
         field_830.add_subfield('@', tfcm.concat_subfs(field_490, with_codes=False))
+
 
     def __split_830_over_901(self, record, field_830, field_901):
         """
@@ -1295,6 +1341,7 @@ class RecordTransformer:
             # print(f"{record.get_control_number()}\t{val}")
             enum, date = self.__parse_901_v(val)
             record.add_field(Field('830', '  ', shared_subfields + ['d', date or default_date, 'v', enum]))
+
 
     @staticmethod
     def __parse_901_v(val):
@@ -1314,9 +1361,12 @@ class RecordTransformer:
             return val.strip(), date.strip()
         return val.strip(), None
 
+
     @staticmethod
-    def __preprocess_904(record):
-        # convert 904 Title Sort/Shelving Version (Normalized) to equivalent 246 field
+    def __preprocess_bib_904(record):
+        """
+        Convert 904 Title Sort/Shelving Version (Normalized) to equivalent 246 field
+        """
         for field in record.get_fields('904'):
             assert 'a' in field or 'x' in field, f"{record.get_control_number()}: 904 with no $a or $x: {field}"
             record.remove_field(field)
@@ -1327,88 +1377,99 @@ class RecordTransformer:
                 record.add_field(Field('246','  ',new_subfields))
 
 
-    def __preprocess_94X(self, record):
-        # convert all 94X to equivalent Relationship field
-        # based on relevant element type/fixed-field data
+    def __preprocess_bib_94X(self, record):
+        """
+        Convert all bib 94X to equivalent Relationship field, based on relevant
+        element type/fixed-field data
+        """
         element_type = record.get_xobis_element_type()
-        # bib
-        if element_type in (WORK_INST, OBJECT):
-            bib_type = record.leader[6:8]
-            # 941 Place --> 651 27
-            for field in record.get_fields('941'):
-                # rel = am, as, e, f: "Place of publication:"; aa, ab: ignore; else: "Place of production:"
-                if bib_type in ('aa','ab'):
-                    continue
-                if bib_type in ('am','as') or bib_type[0] in 'ef':
-                    relator = "Place of publication"
-                else:
-                    relator = "Place of production"
-                record.remove_field(field)
-                record.add_field(Field('651','27',['e',relator,'a',field['a']]))
-            # 942 Language --> 650 26
-            for field in record.get_fields('942'):
-                # rel = aa, ab, am, as, e, f: "Language of text:"; else: "Language:"
-                relator = "Language"
-                if bib_type in ('aa','ab','am','as') or bib_type[0] in 'ef':
-                    relator += " of text"
-                record.remove_field(field)
-                record.add_field(Field('650','26',['e',relator,'a',field['a']]))
-            # 943 Date --> 650 25
-            #   first, pull dates from fixed field
-            fixed_field_dates = record['008'].data[6:15]
-            date_type, d1, d2 = fixed_field_dates[0], fixed_field_dates[1:5], fixed_field_dates[5:]
-            #     recombine e dates
-            if date_type == 'e':
-                d1 = (d1 + '-' + d2[:2] + '-' + d2[2:]).strip(' -u')
-            relator = self.__get_relator_for_bib_943(record)
-            # NONE:
-            if date_type == 'b':
-                # b - No dates given; B.C. date involved
-                record.add_field(Field('650','25',['e',"Produced",'a',"Ancient"]))
-            elif date_type in 'n|':
-                # n - Dates unknown  /  | - No attempt to code
-                record.add_field(Field('650','25',['e',relator,'a',"Unknown"]))
-            # SINGLE:
-            elif date_type in 'es':
-                record.add_field(Field('650','25',['e',relator,'a',d1]))
-            # SINGLE or RANGE:
-            elif date_type == 'q':
-                if d2.strip():
-                    # range
-                    record.add_field(Field('650','25',['e',relator,'a',d1+'?','x',d2+'?']))
-                    if relator == "Published":
-                        record.add_field(Field('655','77',['a',"Subset, Date Range Verify"]))
-                else:
-                    # single
-                    record.add_field(Field('650','25',['e',relator,'a',d1+'?']))
-            # RANGE:
-            elif date_type == 'c':
-                record.add_field(Field('650','25',['e',relator,'a',d1,'x',"Present"]))
-            elif date_type in 'dm':
-                record.add_field(Field('650','25',['e',relator,'a',d1,'x',d2]))
-            elif date_type == 'u':
-                record.add_field(Field('650','25',['e',relator,'a',d1,'x',"Unknown"]))
-            elif date_type == 'i':
-                record.add_field(Field('650','25',['e',"Inclusive dates",'a',d1,'x',d2]))
-            elif date_type == 'k':
-                record.add_field(Field('650','25',['e',"Bulk dates",'a',d1,'x',d2]))
-            # DOUBLE:
-            elif date_type == 'p':
-                record.add_field(Field('650','25',['e',"Distributed",'a',d1]))
-                record.add_field(Field('650','25',['e',"Produced",'a',d2 if d2.strip() else "Unknown"]))
-            elif date_type == 'r':
-                record.add_field(Field('650','25',['e',"Reprinted",'a',d1]))
-                record.add_field(Field('650','25',['e',"Published originally",'a',d2 if d2.strip() else "Unknown"]))
-            elif date_type == 't':
-                record.add_field(Field('650','25',['e',"Published",'a',d1]))
-                record.add_field(Field('650','25',['e',"Copyright",'a',d2 if d2.strip() else "Unknown"]))
-            #   then, get manually-entered dates (ignore i2==8)
-            manual_dates = [field['a'] for field in record.get_fields('943') if 'a' in field and field.indicator2 != '8']
-            record.remove_fields('943')
-            for date in manual_dates:
-                record.add_field(Field('650','25',['e',"Produced",'a',"Ancient"]))
-        # aut
-        elif element_type in (STRING, TIME):
+        bib_type = record.leader[6:8]
+        # 941 Place --> 651 27
+        for field in record.get_fields('941'):
+            # rel = am, as, e, f: "Place of publication:"; aa, ab: ignore; else: "Place of production:"
+            if bib_type in ('aa','ab'):
+                continue
+            if bib_type in ('am','as') or bib_type[0] in 'ef':
+                relator = "Place of publication"
+            else:
+                relator = "Place of production"
+            record.remove_field(field)
+            record.add_field(Field('651','27',['e',relator,'a',field['a']]))
+
+        # 942 Language --> 650 26
+        for field in record.get_fields('942'):
+            # rel = aa, ab, am, as, e, f: "Language of text:"; else: "Language:"
+            relator = "Language"
+            if bib_type in ('aa','ab','am','as') or bib_type[0] in 'ef':
+                relator += " of text"
+            record.remove_field(field)
+            record.add_field(Field('650','26',['e',relator,'a',field['a']]))
+
+        # 943 Date --> 650 25
+        #   first, pull dates from fixed field
+        fixed_field_dates = record['008'].data[6:15]
+        date_type, d1, d2 = fixed_field_dates[0], fixed_field_dates[1:5], fixed_field_dates[5:]
+        #     recombine e dates
+        if date_type == 'e':
+            d1 = (d1 + '-' + d2[:2] + '-' + d2[2:]).strip(' -u')
+        relator = self.__get_relator_for_bib_943(record)
+        # NONE:
+        if date_type == 'b':
+            # b - No dates given; B.C. date involved
+            record.add_field(Field('650','25',['e',"Produced",'a',"Ancient"]))
+        elif date_type in 'n|':
+            # n - Dates unknown  /  | - No attempt to code
+            record.add_field(Field('650','25',['e',relator,'a',"Unknown"]))
+        # SINGLE:
+        elif date_type in 'es':
+            record.add_field(Field('650','25',['e',relator,'a',d1]))
+        # SINGLE or RANGE:
+        elif date_type == 'q':
+            if d2.strip():
+                # range
+                record.add_field(Field('650','25',['e',relator,'a',d1+'?','x',d2+'?']))
+                if relator == "Published":
+                    record.add_field(Field('655','77',['a',"Subset, Date Range Verify"]))
+            else:
+                # single
+                record.add_field(Field('650','25',['e',relator,'a',d1+'?']))
+        # RANGE:
+        elif date_type == 'c':
+            record.add_field(Field('650','25',['e',relator,'a',d1,'x',"Present"]))
+        elif date_type in 'dm':
+            record.add_field(Field('650','25',['e',relator,'a',d1,'x',d2]))
+        elif date_type == 'u':
+            record.add_field(Field('650','25',['e',relator,'a',d1,'x',"Unknown"]))
+        elif date_type == 'i':
+            record.add_field(Field('650','25',['e',"Inclusive dates",'a',d1,'x',d2]))
+        elif date_type == 'k':
+            record.add_field(Field('650','25',['e',"Bulk dates",'a',d1,'x',d2]))
+        # DOUBLE:
+        elif date_type == 'p':
+            record.add_field(Field('650','25',['e',"Distributed",'a',d1]))
+            record.add_field(Field('650','25',['e',"Produced",'a',d2 if d2.strip() else "Unknown"]))
+        elif date_type == 'r':
+            record.add_field(Field('650','25',['e',"Reprinted",'a',d1]))
+            record.add_field(Field('650','25',['e',"Published originally",'a',d2 if d2.strip() else "Unknown"]))
+        elif date_type == 't':
+            record.add_field(Field('650','25',['e',"Published",'a',d1]))
+            record.add_field(Field('650','25',['e',"Copyright",'a',d2 if d2.strip() else "Unknown"]))
+        #   then, get manually-entered dates (ignore i2==8)
+        manual_dates = [field['a'] for field in record.get_fields('943') if 'a' in field and field.indicator2 != '8']
+        record.remove_fields('943')
+        for date in manual_dates:
+            record.add_field(Field('650','25',['e',"Produced",'a',"Ancient"]))
+
+        return record
+
+
+    def __preprocess_aut_94X(self, record):
+        """
+        Convert all aut 94X to equivalent Relationship field, based on relevant
+        element type/fixed-field data
+        """
+        element_type = record.get_xobis_element_type()
+        if element_type in (STRING, TIME):
             pass
         elif element_type == CONCEPT:
             self.__handle_943_insert_as_650(record, "Related")
@@ -1466,154 +1527,3 @@ class RecordTransformer:
         if end_vals:
             new_subfields += ['x', end_vals[0]]
         record.add_field(Field('650','25',new_subfields))
-
-
-    # language_name_to_rfc_3066_map = {
-    #     "Afrikaans": 'af',
-    #     "Albanian": 'sq',
-    #     "Amharic": 'am',
-    #     "Arabic": 'ar',
-    #     "Aramaic": 'arc',
-    #     "Armenian": 'hy',
-    #     "Azerbaijani": 'az',
-    #     "Baluchi": 'bal',
-    #     "Bashkir": 'ba',
-    #     "Basque": 'eu',
-    #     "Batak": 'btk',
-    #     "Bengali": 'bn',
-    #     "Bilingual": 'mul',
-    #     "Bosnian": 'bs',
-    #     "British English": 'en-GB',
-    #     "Bulgarian": 'bg',
-    #     "Burmese": 'my',
-    #     "Byelorussian": 'be',
-    #     "Catalan": 'ca',
-    #     "Central American Indian (Other)": 'cai',
-    #     "Chinese": 'zh',
-    #     "Coptic": 'cop',
-    #     "Croatian": 'hr',
-    #     "Czech": 'cs',
-    #     "Danish": 'da',
-    #     "Delaware (Language)": 'del',
-    #     "Dravidian": 'dra',
-    #     "Dutch": 'nl',
-    #     "Dutch, Middle": 'dum',
-    #     "Egyptian": 'egy',
-    #     "English": 'en',
-    #     "English, Middle (ca. 1100-1500)": 'enm',
-    #     "English, Old (ca. 450-1100)": 'ang',
-    #     "Eskimo-Aleut": 'esx',    # ISO 639-5 macro code, technically invalid under RFC
-    #     "Esperanto": 'eo',
-    #     "Estonian": 'et',
-    #     "Ethiopic": 'gez',
-    #     "Faroese": 'fo',
-    #     "Finnish": 'fi',
-    #     "French": 'fr',
-    #     "French, Middle": 'frm',
-    #     "French, Old": 'fro',
-    #     "Frisian": 'fy',
-    #     "Gaelic (Scots)": 'gd',
-    #     "Gallegan": 'gl',
-    #     "Georgian": 'ka',
-    #     "German": 'de',
-    #     "German, Middle High (ca. 1050-1500)": 'gmh',
-    #     "Greek, Ancient": 'grc',
-    #     "Greek, Modern": 'el',
-    #     "Gujarati": 'gu',
-    #     "Haitian French Creole": 'ht',
-    #     "Hausa": 'ha',
-    #     "Hawaiian": 'haw',
-    #     "Hebrew": 'he',
-    #     "Hindi": 'hi',
-    #     "Hungarian": 'hu',
-    #     "Icelandic": 'is',
-    #     "Igbo": 'ig',
-    #     "Indonesian": 'id',
-    #     "Interlingua": 'ia',
-    #     "Irish": 'ga',
-    #     "Italian": 'it',
-    #     "Japanese": 'ja',
-    #     "Javanese": 'jv',
-    #     "Kazakh": 'kk',
-    #     "Khmer": 'km',
-    #     "Korean": 'ko',
-    #     "Kurdish": 'ku',
-    #     "Langue d'oc": 'oc',
-    #     "Lao": 'lo',
-    #     "Latin": 'la',
-    #     "Latvian": 'lv',
-    #     "Lithuanian": 'lt',
-    #     "Luxembourgish": 'lb',
-    #     "Macedonian": 'mk',
-    #     "Malagasy": 'mg',
-    #     "Malay": 'ms',
-    #     "Malayalam": 'ml',
-    #     "Maltese": 'mt',
-    #     "Maori": 'mi',
-    #     "Marathi": 'mr',
-    #     "Masai": 'mas',
-    #     "Mixed": 'mul',
-    #     "Moldavian": 'ro-MD',
-    #     "Mongolian": 'mn',
-    #     "Multilingual": 'mul',
-    #     "Nahuatl": 'nah',
-    #     "Ndebele (Zimbabwe)": 'nd',
-    #     "Nepali": 'ne',
-    #     "No Linguistic Content": 'zxx',
-    #     "North American Indian (Other)": 'nai',
-    #     "Norwegian": 'nb',    # assumes bokmål
-    #     "Oirat": 'xal',
-    #     "Pali": 'pi',
-    #     "Panjabi": 'pa',
-    #     "Persian": 'fa',
-    #     "Persian, Middle": 'pal',
-    #     "Persian, Old": 'peo',
-    #     "Polish": 'pl',
-    #     "Portuguese": 'pt',
-    #     "Provençal": 'pro',
-    #     "Pushto": 'ps',
-    #     "Raeto-Romance": 'rm',
-    #     "Romanian": 'ro',
-    #     "Russian": 'ru',
-    #     "Sanskrit": 'sa',
-    #     "Serbian": 'sr',
-    #     "Shona": 'sn',
-    #     "Singhalese": 'si',
-    #     "Slavic (Other)": 'sla',
-    #     "Slovak": 'sk',
-    #     "Slovenian": 'sl',
-    #     "Somali": 'so',
-    #     "Spanish": 'es',
-    #     "Sundanese": 'su',
-    #     "Swahili": 'sw',
-    #     "Swedish": 'sv',
-    #     "Syriac": 'syr',
-    #     "Tagalog": 'tl',
-    #     "Tajik": 'tg',
-    #     "Tamil": 'ta',
-    #     "Tatar": 'tt',
-    #     "Telugu": 'te',
-    #     "Thai": 'th',
-    #     "Tibetan": 'bo',
-    #     "Tswana": 'tn',
-    #     "Turkish": 'tr',
-    #     "Turkish, Ottoman": 'ota',
-    #     "Uighur": 'ug',
-    #     "Ukrainian": 'uk',
-    #     "Undetermined": 'und',
-    #     "Urdu": 'ur',
-    #     "Uzbek": 'uz',
-    #     "Vietnamese": 'vi',
-    #     "Welsh": 'cy',
-    #     "Xhosa": 'xh',
-    #     "Yiddish": 'yi',
-    #     "Yoruba": 'yo',
-    #     "Zulu": 'zu'
-    # }
-    # def language_name_to_rfc_3066(self, language_name):
-    #     """
-    #     Convert Lane catalog Language heading to code specified by RFC 3066
-    #     (ISO 639-1 two-letter code where exists, else 639-2/T three-letter,
-    #     ISO 3166 alpha-2 country code as subtag where applicable)
-    #     """
-    #     return self.language_name_to_rfc_3066_map.get(language_name)

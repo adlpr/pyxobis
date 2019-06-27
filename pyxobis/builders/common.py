@@ -12,8 +12,8 @@ class Builder:
     Superclass for all builders.
     """
     def __init__(self):
-        self.name_content = []  # NameContent objs (parts of entry name)
-        self.qualifiers = []     # RefElement objs
+        self.name_content = []    # NameContent objs (parts of entry name)
+        self.qualifiers = []      # RefElement objs
     def add_name(self, name_text, lang=None, script=None, nonfiling=0):
         self.name_content.append(
             NameContent(name_text, lang, script, nonfiling)
@@ -54,7 +54,6 @@ set_scheme
 set_class
 set_usage
 set_entry_group_attributes
-set_holdings
 """
 
 class PrincipalElementBuilder(Builder):
@@ -70,12 +69,9 @@ class PrincipalElementBuilder(Builder):
         self.scheme = None
         self.class_ = None
         self.usage  = None
-        # should PE main entry be preferred=true unless otherwise noted?
+        # should PE main entry be preferred=True unless otherwise noted?
         # self.entry_group_attributes = EntryGroupAttributes(id=None, group=None, preferred=True)
         self.entry_group_attributes = EntryGroupAttributes()
-    # def add_qualifier(self, *args, **kwargs):
-    #     # assert isinstance(qualifier, RefElement)
-    #     super().add_qualifier(*args, **kwargs)
     def add_variant(self, variant):
         self.variants.append(variant)
     def add_note(self, content_text, content_lang=None, role=None, link_title=None, href_URI=None, set_URI=None, type_link_title=None, type_href_URI=None, type_set_URI=None, source=[]):

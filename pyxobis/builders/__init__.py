@@ -22,4 +22,4 @@ from .PlaceB import *
 
 from .RelationshipB import *
 
-# from .HoldingsB import *
+from .HoldingsB import *
