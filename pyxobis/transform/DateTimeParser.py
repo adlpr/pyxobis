@@ -169,7 +169,7 @@ class DateTimeParser:
         # YYYY-MM-DD-DD --> YYYY-MM-DD, DD
         split_dates = re.split(r'(?<=^\d\d\d\d-\d\d-\d\d)-(?=\d\d$)', dts)
         if len(split_dates) == 1:
-            split_dates = re.split(r'-(?!\d\d(?:[\-\./\?~](?: [\w\.]+)?|[\-\./\?~]?(?: [\w\.]+)?$))', dts)
+            split_dates = re.split(r'-(?!\d\d(?:[T\-\./\?~](?: [\w\.]+)?|[T\-\./\?~]?(?: [\w\.]+)?$))', dts)
 
         # print("split", str(split_dates))
 

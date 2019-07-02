@@ -623,6 +623,11 @@ class RelationshipTransformerBib:
                             type_href_URI = Indexer.simple_lookup("Series Note", CONCEPT),
                             type_set_URI = Indexer.simple_lookup("Note Types", CONCEPT))
 
+            # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            # L22192: 830 should link to WORK_AUT
+            # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             rb.set_target(self.build_ref_from_field(field, WORK_AUT if field.tag == '730' else WORK_INST))
 
             relationships.append(rb.build())

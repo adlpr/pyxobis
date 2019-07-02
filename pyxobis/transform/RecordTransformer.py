@@ -71,6 +71,14 @@ class RecordTransformer:
         if '040' in record and record['040']['a'] == "IMMI":
             return None
 
+        element_type = record.get_xobis_element_type()
+        if element_type is None:
+            # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+            # at this point these should all be 155 category dummy records
+            #   we want to skip, but maybe make this into a warning
+            #   just to make sure?
+            return None
+
         rb = RecordBuilder()
 
         # --------------------------
@@ -116,24 +124,12 @@ class RecordTransformer:
         # -------
         # ACTIONS
         # -------
-        # Administrative metadata (get these from: 007; oracle??)
-        # Action Types
-        # created; modified..
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
+        self.transform_record_actions(record, rb)
 
         # --------------------------
         # PRINCIPAL ELEMENT
         # --------------------------
         # Determine which function to delegate PE building based on record type
-
-        element_type = record.get_xobis_element_type()
-        assert element_type is not None, \
-            f"{record.get_control_number()}: could not determine type of record"
 
         # ~~~~~~
         # RECORD PREPROCESSING
@@ -242,7 +238,8 @@ class RecordTransformer:
         for field in record.get_fields('906'):
             for val in field.get_subfields('a'):
                 # exception for ASV since common in ^a when it should be ^d
-                if val == 'ASV': val = "Alpha Parent Visual"
+                if val == 'ASV':
+                    val = "Alpha Parent Visual"
                 title = f"Subset, Component, {val}"
                 rb.add_type(title = title,
                             href  = Indexer.simple_lookup(title, CONCEPT),
@@ -268,6 +265,80 @@ class RecordTransformer:
                 rb.add_type(title = title,
                             href  = Indexer.simple_lookup(title, CONCEPT),
                             set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
+
+
+    def transform_record_actions(self, record, rb):
+        """
+        For each field describing an Action in record,
+        add to RecordBuilder rb.
+
+        3 established types that aren't being fully mapped here:
+            Batch imported:  (except for hdg 989)
+            Batch revised:
+            Lane imported:
+        need information available only in Voyager's Oracle tables.
+        """
+        actions = []
+
+        # 005  Date and Time of Latest Transaction (NR)
+        #   --> Lane [OR Batch] revised
+        modified_timestamp = record['005'].data
+        if modified_timestamp.strip():
+            # Format as ISO 8601 string and convert to TimeRef
+            modified_time_fstr = f"{modified_timestamp[:4]}-{modified_timestamp[4:6]}-{modified_timestamp[6:8]}T{modified_timestamp[8:10]}:{modified_timestamp[10:12]}:{modified_timestamp[12:14]}"
+            modified_time_ref = DateTimeParser.parse_as_ref(modified_time_fstr)
+            actions.append(("Lane revised", modified_time_ref))
+
+        # 008	Fixed-Length Data Elements (NR)  (first 6 bytes)
+        #   --> LC OR NLM OR Lane OR Record created  [OR Batch imported]
+        #       [for bibs; what about auts?]
+        created_timestamp = record['008'].data[:6]
+        if created_timestamp.strip():
+            # Format as ISO 8601 string and convert to TimeRef
+            year_start = "20" if created_timestamp[:2] < "60" else "19"
+            created_time_fstr = f"{year_start}{created_timestamp[:2]}-{created_timestamp[2:4]}-{created_timestamp[4:]}"
+            created_time_ref = DateTimeParser.parse_as_ref(created_time_fstr)
+            # Determine creator from bib 040
+            record_creator = 'Record'
+            cataloging_source_field = record['040']
+            if cataloging_source_field is not None:
+                agency_code = cataloging_source_field['c'] or cataloging_source_field['a']
+                if agency_code is not None:
+                    agency_code = agency_code.lower()
+                    if 'cstl' in agency_code.replace('cst-law','').replace('-',''):
+                        record_creator = "Lane"
+                    elif 'dnlm' in agency_code:
+                        record_creator = "NLM"
+                    elif 'dlc' in agency_code:
+                        record_creator = "LC"
+            actions.append((f"{record_creator} created", created_time_ref))
+
+        # 915  ControlData - Temporal (Lane) (R)
+        #   --> NLM types (use what's in $e)
+        for field in record.get_fields('915'):
+            subf_as, subf_es = field.get_subfields('a'), field.get_subfields('e')
+            if len(subf_as) != 1 or len(subf_es) != 1:
+                print(f"{record.get_control_number()}: WARNING: invalid 915: {field}")
+                continue
+            timestamp, action_type = subf_as[0], subf_es[0]
+            time_ref = DateTimeParser.parse_as_ref(timestamp)
+            actions.append((action_type.rstrip(': '), time_ref))
+
+        # hdg 989  Date/Time of Automated Processing (Lane) (NR)
+        #   --> Batch imported
+        for field in record.get_fields('989'):
+            imported_timestamp = field['a']
+            # Format as ISO 8601 string and convert to TimeRef
+            imported_time_fstr = f"{imported_timestamp[:4]}-{imported_timestamp[4:6]}-{imported_timestamp[6:8]}T{imported_timestamp[8:10]}:{imported_timestamp[10:12]}:{imported_timestamp[12:14]}"
+            imported_time_ref = DateTimeParser.parse_as_ref(imported_time_fstr)
+            actions.append(("Batch imported", imported_time_ref))
+
+        action_type_set_href = Indexer.simple_lookup("Action Type", CONCEPT)
+        for action_type, action_time_or_duration_ref in actions:
+            rb.add_action(action_time_or_duration_ref,
+                          title = action_type,
+                          href  = Indexer.simple_lookup(action_type, RELATIONSHIP),
+                          set_ref = action_type_set_href)
 
 
     def init_being_builder(self, record):

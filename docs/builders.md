@@ -1257,15 +1257,35 @@ set_target ( element_ref )
 
 ### HoldingsBuilder
 ```python
-set_work_or_object_ref(  )
+set_work_or_object_ref( work_or_object_ref )
 
-set_concept_ref(  )
+set_concept_ref( concept_ref )
 
 add_qualifier ( qualifier )  # RefElement
 
-...
-...
-...
+set_summary( enumeration, chronology )  # str, str
+
+add_summary_note( content_text,
+                  content_lang = None,
+                  role = None,  # transcription, annotation, documentation, description
+                  link_title = None,
+                  href_URI = None,
+                  set_URI = None,
+                  type_link_title = None,
+                  type_href_URI = None,
+                  type_set_URI = None,
+                  source = [] ) # WorkRef, OrganizationRef, str
+
+add_note ( content_text,
+           content_lang = None,
+           role = None,  # transcription, annotation, documentation, description
+           link_title = None,
+           href_URI = None,
+           set_URI = None,
+           type_link_title = None,
+           type_href_URI = None,
+           type_set_URI = None,
+           source = [] ) # WorkRef, OrganizationRef, str
 ```
 
 ### HoldingsRefBuilder

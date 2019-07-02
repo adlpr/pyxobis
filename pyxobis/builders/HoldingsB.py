@@ -26,7 +26,7 @@ class HoldingsBuilder(PrincipalElementBuilder):
     def add_name_tuple(self, *args, **kwargs):
         raise AttributeError("Holdings element does not have name element")
     def add_variant(self, *args, **kwargs):
-        raise AttributeError("Holdings element does not have variants")
+        raise AttributeError("Holdings element does not have variants element")
     def set_type(self, *args, **kwargs):
         raise AttributeError("Holdings element does not have property 'type'")
     def set_role(self, *args, **kwargs):
