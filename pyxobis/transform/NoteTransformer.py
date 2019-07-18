@@ -5,6 +5,7 @@ from lmldb.xobis_constants import *
 
 from .NoteTransformerAut import NoteTransformerAut
 from .NoteTransformerBib import NoteTransformerBib
+from .NoteTransformerHdg import NoteTransformerHdg
 
 class NoteTransformer:
     """
@@ -14,7 +15,7 @@ class NoteTransformer:
         # subordinate Transformers
         self.ntaut = NoteTransformerAut()
         self.ntbib = NoteTransformerBib()
-        # self.nthdg = NoteTransformerHdg()
+        self.nthdg = NoteTransformerHdg()
 
     def transform_notes(self, record):
         """
@@ -24,8 +25,5 @@ class NoteTransformer:
         if element_type in (WORK_INST, OBJECT):
             return self.ntbib.transform_notes(record)
         elif element_type == HOLDINGS:
-            # @@@@@@@@@@@@@@@@@@@
-            # return self.nthdg.transform_notes(record)
-            return []
-            # @@@@@@@@@@@@@@@@@@@
+            return self.nthdg.transform_notes(record)
         return self.ntaut.transform_notes(record)

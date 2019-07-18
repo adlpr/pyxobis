@@ -11,6 +11,7 @@ from .NameParser import NameParser
 
 from .RelationshipTransformerAut import RelationshipTransformerAut
 from .RelationshipTransformerBib import RelationshipTransformerBib
+from .RelationshipTransformerHdg import RelationshipTransformerHdg
 
 
 class RelationshipTransformer:
@@ -22,7 +23,7 @@ class RelationshipTransformer:
         # subordinate Transformers
         self.reltaut = RelationshipTransformerAut(self)
         self.reltbib = RelationshipTransformerBib(self)
-        # self.relthdg = RelationshipTransformerHdg(self)
+        self.relthdg = RelationshipTransformerHdg(self)
 
     def transform_relationships(self, record):
         """
@@ -32,10 +33,7 @@ class RelationshipTransformer:
         if element_type in (WORK_INST, OBJECT):
             return self.reltbib.transform_relationships(record)
         elif element_type == HOLDINGS:
-            # @@@@@@@@@@@@@@@@@@@
-            # return self.relthdg.transform_relationships(record)
-            return []
-            # @@@@@@@@@@@@@@@@@@@
+            return self.relthdg.transform_relationships(record)
         return self.reltaut.transform_relationships(record)
 
     def get_relation_type(self, rel_name):

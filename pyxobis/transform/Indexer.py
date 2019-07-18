@@ -22,6 +22,7 @@ class Indexer:
     INDEX_FILE = INDEX_DIR / "index.json"
     INDEX_REVERSE_FILE = INDEX_DIR / "index_reverse.json"
     INDEX_REL_TYPE_FILE = INDEX_DIR / "index_rel_type.json"
+    INDEX_BIB_TO_HDG_FILE = INDEX_DIR / "index_bib_to_hdg.json"
 
     # constants for lookups unable to be resolved,
     # either due to conflict or having no match
@@ -116,6 +117,9 @@ class Indexer:
         results = list(filter(None, [cls.element_type_from_value(bespoke_field) for bespoke_field in bespoke_fields]))
         return results[0] if len(results) == 1 else None
 
+    @classmethod
+    def get_hdgs_for_bib(cls, bibid):
+        return cls.index_bib_to_hdg.get(bibid, [])
 
     @classmethod
     def list_conflicts(cls):
@@ -125,12 +129,12 @@ class Indexer:
         return { element_type : [identity for identity, value in index.items() if value == cls.CONFLICT] for element_type, index in cls.index.items() }
 
 
-    index, index_reverse, index_rel_type = None, None, None
+    index, index_reverse, index_rel_type, index_bib_to_hdg = None, None, None, None
 
     @classmethod
     def init_index(cls):
         # Store index as json (for now, maybe change to pickle later?)
-        if not all((cls.index, cls.index_reverse, cls.index_rel_type)):
+        if not all((cls.index, cls.index_reverse, cls.index_rel_type, cls.index_bib_to_hdg)):
             # read index from file, or generate it
             try:
                 with cls.INDEX_FILE.open('r') as inf:
@@ -139,6 +143,8 @@ class Indexer:
                     cls.index_reverse = json.load(inf)
                 with cls.INDEX_REL_TYPE_FILE.open('r') as inf:
                     cls.index_rel_type = json.load(inf)
+                with cls.INDEX_BIB_TO_HDG_FILE.open('r') as inf:
+                    cls.index_bib_to_hdg = json.load(inf)
             except:
                 cls.__generate_index()
                 with cls.INDEX_FILE.open('w') as outf:
@@ -147,6 +153,8 @@ class Indexer:
                     json.dump(cls.index_reverse, outf)
                 with cls.INDEX_REL_TYPE_FILE.open('w') as outf:
                     json.dump(cls.index_rel_type, outf)
+                with cls.INDEX_BIB_TO_HDG_FILE.open('w') as outf:
+                    json.dump(cls.index_bib_to_hdg, outf)
 
     @classmethod
     def __generate_index(cls):
@@ -162,6 +170,8 @@ class Indexer:
         index_rel_type = {}
         all_rel_types = set(("Subordinate", "Superordinate", "Preordinate",
             "Postordinate", "Associative", "Dissociative", "Equivalence"))
+        # bib to hdg for field transposition etc (bib id --> list of hdg ids)
+        index_bib_to_hdg = {}
 
         with LMLDB() as db:
             for record_type, db_query in (('bib',db.get_bibs),('auth',db.get_auts)):
@@ -206,6 +216,13 @@ class Indexer:
                             else:
                                 index_variants[variant_element_type][variant_id_string] = ctrlno
 
+            print(f"  reading hdgs...")
+            for hdg_ctrlno, hdg_record in tqdm(db.get_hdgs()):
+                bib_ctrlno = hdg_record['004'].data
+                if bib_ctrlno not in index_bib_to_hdg:
+                    index_bib_to_hdg[bib_ctrlno] = []
+                index_bib_to_hdg[bib_ctrlno].append(hdg_ctrlno)
+
         # Go back and mark conflicts:
         # Conflicts within main identities
         for element_type, conflict in conflicts:
@@ -229,4 +246,4 @@ class Indexer:
                 index[element_type].update(index_variants[element_type])
 
         cls.index, cls.index_reverse = index, index_reverse
-        cls.index_rel_type = index_rel_type
+        cls.index_rel_type, cls.index_bib_to_hdg = index_rel_type, index_bib_to_hdg

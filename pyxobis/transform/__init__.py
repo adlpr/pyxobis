@@ -12,3 +12,5 @@ DateTimeParser.init_default_type_kwargs()
 from .NameParser import NameParser
 
 from .EntryStringFormatter import EntryStringFormatter
+
+from .FieldTransposer import FieldTransposer

@@ -16,6 +16,7 @@ from . import tf_common_methods as tfcm
 from .Indexer import Indexer
 from .DateTimeParser import DateTimeParser
 from .NameParser import NameParser
+from .FieldTransposer import FieldTransposer
 
 from .VariantTransformer import VariantTransformer
 from .RelationshipTransformer import RelationshipTransformer
@@ -48,6 +49,8 @@ class RecordTransformer:
         self.lc_org_ref   = tfcm.build_simple_ref("Library of Congress", ORGANIZATION)
         self.nlm_org_ref  = tfcm.build_simple_ref("National Library of Medicine (U.S.)", ORGANIZATION)
         self.oclc_org_ref = tfcm.build_simple_ref("OCLC", ORGANIZATION)
+
+        self.ft = FieldTransposer()
 
         # subordinate Transformers
         self.vt  = VariantTransformer()
@@ -163,7 +166,8 @@ class RecordTransformer:
             self.__preprocess_aut_94X(record)
         # hdg
         else:
-            ...
+            # Insert fields pulled from bibs by FieldTransposer
+            record.add_field(*self.ft.get_transposed_fields(record_control_no))
 
         # ~~~~~~
         # RECORD PROCESSING
@@ -861,10 +865,12 @@ class RecordTransformer:
 
         # CONCEPT REF
         # ---
-        # i.e. category/material type
-        ...
-        ...
-        ...
+        # i.e. digital/physical
+
+        holdings_type = record.get_holdings_type()
+        assert holdings_type is not None, f"{record.get_control_number()}: invalid holdings type"
+        holdings_type_concept_name = { record.PHYSICAL : "",
+                                       record.DIGITAL  : "" }.get(holdings_type)
         # @@@@@@@@@@@@@@@@@@@@@@@@@@@
         concept_ref = tfcm.build_simple_ref("...", CONCEPT)
         # @@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -873,12 +879,28 @@ class RecordTransformer:
         ...
         hb.set_concept_ref(concept_ref)
 
+        # QUALIFIERS
+        # ---
+        # from 844
+
         # SUMMARY
         # ---
         # from 866
-        ...
-        ...
-        ...
+        record_summary_field = record['866']
+        if record_summary_field is not None:
+            summary_enum, summary_chron = None, None
+            if 'v' in record_summary_field:
+                if len(record_summary_field.get_subfields('v')) > 1:
+                    print(f"WARNING: {record.get_control_number()}: >1 866v")
+                summary_enum = record_summary_field['v']
+            if 'y' in record_summary_field:
+                if len(record_summary_field.get_subfields('y')) > 1:
+                    print(f"WARNING: {record.get_control_number()}: >1 866y")
+                summary_chron = record_summary_field['y']
+            hb.set_summary(summary_enum, summary_chron)
+            for code, val in record_summary_field.get_subfields('x','z', with_codes=True):
+                hb.add_summary_note(val,
+                                    role = "annotation" if code == 'z' else "documentation")
 
         return hb
 
@@ -904,7 +926,7 @@ class RecordTransformer:
 
         # 020  International Standard Book Number (R)
         for field in record.get_fields('020'):
-            id_alternate_notes = field.get_subfields('c','q')
+            id_alternate_notes = field.get_subfields('c','q','9')
             for code, val in field.get_subfields('a','z', with_codes=True):
                 rb.set_id_alternate("ISBN",  # "International Standard Book Number" ?
                                     val.strip(),
@@ -938,13 +960,13 @@ class RecordTransformer:
                 else:
                     id_description = "Standard identifier; source: " + id_source
             else:
-                id_description = { '1': "Universal Product Code",
+                id_description = { '0': "International Standard Recording Code",
+                                   '1': "Universal Product Code",
+                                   '2': "International Standard Music Number",
                                    '3': "International Article Number (EAN) / ISBN 13",
                                    '4': "Serial Item and Contribution Identifier"
-                                   }.get(field.indicator1)
-            if not id_description:
-                id_description = "Unspecified standard identifier"
-            id_alternate_notes = field.get_subfields('c','d','q')
+                                   }.get(field.indicator1, "Unspecified standard identifier")
+            id_alternate_notes = field.get_subfields('c','d','q','9')
             for code, val in field.get_subfields('a','z', with_codes=True):
                 rb.set_id_alternate(id_description, val.strip(),
                                     'invalid' if code=='z' else 'valid')
