@@ -24,33 +24,48 @@ class NoteTransformerHdg:
         """
         notes = []
 
-        # Geographic Area Code (NR)
-        # for field in record.get_fields('043'):
-        #     for val in field.get_subfields('a'):
-        #         notes.append({ 'content_text' : val,
-        #                        'role' : 'annotation',
-        #                        'type_link_title' : 'Place Note' })
-        #
-        # # Series Dates of Publication and/or Volume Designation (R) (Lane)
-        # for field in record.get_fields('640'):
-        #     for val in field.get_subfields('a'):
-        #         notes.append({ 'content_text' : val,
-        #                        'role' : 'annotation',
-        #                        'type_link_title' : 'Description (Serial Enumeration/Chronology, Unformatted) Note' })
-        #
-        # # Series Numbering Peculiarities (R)
-        # for field in record.get_fields('641'):
-        #     for val in field.get_subfields('a'):
-        #         notes.append({ 'content_text' : val,
-        #                        'role' : 'annotation',
-        #                        'type_link_title' : 'Enumeration Note' })
-        #
-        # # Series Place and Publisher/Issuing Body (R)
-        # for field in record.get_fields('643'):
-        #    notes.append({ 'content_text' : tfcm.concat_subfs(field),
-        #                   'role' : 'description',
-        #                   'type_link_title' : 'Organizations (Imprint) Note' })
-        #
+        # Summary-level Holdings Note (Lane) (R)
+        for field in record.get_fields('931'):
+            for val in field.get_subfields('a'):
+                notes.append({ 'content_text' : val,
+                               'role' : 'annotation',
+                               'type_link_title' : 'General Note' })
+
+
+        # Moved from bib
+
+        # Restrictions on Access Note (R)
+        for field in record.get_fields('506'):
+            for val in field.get_subfields('a'):
+                notes.append({ 'content_text' : val,
+                               'role' : 'annotation',
+                               'type_link_title' : 'Access Note' })
+
+        # Retention Policy/Processing Instruction (Lane) (R)
+        for field in record.get_fields('905'):
+            notes.append({ 'content_text' : tfcm.concat_subfs(field),
+                           'role' : 'documentation',
+                           'type_link_title' : 'Retention/Processing Note' })
+
+        # Serhold Data and Status (Lane) (R)
+        # for field in record.get_fields('953'):
+        #     notes.append({ 'content_text' : tfcm.concat_subfs(field),
+        #                    'role' : 'documentation',
+        #                    'type_link_title' : 'Serhold Note' })
+
+        # Title-Level Selection Data (Lane) (R)
+        for field in record.get_fields('992'):
+            notes.append({ 'content_text' : tfcm.concat_subfs(field),
+                           'role' : 'documentation',
+                           'type_link_title' : 'Title-Level Selection Data Note' })
+
+        # Title-Level Usage Statistics (Lane) (NR)
+        for field in record.get_fields('993'):
+            notes.append({ 'content_text' : tfcm.concat_subfs(field),
+                           'role' : 'documentation',
+                           'type_link_title' : 'Title-Level Usage Statistics Note' })
+
+
         # # Complex See Also Reference, Name (NR)
         # for field in record.get_fields('663'):
         #    notes.append({ 'content_text' : tfcm.concat_subfs(field),

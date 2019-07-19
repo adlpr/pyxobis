@@ -115,25 +115,6 @@ class RecordTransformer:
         # ---
         rb.set_id_status('valid')
 
-        # ID ALTERNATES
-        # ---
-        self.transform_id_alternates(record, rb)
-
-        # -------
-        # TYPES
-        # -------
-        self.transform_record_types(record, rb)
-
-        # -------
-        # ACTIONS
-        # -------
-        self.transform_record_actions(record, rb)
-
-        # --------------------------
-        # PRINCIPAL ELEMENT
-        # --------------------------
-        # Determine which function to delegate PE building based on record type
-
         # ~~~~~~
         # RECORD PREPROCESSING
         # ~~~~~~
@@ -169,9 +150,24 @@ class RecordTransformer:
             # Insert fields pulled from bibs by FieldTransposer
             record.add_field(*self.ft.get_transposed_fields(record_control_no))
 
-        # ~~~~~~
-        # RECORD PROCESSING
-        # ~~~~~~
+        # ID ALTERNATES
+        # ---
+        self.transform_id_alternates(record, rb)
+
+        # -------
+        # TYPES
+        # -------
+        self.transform_record_types(record, rb)
+
+        # -------
+        # ACTIONS
+        # -------
+        self.transform_record_actions(record, rb)
+
+        # --------------------------
+        # PRINCIPAL ELEMENT
+        # --------------------------
+        # Determine which function to delegate PE building based on record type
         init_builder = self.init_builder_methods.get(element_type)
 
         # Initialize, perform PE-specific work on, and return Builder object.
@@ -958,7 +954,7 @@ class RecordTransformer:
                 if id_source.strip().lower() == 'doi':
                     id_description = tfcm.build_simple_ref("International DOI Foundation", ORGANIZATION)
                 else:
-                    id_description = "Standard identifier; source: " + id_source
+                    id_description = f"Standard identifier; source: {id_source}"
             else:
                 id_description = { '0': "International Standard Recording Code",
                                    '1': "Universal Product Code",
@@ -1053,9 +1049,6 @@ class RecordTransformer:
                         id_desc = "Other system control number"
                 rb.add_id_alternate(id_desc, val.strip(), 'valid' if code=='a' else 'invalid')
 
-        # 072   Subject Category Code (Lane: MeSH tree no.) (R)
-        ...
-
         # 074   GPO Item Number (R)
         for field in record.get_fields('074'):
             for code, val in field.get_subfields('a','z', with_codes=True):
@@ -1063,11 +1056,33 @@ class RecordTransformer:
                                     val.strip(),
                                     'invalid' if code=='z' else 'valid')
 
-        # 086   Government Document Classification Number (R)
-        ...
+        # HOLDINGS ONLY: call numbers
+        if record.get_record_type() == record.HDG:
+            # 050   Library of Congress Call Number (R)
+            # for field in record.get_fields('050'):
+            #     for code, val in field.get_subfields('a','b', with_codes=True):
+            #         rb.add_id_alternate("Library of Congress Call Number",
+            #                             val.strip(), 'valid')
+            # 060   National Library of Medicine Call Number (R)
+            # for field in record.get_fields('060'):
+            #     for code, val in field.get_subfields('a','b', with_codes=True):
+            #         rb.add_id_alternate("National Library of Medicine Call Number",
+            #                             val.strip(), 'valid')
+            # 086   Government Document Classification Number (R)
+            for field in record.get_fields('086'):
+                id_description = "Government Document Classification Number"
+                if field.indicator1 == '0':
+                    id_description += f" (Superintendent of Documents Classification System)"
+                elif field.indicator1 == '1':
+                    id_description += f" (Government of Canada Publications: Outline of Classification)"
+                elif '2' in field:
+                    id_description += f"; source: {field['2']}"
+                for code, val in field.get_subfields('a','z', with_codes=True):
+                    rb.add_id_alternate(id_description, val.strip(),
+                                        'invalid' if code=='z' else 'valid')
 
         # AUT ONLY: 7XX LC/NLM forms
-        if record.get_record_type() == record.AUT:
+        elif record.get_record_type() == record.AUT:
             """
                 700  Established Heading Linking Entry, Personal Name (Lane: LC naf equiv) (R)
                 710  Established Heading Linking Entry, Organization Name (Lane: LC naf equiv) (R)

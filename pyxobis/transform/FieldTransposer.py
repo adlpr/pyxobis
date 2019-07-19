@@ -39,7 +39,7 @@ class FieldTransposer:
         print("pulling fields and holdings IDs from bibs")
         for bib_ctrlno, bib_record in tqdm(db.get_bibs()):
             # does it have fields to move?
-            alt_id_fields = bib_record.get_fields('050','055','060','086')
+            alt_id_fields = bib_record.get_fields('050','060','086')
             # note_unknown_fields = bib_record.get_fields('506','905')
             note_unknown_fields = []
             note_serhold_fields = bib_record.get_fields('953')
