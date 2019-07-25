@@ -22,7 +22,7 @@ class NoteTransformerBib:
         '362','490','500','501','502','504','505','508','510','511','513','515',
         '518','520','521','525','533','534','536','538','541','542','544','545',
         '546','547','550','555','556','561','570','580','581','586','590','753',
-        '880','901','906','990','997'
+        '880','901','906','953','990','997'
         ]
     def transform_notes(self, record):
         """
@@ -461,6 +461,14 @@ class NoteTransformerBib:
                         notes.append({ 'content_text' : val,
                                        'role' : 'documentation',
                                        'type_link_title' : 'General Note' })
+
+            # Serhold Data and Status (Lane) (R)
+            elif field.tag == '953':
+                if field.indicator1 != ' ':
+                    field['1'] = field.indicator1
+                notes.append({ 'content_text' : tfcm.concat_subfs(field),
+                               'role' : 'documentation',
+                               'type_link_title' : 'Serhold Note' })
 
             # Staff Note (Lane) (R)
             elif field.tag == '990':

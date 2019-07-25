@@ -147,6 +147,8 @@ class RecordTransformer:
             self.__preprocess_aut_94X(record)
         # hdg
         else:
+            # treat most 655 as subsets
+            self.__preprocess_hdg_655(record)
             # Insert fields pulled from bibs by FieldTransposer
             record.add_field(*self.ft.get_transposed_fields(record_control_no))
 
@@ -214,11 +216,11 @@ class RecordTransformer:
         #     to which PE a record is
         for field in record.get_fields('655'):
             assert 'a' in field, f"{record.get_control_number()}: 655 with no $a: {field}"
-            if field.indicator1 in '7':
+            if field.indicator1 == '7':
                 for val in field.get_subfields('a'):
                     rb.add_type(title = val,
                                 href  = "(CStL)" + field['0'] if '0' in field else Indexer.simple_lookup(val, CONCEPT),
-                                set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
+                                set_ref = Indexer.simple_lookup("Subset", CONCEPT))
 
         # convert 903 NEW(E) to Subset
         for field in record.get_fields('903'):
@@ -232,7 +234,7 @@ class RecordTransformer:
                     title = f"Subset, New Resource {val[3:].strip()}"
                 rb.add_type(title = title,
                             href  = Indexer.simple_lookup(title, CONCEPT),
-                            set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
+                            set_ref = Indexer.simple_lookup("Subset", CONCEPT))
 
         # convert 906 ^a/^d (+ sometimes ^c) to Subset
         for field in record.get_fields('906'):
@@ -243,13 +245,13 @@ class RecordTransformer:
                 title = f"Subset, Component, {val}"
                 rb.add_type(title = title,
                             href  = Indexer.simple_lookup(title, CONCEPT),
-                            set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
+                            set_ref = Indexer.simple_lookup("Subset", CONCEPT))
             for val in field.get_subfields('c'):
                 if val in ('LIB','REF'):
                     title = f"Subset, Component, {val}"
                     rb.add_type(title = title,
                                 href  = Indexer.simple_lookup(title, CONCEPT),
-                                set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
+                                set_ref = Indexer.simple_lookup("Subset", CONCEPT))
             for val in field.get_subfields('d'):
                 title = {'AB'     : "Subset, Component, Alpha Parents",
                          'AS'     : "Subset, Component, Alpha Parent",
@@ -264,7 +266,7 @@ class RecordTransformer:
                 assert title is not None, f"{record.get_control_number()}: invalid 906 $d: {field}"
                 rb.add_type(title = title,
                             href  = Indexer.simple_lookup(title, CONCEPT),
-                            set_ref = Indexer.simple_lookup("Note Type", CONCEPT))
+                            set_ref = Indexer.simple_lookup("Subset", CONCEPT))
 
 
     def transform_record_actions(self, record, rb):
@@ -865,19 +867,24 @@ class RecordTransformer:
 
         holdings_type = record.get_holdings_type()
         assert holdings_type is not None, f"{record.get_control_number()}: invalid holdings type"
-        holdings_type_concept_name = { record.PHYSICAL : "",
-                                       record.DIGITAL  : "" }.get(holdings_type)
         # @@@@@@@@@@@@@@@@@@@@@@@@@@@
-        concept_ref = tfcm.build_simple_ref("...", CONCEPT)
+        holdings_type_concept_name = { record.PHYSICAL : "Physical Holdings",
+                                       record.DIGITAL  : "Digital Holdings" }.get(holdings_type)
+        concept_ref = tfcm.build_simple_ref(holdings_type_concept_name, CONCEPT)
         # @@@@@@@@@@@@@@@@@@@@@@@@@@@
         ...
         ...
         ...
         hb.set_concept_ref(concept_ref)
 
-        # QUALIFIERS
+        # QUALIFIER(S)
         # ---
         # from 844
+        # look up 844a as WorkRef OR OrgRef
+        # if neither alidates, then ??
+        ...
+        ...
+        ...
 
         # SUMMARY
         # ---
@@ -1597,6 +1604,17 @@ class RecordTransformer:
             relator_943 = {EVENT: "Held", ORGANIZATION: "Active", PLACE: "Active"}.get(element_type, "Related")
             self.__handle_943_insert_as_650(record, relator_943)
 
+        return record
+
+
+    def __preprocess_hdg_655(self, record):
+        """
+        Most hdg 655 are subsets, so convert their I1 to be treated as such,
+        except for a few hardcoded exceptions
+        """
+        for field in record.get_fields('655'):
+            if field['a'] not in ("Archival Materials","Letters","Print Reproductions","Subunits"):
+                field.indicator1 = '7'
         return record
 
 
