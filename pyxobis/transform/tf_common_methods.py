@@ -126,6 +126,9 @@ def build_simple_ref(name, element_type):
     """
     Build a ref based on only a single name string and its element type.
     """
+    if element_type == TIME:
+        # use DTP for time/duration instead
+        return DateTimeParser.parse_as_ref(name)
     rb_class = ref_builder_map.get(element_type)
     assert rb_class, f"invalid element type: {element_type}"
     rb = rb_class()

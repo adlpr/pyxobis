@@ -598,16 +598,14 @@ class NameParser:
         to pass into a WorkBuilder.
         """
         field_lang, field_script = field['3'], field['4']
+
         # ^1  Nonfiling characters (articles, punct., etc. excluded from filing) (NR)
         nonfiling = 0
         if '1' in field:
             nonfiling = len(field['1'])
             field['a'] = field['1'] + field['a']
-        elif field.tag in ('730','740'):
-            try:
-                nonfiling = int(field.indicator1)
-            except:
-                pass
+        elif field.tag in ('730','740') and field.indicator1.isdigit():
+            nonfiling = int(field.indicator1)
 
         # NAME(S) & QUALIFIER(S)
         # ---

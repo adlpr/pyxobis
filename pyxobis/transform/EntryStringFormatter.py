@@ -10,6 +10,8 @@ class EntryStringFormatter:
 
     ** Expects BeautifulSoup4 Tag elements as input!! **
 
+    (can't this be rewritten to accept tf'd Record obj instead??)
+
     [originally ported from xsl transformations written for lmldbx]
     """
 
@@ -29,6 +31,15 @@ class EntryStringFormatter:
             ...
             ...
             ...
+        elif entry_tag.parent.name == 'holdings':
+            # entry-level work/obj + concept, and qualifiers
+            for child in entry_tag.children:
+                if child.name == 'qualifiers':
+                    entry_str_segments.append(cls.format_qualifiers_str(child))
+                else:
+                    # work or concept
+                    entry_str_segments.append(cls.format_ref_element_str(child))
+                entry_str_segments.append('·')
         elif entry_tag.find_all('name', recursive=False):
             # print("entry with child name")
             # <entry> with typical <name>
@@ -101,11 +112,12 @@ class EntryStringFormatter:
             return f"{cls.format_ref_element_str(time_ref_1)}–{cls.format_ref_element_str(time_ref_2)}"
         else:
             # other
-            for child_tag in ref_tag.find_all('name') + ref_tag.find_all('part') + ref_tag.find_all('qualifiers'):
+            for child_tag in ref_tag.children:
                 if child_tag.name in ('name','part'):
                     ref_str_segments.append(cls.format_name_str(child_tag))
                 else:
                     ref_str_segments.append(cls.format_qualifiers_str(child_tag))
+                ref_str_segments.append('·')
         ref_str = re.sub(r'\s\s+', ' ', ' '.join(ref_str_segments).strip(' ·'))
         return ref_str
 

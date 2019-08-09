@@ -84,7 +84,7 @@ class VariantTransformer:
         # ---
         bvb.set_entry_group_attributes(id        = None,
                                        group     = field['6'] or field['7'],
-                                       preferred = bool(field['5']) if field['6'] else None)
+                                       preferred = True if field['5'] else None)
 
         # Type / Time/Duration Ref
         # ---
@@ -227,7 +227,7 @@ class VariantTransformer:
         # ---
         evb.set_entry_group_attributes(id        = None,
                                        group     = field['6'] or field['7'],
-                                       preferred = bool(field['5']) if field['6'] else None)
+                                       preferred = True if field['5'] else None)
 
         # Type / Time/Duration Ref
         # ---
@@ -338,7 +338,7 @@ class VariantTransformer:
         # ---
         ovb.set_entry_group_attributes(id        = None,
                                        group     = field['6'] or field['7'],
-                                       preferred = bool(field['5']) if field['6'] else None)
+                                       preferred = True if field['5'] else None)
 
         # Type / Time/Duration Ref
         # ---
@@ -396,7 +396,7 @@ class VariantTransformer:
         # ---
         pvb.set_entry_group_attributes(id        = None,
                                        group     = field['6'] or field['7'],
-                                       preferred = bool(field['5']) if field['6'] else None)
+                                       preferred = True if field['5'] else None)
 
         # Type / Time/Duration Ref
         # ---
@@ -468,7 +468,7 @@ class VariantTransformer:
         # ---
         svb.set_entry_group_attributes(id        = None,
                                        group     = field['6'] or field['7'],
-                                       preferred = bool(field['5']) if field['6'] else None)
+                                       preferred = True if field['5'] else None)
 
         # Type / Time/Duration Ref
         # ---
@@ -585,7 +585,7 @@ class VariantTransformer:
         # ---
         wvb.set_entry_group_attributes(id        = None,
                                        group     = field['6'] or field['7'],
-                                       preferred = bool(field['5']) if field['6'] else None)
+                                       preferred = True if field['5'] else None)
 
         # Type / Time/Duration Ref
         # ---

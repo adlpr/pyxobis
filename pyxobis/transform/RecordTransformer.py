@@ -81,6 +81,11 @@ class RecordTransformer:
             #   we want to skip, but maybe make this into a warning
             #   just to make sure?
             return None
+        elif element_type == HOLDINGS and record.get_holdings_type() is None:
+            # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+            # skip component records (may erroneously skip others if
+            #   new/invalid loc codes added, so revisit this at some point)
+            return None
 
         rb = RecordBuilder()
 
@@ -854,37 +859,52 @@ class RecordTransformer:
         # get bib number from 004
         bib_ctrlno = record['004'].data
         # full ctrlno has prepended L or Q
-        target_identity = Indexer.reverse_lookup(f"(CStL)L{bib_ctrlno}") or \
-                          Indexer.reverse_lookup(f"(CStL)Q{bib_ctrlno}")
+        bib_full_ctrlno = f"(CStL)L{bib_ctrlno}"
+        target_identity = Indexer.reverse_lookup(bib_full_ctrlno)
+        if target_identity is None:
+            bib_full_ctrlno = f"(CStL)Q{bib_ctrlno}"
+            target_identity = Indexer.reverse_lookup(bib_full_ctrlno)
         assert target_identity is not None, \
-            f"{record.get_control_number()}: could not look up linked bib id: {bib_ctrlno}"
-        work_or_object_ref = self.rlt.build_ref_from_field(Field('149','  ',target_identity), WORK_INST)
+            f"{record.get_control_number()}: could not find linked bib id: {bib_ctrlno}"
+        work_or_object_ref = self.rlt.build_ref_from_field(Field('730','  ',target_identity+['w',bib_full_ctrlno]), WORK_INST)
         hb.set_work_or_object_ref(work_or_object_ref)
 
         # CONCEPT REF
         # ---
         # i.e. digital/physical
-
         holdings_type = record.get_holdings_type()
         assert holdings_type is not None, f"{record.get_control_number()}: invalid holdings type"
-        # @@@@@@@@@@@@@@@@@@@@@@@@@@@
-        holdings_type_concept_name = { record.PHYSICAL : "Physical Holdings",
-                                       record.DIGITAL  : "Digital Holdings" }.get(holdings_type)
+        holdings_type_concept_name = { record.PHYSICAL : "Physical Resources",
+                                       record.DIGITAL  : "Internet Resources" }.get(holdings_type)
         concept_ref = tfcm.build_simple_ref(holdings_type_concept_name, CONCEPT)
-        # @@@@@@@@@@@@@@@@@@@@@@@@@@@
-        ...
-        ...
-        ...
         hb.set_concept_ref(concept_ref)
 
         # QUALIFIER(S)
         # ---
-        # from 844
-        # look up 844a as WorkRef OR OrgRef
-        # if neither alidates, then ??
-        ...
-        ...
-        ...
+        # look up 844a as Work -> Org -> String
+        for val in record.get_subfields('844','a'):
+            # WORK_AUT
+            ref = tfcm.build_simple_ref(val, WORK_AUT)
+            if ref.link_attributes is not None and ref.link_attributes.href.anyURI not in (Indexer.UNVERIFIED, Indexer.CONFLICT):
+                hb.add_qualifier(ref)
+                # print(val, WORK_AUT, ref.link_attributes.href.anyURI)
+                continue
+            # WORK_INST
+            ref = tfcm.build_simple_ref(val, WORK_INST)
+            if ref.link_attributes is not None and ref.link_attributes.href.anyURI not in (Indexer.UNVERIFIED, Indexer.CONFLICT):
+                hb.add_qualifier(ref)
+                # print(val, WORK_INST, ref.link_attributes.href.anyURI)
+                continue
+            # ORGANIZATION
+            ref = tfcm.build_simple_ref(val, ORGANIZATION)
+            if ref.link_attributes is not None and ref.link_attributes.href.anyURI not in (Indexer.UNVERIFIED, Indexer.CONFLICT):
+                hb.add_qualifier(ref)
+                # print(val, ORGANIZATION, ref.link_attributes.href.anyURI)
+                continue
+            # STRING
+            ref = tfcm.build_simple_ref(val, STRING)
+            hb.add_qualifier(ref)
+            # print(val, STRING, ref.link_attributes.href.anyURI)
 
         # SUMMARY
         # ---

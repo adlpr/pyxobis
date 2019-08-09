@@ -3,6 +3,7 @@
 
 from pymarc import Field
 
+from lmldb import LaneMARCRecord
 from lmldb.xobis_constants import *
 
 from ..builders import RelationshipBuilder, WorkRefBuilder
@@ -24,7 +25,6 @@ class RelationshipTransformerHdg:
         self.build_ref_from_field = rlt.build_ref_from_field
         # self.extract_enumeration = rlt.extract_enumeration
 
-
     def transform_relationships(self, record):
         """
         For each field describing a relationship
@@ -34,46 +34,9 @@ class RelationshipTransformerHdg:
         Returns a list of zero or more Relationship objects.
         """
 
+        holdings_type = record.get_holdings_type()
+
         relationships = []
-
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
-
-        # See Also From Reference, Personal Name (R) / Related Subject, Personal Name (Lane) (R)
-        # for field in record.get_fields('500','600'):
-        #     # Relationship Name(s)
-        #     rel_names = field.get_subfields('e') or ["Related"]
-        #     for rel_name in rel_names:
-        #         rb = RelationshipBuilder()
-        #
-        #         # Name/Type
-        #         rel_name = rel_name.rstrip(': ')
-        #         rb.set_name(rel_name)
-        #         rb.set_type(self.get_relation_type(rel_name))
-        #
-        #         # Degree: n/a
-        #         # Enumeration: n/a
-        #
-        #         # Chronology
-        #         rb.set_time_or_duration_ref(tfcm.get_field_chronology(field))
-        #
-        #         # Target
-        #         rb.set_target(self.build_ref_from_field(field, BEING))
-        #
-        #         # Notes:
-        #         for val in field.get_subfields('j'):
-        #             rb.add_note(val,
-        #                         content_lang = None,
-        #                         role = "annotation")
-        #
-        #         relationships.append(rb.build())
 
         # Category Entry (Lane) (R)
         for field in record.get_fields('655'):
@@ -99,60 +62,254 @@ class RelationshipTransformerHdg:
 
                 relationships.append(rb.build())
 
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
-        ...
 
+        # Collection/Location/Call Number (R)
+        for field in record.get_fields('852'):
+            rb = RelationshipBuilder()
 
-        # Electronic Location and Access (Lane: use MFHD) (R)
-        # for field in record.get_fields('856'):
-        #     # only those marked as "related resource" and not the resource itself
-        #     if field.indicator2 != '2':
-        #         continue
-        #
-        #     rb = RelationshipBuilder()
-        #
-        #     # Name/Type
-        #     rel_name = "Related"
-        #     rb.set_name(rel_name)
-        #     rb.set_type(self.get_relation_type(rel_name))
-        #
-        #     # Degree: n/a
-        #     # Enumeration: n/a
-        #     # Chronology: n/a
-        #
-        #     # Notes
-        #     for code, val in field.get_subfields('9','x', with_codes=True):
-        #         if code == 'x':
-        #             val = "Date verified: " + val
-        #         rb.add_note(val,
-        #                     role = "annotation" if code == 'x' else "documentation")
-        #
-        #     # Target
-        #     wrb = WorkRefBuilder()
-        #
-        #     # field should only have one y or z, but do all just in case.
-        #     link_name = ' '.join(field.get_subfields('y','z'))
-        #     wrb.add_name(link_name)
-        #     wrb.set_link(link_name,
-        #                  href_URI = field['u'] )
-        #
-        #     for val in field.get_subfields('q'):
-        #         # take a wild guess at the qualifier type
-        #         qualifier_type = Indexer.simple_element_type_from_value(val)
-        #         if qualifier_type is None:
-        #             qualifier_type = STRING
-        #         wrb.add_qualifier(tfcm.build_simple_ref(val, qualifier_type))
-        #
-        #     rb.set_target(wrb.build())
-        #
-        #     relationships.append(rb.build())
+            # Name/Type
+            if 'b' not in field:
+                print(f"WARNING: {record.get_control_number()}: loc code ($b) not found: {field}")
+                continue
+            loc_code = field['b'].strip(' .').upper()
+            rel_name = self.location_code_to_relator_map.get(loc_code, "Access")
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
 
+            # Degree: n/a
+
+            # Enumeration
+            # if physical holdings, h/i are enum on rel to Place, else ignore
+            if holdings_type == LaneMARCRecord.PHYSICAL:
+                ...
+                ...
+                ...
+                ...
+                ...
+                ...
+
+            # Chronology: n/a
+
+            # Target
+            rb.set_target(self.build_ref_from_field(Field('651',' 7',['a',loc_code]), PLACE))
+
+            # Notes
+            # map ind 1
+            # ...
+            # ...
+            # ...
+            for code, val in field.get_subfields('x','z', with_codes=True):
+                rb.add_note(val,
+                            role = "annotation" if code == 'x' else "documentation")
+
+            relationships.append(rb.build())
+
+        # Electronic Location And Access (R)
+        for field in record.get_fields('856'):
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rel_name = field['e'] if 'e' in field else \
+                       ("Access" if field.indicator2 in '01' else "Related")
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+            # Enumeration: n/a
+            # Chronology: n/a
+
+            # Notes
+            for code, val in field.get_subfields('9','i','r','x', with_codes=True):
+                if code == 'x':
+                    val = "Date verified: " + val
+                rb.add_note(val,
+                            role = "annotation" if code in 'irx' else "documentation")
+
+            # Target
+            wrb = WorkRefBuilder()
+
+            # field should only have one y or z, but do all just in case.
+            link_name = ' '.join(field.get_subfields('y','z'))
+            wrb.add_name(link_name)
+            wrb.set_link(link_name,
+                         href_URI = field['u'] )
+
+            for val in field.get_subfields('q'):
+                # take a guess at the qualifier type
+                qualifier_type = Indexer.simple_element_type_from_value(val)
+                if qualifier_type is None:
+                    qualifier_type = STRING
+                wrb.add_qualifier(tfcm.build_simple_ref(val, qualifier_type))
+
+            rb.set_target(wrb.build())
+
+            relationships.append(rb.build())
+
+        # Uniform Title Associated with Version (Lane) (R)
+        for field in record.get_fields('963'):
+            rb = RelationshipBuilder()
+
+            # Name/Type
+            rel_name = "Related uniform title"
+            rb.set_name(rel_name)
+            rb.set_type(self.get_relation_type(rel_name))
+
+            # Degree: n/a
+            # Enumeration: n/a
+
+            # Chronology:
+            for val in field.get_subfields('d','f'):
+                rb.set_time_or_duration_ref(DateTimeParser.parse_as_ref(val))
+            field.delete_all_subfields('d')
+            field.delete_all_subfields('f')
+
+            # Notes: n/a
+
+            # these often link to work insts instead of auts, but
+            # should be PARSED most similarly to e.g. bib 730 (aut)
+            rb.set_target(self.build_ref_from_field(field, WORK_AUT))
+
+            relationships.append(rb.build())
 
         return relationships
+
+    location_code_to_relator_map = {
+        "ACQ": "???",
+        "APER": "Stored",
+        "ARAB": "Mediated",
+        "ARASZ": "Mediated",
+        "ARCH": "Mediated",
+        "AV": "Mediated",
+        "BOOK": "Mediated",
+        "BSP": "Shelved",
+        "BSW": "Shelved",
+        "CAT": "???",
+        "CDLC": "???",
+        "CDPER": "???",
+        "CIRC": "Mediated",
+        "COM": "Shelved",
+        "COMP": "???",
+        "COR": "Shelved",
+        "CRDSK": "Mediated",
+        "CRES": "Mediated",
+        "DESKCOPY": "Mediated",
+        "DTBS": "Access",
+        "ECOLL": "Access",
+        "ECOMP": "Access",
+        "EDATA": "Access",
+        "EDOC": "Access",
+        "EFEE": "Access",
+        "EPER": "Access",
+        "EPER1": "Access",
+        "EPER2": "Access",
+        "EPER3": "Access",
+        "EPER4": "Access",
+        "EPER5": "Access",
+        "EPER6": "Access",
+        "EPER7": "Access",
+        "EQUIP": "Mediated",
+        "ERQC": "???",
+        "FLAT": "Shelved",
+        "FOLIO": "Shelved",
+        "FOTOF": "Mediated",
+        "FPER": "Mediated",
+        "FSDOC": "Mediated",
+        "FSOFT": "Mediated",
+        "FTHSS": "Stored",
+        "HIST": "Shelved",
+        "HSFLE": "Mediated",
+        "IFOAV": "Mediated",
+        "IFOEQ": "Mediated",
+        "ILLDK": "Mediated",
+        "IMAGE": "Access",
+        "IMMI": "???",
+        "INCAT": "Mediated",
+        "INDEX": "Shelved",
+        "INSTR": "Mediated",
+        "ISIIF": "Access",
+        "LAN": "Shelved",
+        "LASER": "Mediated",
+        "LC2": "Stored",
+        "LECT": "Mediated",
+        "LIBR": "Mediated",
+        "LKSC": "???",
+        "MAP": "Mediated",
+        "MICRO": "Shelved",
+        "MINI": "Mediated",
+        "MISC": "???",
+        "MOBI": "Access",
+        "MODEL": "Mediated",
+        "MSS": "Mediated",
+        "NEWB": "???",
+        "NEWS": "Shelved",
+        "NLOC": "???",
+        "NOLOC": "???",
+        "OHIST": "???",
+        "OLC": "Mediated",
+        "OLD": "Stored",
+        "OVPER": "Shelved",
+        "OVSZE": "Shelved",
+        "PANL": "???",
+        "PARCH": "Mediated",
+        "PAV": "Mediated",
+        "PCOMP": "???",
+        "PER": "Shelved",
+        "PLIBR": "Mediated",
+        "PMICR": "Mediated",
+        "POLC": "Mediated",
+        "PORT": "Mediated",
+        "PREF": "???",
+        "PRES": "???",
+        "PROLC": "Mediated",
+        "PRREF": "???",
+        "PRSV": "???",
+        "PSPEC": "???",
+        "PTS": "Mediated",
+        "QUERY": "Mediated",
+        "REF": "Shelved",
+        "REFREV": "???",
+        "RES": "???",
+        "REVIEW": "???",
+        "RFDSK": "???",
+        "RFFLE": "???",
+        "RLIN": "Mediated",
+        "RLOC": "???",
+        "ROLC": "???",
+        "RREF": "Shelved",
+        "RREF2": "Stored",
+        "RTHSS": "Mediated",
+        "SAL3": "Stored",
+        "SAL3X": "Mediated",
+        "SC1": "???",
+        "SCAN": "???",
+        "SDOC": "Mediated",
+        "SELF": "???",
+        "SERIES": "???",
+        "SFLAT": "Mediated",
+        "SFOL": "Mediated",
+        "SIMUL": "Mediated",
+        "SKKAT": "???",
+        "SOFT": "Mediated",
+        "SOMCC": "???",
+        "SPAV": "Mediated",
+        "SPEC": "Mediated",
+        "SPLCO": "Mediated",
+        "SPOLD": "Mediated",
+        "SPOO1": "Mediated",
+        "SPOO2": "Mediated",
+        "SPOO3": "Mediated",
+        "SREF": "Mediated",
+        "STEAM": "Stored",
+        "STOR": "Stored",
+        "STRG": "Mediated",
+        "SUL": "???",
+        "TELBK": "???",
+        "TEST": "???",
+        "THSS": "Stored",
+        "TS": "Mediated",
+        "WKSTA": "???",
+        "WKSTB": "???",
+        "WKSTC": "???",
+        "WKSTD": "Mediated",
+        "WKSTE": "???"
+    }
