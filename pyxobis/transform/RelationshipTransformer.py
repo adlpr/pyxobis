@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
+from pymarc import Field
+
 from lmldb import LaneMARCRecord
 from lmldb.xobis_constants import *
 
@@ -65,19 +67,14 @@ class RelationshipTransformer:
         if element_type in (CONCEPT, LANGUAGE) and not field.tag.endswith('80'):
             # ^vxyz should always be subdivisions in concept/language fields
             for code, val in field.get_subfields('v','x','y','z', with_codes=True):
-                if code == 'v':
-                    # ^v = CONCEPT (i.e. form)
-                    subdiv_element_type = CONCEPT
-                elif code == 'x':
-                    # ^x = CONCEPT or LANGUAGE
-                    subdiv_element_type = CONCEPT if element_type == CONCEPT else LANGUAGE
-                elif code == 'y':
-                    # ^y = TIME
-                    subdiv_element_type = TIME
+                if code == 'x' and element_type == CONCEPT:
+                    # CONCEPT ^x (MeSH qualifier) needs special Indexer treatment
+                    val_href = Indexer.lookup(Field('650','  ',['x',val]), CONCEPT)
                 else:
-                    # ^z = PLACE
-                    subdiv_element_type = PLACE
-                val_href = Indexer.simple_lookup(val, subdiv_element_type)
+                    subdiv_element_type = {'v' : CONCEPT,
+                                           'x' : LANGUAGE,
+                                           'y' : TIME}.get(code, PLACE)
+                    val_href = Indexer.simple_lookup(val, subdiv_element_type)
                 rb.add_subdivision_link(val,
                                         content_lang = None,
                                         link_title = val,

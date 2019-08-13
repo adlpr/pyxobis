@@ -81,12 +81,8 @@ class RelationshipTransformerHdg:
             # Enumeration
             # if physical holdings, h/i are enum on rel to Place, else ignore
             if holdings_type == LaneMARCRecord.PHYSICAL:
-                ...
-                ...
-                ...
-                ...
-                ...
-                ...
+                # just concat??
+                rb.set_enumeration(' '.join(field.get_subfields('h','i')).strip())
 
             # Chronology: n/a
 
@@ -174,7 +170,7 @@ class RelationshipTransformerHdg:
         return relationships
 
     location_code_to_relator_map = {
-        "ACQ": "???",
+        # "ACQ": "???",
         "APER": "Stored",
         "ARAB": "Mediated",
         "ARASZ": "Mediated",
@@ -184,8 +180,8 @@ class RelationshipTransformerHdg:
         "BSP": "Shelved",
         "BSW": "Shelved",
         "CAT": "???",
-        "CDLC": "???",
-        "CDPER": "???",
+        "CDLC": "Mediated",
+        # "CDPER": "???",
         "CIRC": "Mediated",
         "COM": "Shelved",
         "COMP": "???",
@@ -208,7 +204,7 @@ class RelationshipTransformerHdg:
         "EPER6": "Access",
         "EPER7": "Access",
         "EQUIP": "Mediated",
-        "ERQC": "???",
+        # "ERQC": "???",
         "FLAT": "Shelved",
         "FOLIO": "Shelved",
         "FOTOF": "Mediated",
@@ -216,13 +212,14 @@ class RelationshipTransformerHdg:
         "FSDOC": "Mediated",
         "FSOFT": "Mediated",
         "FTHSS": "Stored",
+        "GRATIS": "Mediated",
         "HIST": "Shelved",
         "HSFLE": "Mediated",
         "IFOAV": "Mediated",
         "IFOEQ": "Mediated",
         "ILLDK": "Mediated",
         "IMAGE": "Access",
-        "IMMI": "???",
+        "IMMI": "Access",
         "INCAT": "Mediated",
         "INDEX": "Shelved",
         "INSTR": "Mediated",
@@ -232,19 +229,19 @@ class RelationshipTransformerHdg:
         "LC2": "Stored",
         "LECT": "Mediated",
         "LIBR": "Mediated",
-        "LKSC": "???",
+        "LKSC": "Mediated",
         "MAP": "Mediated",
         "MICRO": "Shelved",
         "MINI": "Mediated",
-        "MISC": "???",
+        "MISC": "Shelved",
         "MOBI": "Access",
         "MODEL": "Mediated",
         "MSS": "Mediated",
-        "NEWB": "???",
+        # "NEWB": "???",
         "NEWS": "Shelved",
         "NLOC": "???",
         "NOLOC": "???",
-        "OHIST": "???",
+        # "OHIST": "???",
         "OLC": "Mediated",
         "OLD": "Stored",
         "OVPER": "Shelved",
