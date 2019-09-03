@@ -486,7 +486,9 @@ class RelationshipTransformerAut:
             wrb = WorkRefBuilder()
 
             # field should only have one y or z, but do all just in case.
-            link_name = ' '.join(field.get_subfields('y','z'))
+            link_name = ' '.join(field.get_subfields('y','z')).strip()
+            if not link_name:
+                link_name = 'Link'
             wrb.add_name(link_name)
             wrb.set_link(link_name,
                          href_URI = field['u'] )

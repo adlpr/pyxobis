@@ -10,6 +10,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
+import iso4
 from pymarc import MARCReader, Field
 
 from lmldb import LaneMARCRecord, LMLDB
@@ -18,7 +19,7 @@ from lmldb.xobis_constants import *
 
 class Indexer:
     # index file paths
-    INDEX_DIR = Path("../lib/lmldb")
+    INDEX_DIR = Path("/home/alex/py/lib/lmldb")
     INDEX_FILE = INDEX_DIR / "index.json"
     INDEX_REVERSE_FILE = INDEX_DIR / "index_reverse.json"
     INDEX_REL_TYPE_FILE = INDEX_DIR / "index_rel_type.json"

@@ -3,8 +3,10 @@
 
 # import re
 
-import pickle
+import pickle, time
 from tqdm import tqdm
+
+from pymarc import Field, Record
 
 from lmldb import LMLDB, LaneMARCRecord
 
@@ -24,15 +26,19 @@ class FieldTransposer:
                 self.map = pickle.load(inf)
         except:
             # with access to LMLDB, creates dict of format:
-            #   { target_record_ctrlno : [Field, Field, ...], ... }
+            #   { LaneMARCRecord.BIB : { target_record_ctrlno : [pymarc Field, Field, ...], ... },
+            #     LaneMARCRecord.AUT : [pymarc Record, Record, ...] }
             self.map = {}
             with LMLDB() as db:
+                self.__generate_hdgs_from_auts(db)
                 self.__add_hdgs_fields_from_bibs(db)
             with self.FIELD_TRANSPOSER_MAP_FILE.open('wb') as outf:
                 pickle.dump(self.map, outf)
 
+
     def __add_hdgs_fields_from_bibs(self, db):
         print("generating fields to transpose from bib to hdgs")
+        self.map[LaneMARCRecord.BIB] = {}
         # for each bib
         hdg_ctrlnos_all = []
         bib_fields_to_move_map = {}
@@ -80,10 +86,10 @@ class FieldTransposer:
             for hdg_ctrlno in hdg_ctrlnos:
                 hdg_type = hdgs_type_map.get(hdg_ctrlno)
                 hdg_ctrlno_prefixed = f'(CStL)H{hdg_ctrlno}'
-                if hdg_ctrlno_prefixed not in self.map:
-                    self.map[hdg_ctrlno_prefixed] = []
+                if hdg_ctrlno_prefixed not in self.map[LaneMARCRecord.BIB]:
+                    self.map[LaneMARCRecord.BIB][hdg_ctrlno_prefixed] = []
                 # callno_and_alt_id_fields : all alt ID fields ok for all associated hdgs
-                self.map[hdg_ctrlno_prefixed].extend(callno_and_alt_id_fields)
+                self.map[LaneMARCRecord.BIB][hdg_ctrlno_prefixed].extend(callno_and_alt_id_fields)
                 # note_unknown_fields : ?????????
                 ...
                 ...
@@ -95,9 +101,33 @@ class FieldTransposer:
                 # else:
                 #     self.map[hdg_ctrlno_prefixed].extend(note_serhold_fields_format_phys)
                 # note_title_level_data_fields : physical only
-                if hdg_type == LaneMARCRecord.PHYSICAL:
-                    self.map[hdg_ctrlno_prefixed].extend(note_title_level_data_fields)
+                if hdg_type != LaneMARCRecord.DIGITAL:
+                    self.map[LaneMARCRecord.BIB][hdg_ctrlno_prefixed].extend(note_title_level_data_fields)
+
+
+    def __generate_hdgs_from_auts(self, db):
+        print(f"generating ad-hoc hdgs linked to (Work) auts")
+        self.map[LaneMARCRecord.AUT] = []
+        for aut_ctrlno, aut_record in tqdm(db.get_auts()):
+            fields_to_move = [field for field in aut_record.get_fields('856') if field.indicator2 in '01']
+            has_url = any(fields_to_move)
+            fields_to_move.extend(aut_record.get_fields('907'))
+            if not any(fields_to_move):
+                continue
+            fields_to_move.append(Field('001',data=f"Z{aut_ctrlno}"))
+            fields_to_move.append(Field('004',data=f"Z{aut_ctrlno}"))
+            now = time.strftime('%Y%m%d%H%M%S.0')
+            fields_to_move.append(Field('005',data=now))
+            fields_to_move.append(Field('008',data=f'{now[2:8]}uu    8   0000uuund0000000'))
+            fields_to_move.append(Field('852','  ',['b','EDATA' if has_url else 'NOITEM']))
+            hdg_record = Record()
+            hdg_record.add_field(*fields_to_move)
+            self.map[LaneMARCRecord.AUT].append(hdg_record)
 
 
     def get_transposed_fields(self, target_record_ctrlno):
-        return self.map.get(target_record_ctrlno, [])
+        return self.map[LaneMARCRecord.BIB].get(target_record_ctrlno, [])
+
+    def get_ad_hoc_hdgs(self):
+        for record in self.map[LaneMARCRecord.AUT]:
+            yield record['001'].data, record

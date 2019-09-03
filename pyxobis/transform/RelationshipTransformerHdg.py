@@ -79,10 +79,11 @@ class RelationshipTransformerHdg:
             # Degree: n/a
 
             # Enumeration
-            # if physical holdings, h/i are enum on rel to Place, else ignore
-            if holdings_type == LaneMARCRecord.PHYSICAL:
+            # if not digital holdings, h/i are enum on rel to Place, else ignore
+            if holdings_type != LaneMARCRecord.DIGITAL:
                 # just concat??
-                rb.set_enumeration(' '.join(field.get_subfields('h','i')).strip())
+                enum = ' '.join(field.get_subfields('h','i')).strip()
+                rb.set_enumeration(tfcm.build_simple_ref(enum, STRING) if enum else None)
 
             # Chronology: n/a
 
@@ -125,7 +126,9 @@ class RelationshipTransformerHdg:
             wrb = WorkRefBuilder()
 
             # field should only have one y or z, but do all just in case.
-            link_name = ' '.join(field.get_subfields('y','z'))
+            link_name = ' '.join(field.get_subfields('y','z')).strip()
+            if not link_name:
+                link_name = 'Link'
             wrb.add_name(link_name)
             wrb.set_link(link_name,
                          href_URI = field['u'] )
@@ -179,12 +182,12 @@ class RelationshipTransformerHdg:
         "BOOK": "Mediated",
         "BSP": "Shelved",
         "BSW": "Shelved",
-        "CAT": "???",
+        # "CAT": "???",
         "CDLC": "Mediated",
         # "CDPER": "???",
         "CIRC": "Mediated",
         "COM": "Shelved",
-        "COMP": "???",
+        "COMP": "Access",
         "COR": "Shelved",
         "CRDSK": "Mediated",
         "CRES": "Mediated",
@@ -239,55 +242,55 @@ class RelationshipTransformerHdg:
         "MSS": "Mediated",
         # "NEWB": "???",
         "NEWS": "Shelved",
-        "NLOC": "???",
-        "NOLOC": "???",
+        "NLOC": "Access",
+        "NOLOC": "Access",
         # "OHIST": "???",
         "OLC": "Mediated",
         "OLD": "Stored",
         "OVPER": "Shelved",
         "OVSZE": "Shelved",
-        "PANL": "???",
+        "PANL": "Access",
         "PARCH": "Mediated",
         "PAV": "Mediated",
-        "PCOMP": "???",
+        # "PCOMP": "???",
         "PER": "Shelved",
         "PLIBR": "Mediated",
         "PMICR": "Mediated",
         "POLC": "Mediated",
         "PORT": "Mediated",
-        "PREF": "???",
-        "PRES": "???",
+        "PREF": "Shelved",
+        # "PRES": "???",
         "PROLC": "Mediated",
-        "PRREF": "???",
-        "PRSV": "???",
-        "PSPEC": "???",
+        "PRREF": "Shelved",
+        # "PRSV": "???",
+        "PSPEC": "Mediated",
         "PTS": "Mediated",
         "QUERY": "Mediated",
         "REF": "Shelved",
-        "REFREV": "???",
-        "RES": "???",
-        "REVIEW": "???",
-        "RFDSK": "???",
-        "RFFLE": "???",
+        # "REFREV": "???",
+        # "RES": "???",
+        # "REVIEW": "???",
+        "RFDSK": "Mediated",
+        "RFFLE": "Mediated",
         "RLIN": "Mediated",
-        "RLOC": "???",
-        "ROLC": "???",
+        "RLOC": "Access",
+        "ROLC": "Shelved",
         "RREF": "Shelved",
         "RREF2": "Stored",
         "RTHSS": "Mediated",
         "SAL3": "Stored",
         "SAL3X": "Mediated",
-        "SC1": "???",
-        "SCAN": "???",
+        # "SC1": "???",
+        "SCAN": "Mediated",
         "SDOC": "Mediated",
-        "SELF": "???",
-        "SERIES": "???",
+        # "SELF": "???",
+        "SERIES": "Shelved",
         "SFLAT": "Mediated",
         "SFOL": "Mediated",
         "SIMUL": "Mediated",
-        "SKKAT": "???",
+        "SKKAT": "Mediated",
         "SOFT": "Mediated",
-        "SOMCC": "???",
+        "SOMCC": "Shelved",
         "SPAV": "Mediated",
         "SPEC": "Mediated",
         "SPLCO": "Mediated",
@@ -299,14 +302,14 @@ class RelationshipTransformerHdg:
         "STEAM": "Stored",
         "STOR": "Stored",
         "STRG": "Mediated",
-        "SUL": "???",
-        "TELBK": "???",
-        "TEST": "???",
+        "SUL": "Access",
+        "TELBK": "Mediated",
+        # "TEST": "???",
         "THSS": "Stored",
         "TS": "Mediated",
-        "WKSTA": "???",
-        "WKSTB": "???",
-        "WKSTC": "???",
+        "WKSTA": "Mediated",
+        "WKSTB": "Mediated",
+        "WKSTC": "Mediated",
         "WKSTD": "Mediated",
-        "WKSTE": "???"
+        "WKSTE": "Mediated"
     }
