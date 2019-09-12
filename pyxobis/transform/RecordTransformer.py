@@ -50,6 +50,9 @@ class RecordTransformer:
         self.nlm_org_ref  = tfcm.build_simple_ref("National Library of Medicine (U.S.)", ORGANIZATION)
         self.oclc_org_ref = tfcm.build_simple_ref("OCLC", ORGANIZATION)
 
+        self.subset_set_href = Indexer.simple_lookup("Subset", CONCEPT)
+        self.action_type_set_href = Indexer.simple_lookup("Action Type", CONCEPT)
+
         self.ft = FieldTransposer()
 
         # subordinate Transformers
@@ -154,6 +157,8 @@ class RecordTransformer:
         else:
             # treat most 655 as subsets
             self.__preprocess_hdg_655(record)
+            # reduce complexities of hdg 907 codes
+            self.__preprocess_hdg_907(record)
             # Insert fields pulled from bibs by FieldTransposer
             record.add_field(*self.ft.get_transposed_fields(record_control_no))
 
@@ -210,12 +215,12 @@ class RecordTransformer:
 
         return rb.build()
 
-
     def transform_record_types(self, record, rb):
         """
         For each field describing a Record Type (Subset) in record,
         add to RecordBuilder rb.
         """
+
         # Record "Types" = Subsets = 655 77
         # NB: Established aut "Record Type" (Z47381) actually refers
         #     to which PE a record is
@@ -225,9 +230,9 @@ class RecordTransformer:
                 for val in field.get_subfields('a'):
                     rb.add_type(title = val,
                                 href  = "(CStL)" + field['0'] if '0' in field else Indexer.simple_lookup(val, CONCEPT),
-                                set_ref = Indexer.simple_lookup("Subset", CONCEPT))
+                                set_ref = self.subset_set_href)
 
-        # convert 903 NEW(E) to Subset
+        # 903 NEW(E) to Subset
         for field in record.get_fields('903'):
             assert 'a' in field, f"{record.get_control_number()}: 903 with no $a: {field}"
             for val in field.get_subfields('a'):
@@ -239,9 +244,9 @@ class RecordTransformer:
                     title = f"Subset, New Resource {val[3:].strip()}"
                 rb.add_type(title = title,
                             href  = Indexer.simple_lookup(title, CONCEPT),
-                            set_ref = Indexer.simple_lookup("Subset", CONCEPT))
+                            set_ref = self.subset_set_href)
 
-        # convert 906 ^a/^d (+ sometimes ^c) to Subset
+        # 906 ^a/^d (+ sometimes ^c) to Subsets
         for field in record.get_fields('906'):
             for val in field.get_subfields('a'):
                 # exception for ASV since common in ^a when it should be ^d
@@ -250,28 +255,65 @@ class RecordTransformer:
                 title = f"Subset, Component, {val}"
                 rb.add_type(title = title,
                             href  = Indexer.simple_lookup(title, CONCEPT),
-                            set_ref = Indexer.simple_lookup("Subset", CONCEPT))
+                            set_ref = self.subset_set_href)
             for val in field.get_subfields('c'):
                 if val in ('LIB','REF'):
                     title = f"Subset, Component, {val}"
                     rb.add_type(title = title,
                                 href  = Indexer.simple_lookup(title, CONCEPT),
-                                set_ref = Indexer.simple_lookup("Subset", CONCEPT))
+                                set_ref = self.subset_set_href)
             for val in field.get_subfields('d'):
-                title = {'AB'     : "Subset, Component, Alpha Parents",
+                title = {'AB'     : "Subset, Component, Alpha+Monograph Parents",
                          'AS'     : "Subset, Component, Alpha Parent",
                          'AS BDM' : "Subset, Component, Alpha Parent Batch",
                          'ASV'    : "Subset, Component, Alpha Parent Visual",
                          'CB'     : "Subset, Component, Classed Parents",
-                         'CM'     : "Subset, Component, Classed Parent Monograph",
+                         'CM'     : "Subset, Component, Classed Monograph Parent",
                          'CMV'    : "Subset, Component, Classed Parent Visual",
-                         'CS'     : "Subset, Component, Classed Parent Serial",
-                         'CU'     : "Subset, Component, Classed Parent Unknown",
+                         'CS'     : "Subset, Component, Classed Serial Parent",
+                         'CU'     : "Subset, Component, Classed Unknown Parent",
                          'pubmed2marc' : "Subset, Component, pubmed2marc" }.get(val)
                 assert title is not None, f"{record.get_control_number()}: invalid 906 $d: {field}"
                 rb.add_type(title = title,
                             href  = Indexer.simple_lookup(title, CONCEPT),
-                            set_ref = Indexer.simple_lookup("Subset", CONCEPT))
+                            set_ref = self.subset_set_href)
+
+        # hdg 907 to Subsets
+        if record.get_xobis_element_type() == LaneMARCRecord.HDG:
+            for field in record.get_fields('907'):
+                # a  Serial type (INC EXC 2ND N/A) (NR)
+                for val in field.get_subfields('a'):
+                    if val == '???':
+                        continue
+                    val = val.strip(" ;:.,'/").upper()
+                    title = {'INC' : "Subset, Serial, Chiefly Articles",
+                             'EXC' : "Subset, Serial, Chiefly Nonarticles",
+                             'INR' : "Subset, Serial, Reference"}.get(val, "Subset, Serial, Pending")
+                    rb.add_type(title = title,
+                                href  = Indexer.simple_lookup(title, CONCEPT),
+                                set_ref = self.subset_set_href)
+                # b  Analysis treatment (AA CA DA PA NA) (NR)
+                for val in field.get_subfields('b'):
+                    # values should be cleaned up already from preprocessing
+                    title = {'AA': "Subset, Analysis, Full",
+                             'CA': "Subset, Analysis, Consider",
+                             'DA': "Subset, Analysis, Do Not",
+                             'PA': "Subset, Analysis, Partial",
+                             'NA': "Subset, Analysis, Not Applicable"}.get(val)
+                    assert title is not None, \
+                        f"{record.get_control_number()}: problem parsing 907 $b: {field}"
+                    rb.add_type(title = title,
+                                href  = Indexer.simple_lookup(title, CONCEPT),
+                                set_ref = self.subset_set_href)
+                # c  Classification/shelving pattern (PER EPER SCN VCN MST N/A) (NR)
+                for val in field.get_subfields('c'):
+                    val = val.strip(" ;:.,'/").upper()
+                    title = {'SCN': "Subset, Classed Together",
+                             'VCN': "Subset, Classed Separately"}.get(val)
+                    if title is not None:
+                        rb.add_type(title = title,
+                                    href  = Indexer.simple_lookup(title, CONCEPT),
+                                    set_ref = self.subset_set_href)
 
 
     def transform_record_actions(self, record, rb):
@@ -340,12 +382,11 @@ class RecordTransformer:
             imported_time_ref = DateTimeParser.parse_as_ref(imported_time_fstr)
             actions.append(("Batch imported", imported_time_ref))
 
-        action_type_set_href = Indexer.simple_lookup("Action Type", CONCEPT)
         for action_type, action_time_or_duration_ref in actions:
             rb.add_action(action_time_or_duration_ref,
                           title = action_type,
                           href  = Indexer.simple_lookup(action_type, RELATIONSHIP),
-                          set_ref = action_type_set_href)
+                          set_ref = self.action_type_set_href)
 
 
     def init_being_builder(self, record):
@@ -443,8 +484,8 @@ class RecordTransformer:
             # SUBTYPE
             # ---
             # general, form, topical, unspecified
-            # other types aren't really in our catalog, I guess
             cb.set_subtype("topical")
+            # other types aren't really in our MARC, I guess
 
         # SCHEME
         # ---
@@ -468,16 +509,19 @@ class RecordTransformer:
 
     # Defined in order of increasing priority
     event_type_map = {
-        'miscellaneous' : ["Censuses", "Exhibitions", "Exhibits", "Experiments",
-            "Special Events", "Trials", "Workshops"],
+        'miscellaneous' :
+            ["Censuses", "Exhibitions", "Exhibits", "Experiments",
+             "Special Events", "Trials", "Workshops"],
         'meeting' : ["Congresses", "Legislative Sessions"],
         'journey' : ["Expeditions", "Medical Missions, Official"],
         # Riots are occurrences even if they contain Fires (see Z58192 Tulsa Race Riot)
-        'occurrence' : ["Armed Conflicts", "Biohazard Release",
-            "Chemical Hazard Release", "Civil Disorders", "Disasters",
-            "Disease Outbreaks", "Explosions", "Mass Casualty Incidents",
-            "Radioactive Hazard Release", "Riots"],
-        'natural' : ["Cyclonic Storms", "Earthquakes", "Fires", "Floods", "Tsunamis"]
+        'occurrence' :
+            ["Armed Conflicts", "Biohazard Release",
+             "Chemical Hazard Release", "Civil Disorders", "Disasters",
+             "Disease Outbreaks", "Explosions", "Mass Casualty Incidents",
+             "Radioactive Hazard Release", "Riots"],
+        'natural' :
+            ["Cyclonic Storms", "Earthquakes", "Fires", "Floods", "Tsunamis"]
     }
 
     def init_event_builder(self, record):
@@ -1635,7 +1679,8 @@ class RecordTransformer:
         return record
 
 
-    def __preprocess_hdg_655(self, record):
+    @staticmethod
+    def __preprocess_hdg_655(record):
         """
         Most hdg 655 are subsets, so convert their I1 to be treated as such,
         except for a few hardcoded exceptions
@@ -1643,6 +1688,42 @@ class RecordTransformer:
         for field in record.get_fields('655'):
             if field['a'] not in ("Archival Materials","Letters","Print Reproductions","Subunits"):
                 field.indicator1 = '7'
+        return record
+
+
+    subfb_regex = re.compile(r'(?:^|\s)(AA|CA|DA|PA|NA)(?:[\s:;.,/!?+*]|$)', flags=re.I)
+    subfc_regex = re.compile(r'(?:^|\s)(AA|CA|DA|PA|NA)(?:[\s:;.,/!?+*]|$)', flags=re.I)
+    def __preprocess_hdg_907(self, record):
+        """
+        Reduce the compexity of 907s for other transform methods, by splitting
+        subfields with multiple codes and separating out notes into ad-hoc subfields
+        """
+        for field in record.get_fields('907'):
+            new_subfields = []
+            for code, val in field.get_subfields(with_codes=True):
+                if code == 'b':
+                    # b  Analysis treatment (AA CA DA PA NA) (NR)
+                    # split
+                    for extracted_subset_code in self.subfb_regex.findall(val):
+                        new_subfields.append(code)
+                        new_subfields.append(extracted_subset_code.upper())
+                    if re.sub('[\s:;.,/!?+*]', '', self.subfb_regex.sub('', val)):
+                        # rest --> $α -> Analysis Treatment Note
+                        new_subfields.append('α')
+                        new_subfields.append(val)
+                elif code == 'c':
+                    # c  Classification/shelving pattern (PER EPER SCN VCN MST N/A) (NR)
+                    for extracted_subset_code in self.subfb_regex.findall(val):
+                        new_subfields.append(code)
+                        new_subfields.append(extracted_subset_code.upper())
+                    if re.sub('[\s:;.,/!?+*]', '', self.subfb_regex.sub('', val)):
+                        # --> $α -> Analysis Treatment Note
+                        new_subfields.append('α')
+                        new_subfields.append(val)
+                else:
+                    new_subfields.append(code)
+                    new_subfields.append(val)
+            field.subfields = new_subfields
         return record
 
 
@@ -1668,6 +1749,8 @@ class RecordTransformer:
         Combine all 943 subfields into single 650 25 with single date ($a) or range ($a+$x)
         ("Unknown" if no 943 $a, empty string if no 943 $b)
         """
+        if '943' not in record:
+            return
         combined_943_subfields = {}
         for field in record.get_fields('943'):
             record.remove_field(field)

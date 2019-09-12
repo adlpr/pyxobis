@@ -24,12 +24,41 @@ class NoteTransformerHdg:
         """
         notes = []
 
-        # Summary-level Holdings Note (Lane) (R)
+        # Serial Control Decisions (Lane)
+        # -> $d  Misc. series/serials treatment instructions (R)
+        # -> $e  Series enumeration/call no. pattern (v. ---, --- ed., etc.) (R)
+        #   + ad-hoc subfields from preprocessing:
+        # -> $α  Analysis Treatment Note
+        # -> $π  Component Parts Note
+        # -> $ω  Acquisitions Note
+        for field in record.get_fields('907'):
+            for val in field.get_subfields('d'):
+                notes.append({ 'content_text' : val,
+                               'role' : 'documentation',
+                               'type_link_title' : "Series/Serial Treatment Note" })
+            for val in field.get_subfields('e'):
+                notes.append({ 'content_text' : val,
+                               'role' : 'documentation',
+                               'type_link_title' : "Enumeration Pattern Note" })
+            for val in field.get_subfields('α'):
+                notes.append({ 'content_text' : val,
+                               'role' : 'documentation',
+                               'type_link_title' : "Analysis Treatment Note" })
+            for val in field.get_subfields('π'):
+                notes.append({ 'content_text' : val,
+                               'role' : 'documentation',
+                               'type_link_title' : "Component Parts Note" })
+            for val in field.get_subfields('ω'):
+                notes.append({ 'content_text' : val,
+                               'role' : 'documentation',
+                               'type_link_title' : "Acquisitions Note" })
+
+        # Restrictions on Access Note (R)
         for field in record.get_fields('931'):
             for val in field.get_subfields('a'):
                 notes.append({ 'content_text' : val,
                                'role' : 'annotation',
-                               'type_link_title' : 'General Note' })
+                               'type_link_title' : "General Note" })
 
 
         # Moved from bib
@@ -39,7 +68,7 @@ class NoteTransformerHdg:
             for val in field.get_subfields('a'):
                 notes.append({ 'content_text' : val,
                                'role' : 'annotation',
-                               'type_link_title' : 'Access Note' })
+                               'type_link_title' : "Access Note" })
 
         # Library of Congress Call Number (R)
         for field in record.get_fields('050'):
@@ -49,7 +78,7 @@ class NoteTransformerHdg:
                 field['2'] = field.indicator2
             notes.append({ 'content_text' : tfcm.concat_subfs(field),
                            'role' : 'annotation',
-                           'type_link_title' : 'Classification Note',
+                           'type_link_title' : "Classification Note",
                            'source' : self.lc_org_ref })
 
         # National Library of Medicine Call Number (R)
@@ -60,33 +89,33 @@ class NoteTransformerHdg:
                 field['2'] = field.indicator2
             notes.append({ 'content_text' : tfcm.concat_subfs(field),
                            'role' : 'annotation',
-                           'type_link_title' : 'Classification Note',
+                           'type_link_title' : "Classification Note",
                            'source' : self.nlm_org_ref })
 
         # Retention Policy/Processing Instruction (Lane) (R)
         for field in record.get_fields('905'):
             notes.append({ 'content_text' : tfcm.concat_subfs(field),
                            'role' : 'documentation',
-                           'type_link_title' : 'Retention/Processing Note' })
+                           'type_link_title' : "Retention/Processing Note" })
 
         # Staff Note (Lane) (R)
         for field in record.get_fields('990'):
             for val in field.get_subfields('a'):
                 notes.append({ 'content_text' : val,
                                'role' : 'documentation',
-                               'type_link_title' : 'General Note' })
+                               'type_link_title' : "General Note" })
 
         # Title-Level Selection Data (Lane) (R)
         for field in record.get_fields('992'):
             notes.append({ 'content_text' : tfcm.concat_subfs(field),
                            'role' : 'documentation',
-                           'type_link_title' : 'Title-Level Selection Data Note' })
+                           'type_link_title' : "Title-Level Selection Data Note" })
 
         # Title-Level Usage Statistics (Lane) (NR)
         for field in record.get_fields('993'):
             notes.append({ 'content_text' : tfcm.concat_subfs(field),
                            'role' : 'documentation',
-                           'type_link_title' : 'Title-Level Usage Statistics Note' })
+                           'type_link_title' : "Title-Level Usage Statistics Note" })
 
         # add href and set URIs to all types in notes
         for note in notes:
