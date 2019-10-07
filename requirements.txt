@@ -1,4 +1,4 @@
-git+git://github.com/adlpr/pymarc.git@master#egg=pymarc
+git+git://github.com/adlpr/pymarc.git@master#egg=pymarc-3.1.L
 lxml==4.3.3
 regex==2019.4.14
 tqdm==4.32.1
