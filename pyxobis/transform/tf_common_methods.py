@@ -8,8 +8,8 @@ Static methods to share across different types of Transformer objects
 import regex as re
 from lxml import etree
 
-from lmldb import LaneMARCRecord
-from lmldb.xobis_constants import *
+from pylmldb import LaneMARCRecord
+from pylmldb.xobis_constants import *
 
 from ..builders import *
 

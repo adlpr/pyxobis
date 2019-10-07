@@ -5,7 +5,7 @@ import regex as re
 
 from pymarc import Field
 
-from lmldb.xobis_constants import *
+from pylmldb.xobis_constants import *
 
 from ..builders import RelationshipBuilder
 

@@ -3,7 +3,7 @@
 
 import regex as re
 
-from lmldb.xobis_constants import *
+from pylmldb.xobis_constants import *
 
 from ..builders import TimeContentSingleBuilder, TimeRefBuilder, DurationRefBuilder
 

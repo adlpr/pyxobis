@@ -3,8 +3,8 @@
 
 from pymarc import Field
 
-from lmldb import LaneMARCRecord
-from lmldb.xobis_constants import *
+from pylmldb import LaneMARCRecord
+from pylmldb.xobis_constants import *
 
 from . import tf_common_methods as tfcm
 

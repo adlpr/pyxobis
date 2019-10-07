@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from pymarc import Field, Record
 
-from lmldb import LMLDB, LaneMARCRecord
+from pylmldb import LMLDB, LaneMARCRecord
 
 from .Indexer import Indexer
 

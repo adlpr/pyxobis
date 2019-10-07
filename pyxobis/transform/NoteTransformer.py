@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from lmldb.xobis_constants import *
+from pylmldb.xobis_constants import *
 
 from .NoteTransformerAut import NoteTransformerAut
 from .NoteTransformerBib import NoteTransformerBib

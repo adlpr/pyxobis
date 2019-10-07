@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from . import tf_common_methods as tfcm
-from lmldb.xobis_constants import *
+from pylmldb.xobis_constants import *
 
 from .Indexer import Indexer
 
