@@ -510,8 +510,6 @@ add_name ( name_text,
 
 add_qualifier ( qualifier )  # RefElement
 
-set_organization ( org_ref )
-
 add_variant ( variant )
 
 add_note ( content_text,

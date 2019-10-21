@@ -13,19 +13,33 @@ class Object(PrincipalElement):
     """
     objectPE |=
         element xobis:object {
-            (attribute role { string "instance" | string "authority instance" },
-             attribute class { string "individual" | string "collective" }?,
-             objectContent)
-            | (attribute role { string "authority" },
-               classAttribute?,
-               objectContent)
+            (
+                ( attribute role { string "instance" | string "authority instance" },
+                attribute class { string "individual" | string "collective" }? )
+                | ( attribute role { string "authority" },
+                classAttribute? )
+            ),
+            attribute type {
+                string "natural"
+                | string "crafted"
+                | string "manufactured"
+            }?,
+            element xobis:entry {
+                entryGroupAttributes?,
+                objectEntryContent,
+            }
+            element xobis:variants { anyVariant+ }?,
+            noteList?
         }
     """
     ROLES_1 = ["instance", "authority instance"]
     ROLES_2 = ["authority"]
     CLASSES_1 = ["individual", "collective", None]
-    def __init__(self, object_content, role, \
-                       class_=None, class_attribute=None):
+    TYPES = ["natural", "crafted", "manufactured", None]
+    def __init__(self, role, object_entry_content, \
+                       class_=None, class_attribute=None, type_=None, \
+                       entry_group_attributes=None, \
+                       variants=[], note_list=None):
         # attributes
         self.is_authority = role in Object.ROLES_2
         if self.is_authority:
@@ -39,9 +53,22 @@ class Object(PrincipalElement):
             assert self.is_authority
             assert isinstance(class_attribute, ClassAttribute)
         self.class_attribute = class_attribute
-        # content
-        assert isinstance(object_content, ObjectContent)
-        self.object_content = object_content
+        assert type_ in Object.TYPES, \
+            f"Object type ({type_}) must be in: {Object.TYPES}"
+        self.type = type_
+        # for entry element
+        if entry_group_attributes is not None:
+            assert isinstance(entry_group_attributes, EntryGroupAttributes)
+        self.entry_group_attributes = entry_group_attributes
+        assert isinstance(object_entry_content, ObjectEntryContent)
+        self.object_entry_content = object_entry_content
+        # for variant elements
+        assert all(isinstance(variant, VariantEntry) for variant in variants)
+        self.variants = variants
+        # for note list
+        if note_list is not None:
+            assert isinstance(note_list, NoteList)
+        self.note_list = note_list
     def serialize_xml(self):
         # Returns an Element.
         # attributes
@@ -53,65 +80,10 @@ class Object(PrincipalElement):
         elif self.is_authority and self.class_attribute is not None:
             class_attribute_attrs = self.class_attribute.serialize_xml()
             object_attrs.update(class_attribute_attrs)
-        # content
-        object_content_elements, object_content_attrs = self.object_content.serialize_xml()
-        object_attrs.update(object_content_attrs)
-        object_e = E('object', **object_attrs)
-        object_e.extend(object_content_elements)
-        return object_e
-
-
-class ObjectContent(Component):
-    """
-    objectContent |=
-        (
-          ( attribute type { string "natural" | string "crafted" }?,
-            element xobis:entry { entryGroupAttributes?, objectEntryContent, orgRef } )
-          |
-          ( attribute type { string "manufactured" }?,
-            element xobis:entry { entryGroupAttributes?, objectEntryContent } )
-        ),
-        element xobis:variants { anyVariant+ }?,
-        noteList?
-    """
-    TYPES_1 = ["natural", "crafted", None]
-    TYPES_2 = ["manufactured", None]
-    def __init__(self, object_entry_content, \
-                       type_=None, org_ref=None, \
-                       entry_group_attributes=None, \
-                       variants=[], note_list=None):
-        # attributes
-        self.is_manufactured = org_ref is not None
-        if self.is_manufactured:
-            assert type_ in ObjectContent.TYPES_2, \
-                f"manufactured (no Org ID) Object type ({type_}) must be in: {ObjectContent.TYPES_2}"
-        else:
-            assert type_ in ObjectContent.TYPES_1, \
-                f"non-manufactured Object type ({type_}) must be in: {ObjectContent.TYPES_1}"
-            assert isinstance(org_ref, OrganizationRef)
-        self.type = type_
-        # for entry element
-        if entry_group_attributes is not None:
-            assert isinstance(entry_group_attributes, EntryGroupAttributes)
-        self.entry_group_attributes = entry_group_attributes
-        assert isinstance(object_entry_content, ObjectEntryContent)
-        self.object_entry_content = object_entry_content
-        self.org_ref = org_ref
-        # for variant elements
-        assert all(isinstance(variant, VariantEntry) for variant in variants)
-        self.variants = variants
-        # for note list
-        if note_list is not None:
-            assert isinstance(note_list, NoteList)
-        self.note_list = note_list
-    def serialize_xml(self):
-        # Returns a list of one or more Elements, and a dict of parent attributes.
-        # parent attributes
-        content_attrs = {}
         if self.type:
-            content_attrs['type'] = self.type
-        # elements
-        elements = []
+            object_attrs['type'] = self.type
+        # content
+        object_e = E('object', **object_attrs)
         # entry element
         entry_attrs = {}
         if self.entry_group_attributes is not None:
@@ -120,22 +92,18 @@ class ObjectContent(Component):
         entry_e = E('entry', **entry_attrs)
         object_entry_content_elements = self.object_entry_content.serialize_xml()
         entry_e.extend(object_entry_content_elements)
-        if not self.is_manufactured:
-            org_ref_e = self.org_ref.serialize_xml()
-            entry_e.append(org_ref_e)
-        elements.append(entry_e)
+        object_e.append(entry_e)
         # variant elements
         if self.variants:
             variant_elements = [variant.serialize_xml() for variant in self.variants]
             variants_e = E('variants')
             variants_e.extend(variant_elements)
-            elements.append(variants_e)
+            object_e.append(variants_e)
         # note list
         if self.note_list is not None:
             note_list_e = self.note_list.serialize_xml()
-            elements.append(note_list_e)
-        return elements, content_attrs
-
+            object_e.append(note_list_e)
+        return object_e
 
 
 class ObjectEntryContent(Component):

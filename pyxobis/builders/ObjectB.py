@@ -11,16 +11,13 @@ class ObjectBuilder(PrincipalElementBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: set_scheme, set_usage
-    # ADDITIONAL: set_organization
+    # ADDITIONAL: -
     def __init__(self):
         super().__init__()
-        self.org_ref = None
     def set_scheme(self, *args, **kwargs):
         raise AttributeError("Object element does not have property 'scheme'")
     def set_usage(self, *args, **kwargs):
         raise AttributeError("Object element does not have property 'usage'")
-    def set_organization(self, org_ref):
-        self.org_ref = org_ref
     def build(self):
         name_content = self.name_content
         if len(name_content) == 1:
@@ -31,20 +28,17 @@ class ObjectBuilder(PrincipalElementBuilder):
         if self.class_ is not None and self.role in Object.ROLES_2:
             class_attribute = ClassAttribute(self.class_)
         return Object(
-                   ObjectContent(
-                       ObjectEntryContent(
-                           GenericName(name_content),
-                           qualifiers
-                       ),
-                       type_ = self.type,
-                       org_ref = self.org_ref,
-                       entry_group_attributes = self.entry_group_attributes,
-                       variants = self.variants,
-                       note_list = note_list
+                   role = self.role,
+                   object_entry_content = ObjectEntryContent(
+                       GenericName(name_content),
+                       qualifiers
                    ),
-                   role   = self.role,
                    class_ = self.class_,
-                   class_attribute = class_attribute
+                   class_attribute = class_attribute,
+                   type_ = self.type,
+                   entry_group_attributes = self.entry_group_attributes,
+                   variants = self.variants,
+                   note_list = note_list
                )
 
 

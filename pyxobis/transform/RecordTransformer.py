@@ -887,11 +887,6 @@ class RecordTransformer:
         # ---
         # n/a
 
-        # ORGANIZATION
-        # ---
-        # = Lane for all our items
-        ob.set_organization(self.lane_org_ref)
-
         return ob
 
 
