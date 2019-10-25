@@ -239,58 +239,6 @@ class SubstituteAttribute(Component):
         return attrs
 
 
-class Subdivisions(Component):
-    """
-    subdivisions |=
-        element xobis:subdivision { subdivisonContent }+
-    """
-    def __init__(self, subdivision_link_contents):
-        assert subdivision_link_contents, "Subdivisions must contain one or more SubdivisionContents"
-        assert all(isinstance(subdivision_link_content, SubdivisionContent)  \
-            for subdivision_link_content in subdivision_link_contents), \
-            "Subdivisions content must be SubdivisionContents"
-        self.subdivision_link_contents = subdivision_link_contents
-    def serialize_xml(self):
-        # Returns a list of zero or more Elements.
-        subdivision_elements = []
-        for subdivision_link_content in self.subdivision_link_contents:
-            subdivision_content_text, subdivision_content_attrs = subdivision_link_content.serialize_xml()
-            subdivision_e = E('subdivision', **subdivision_content_attrs)
-            subdivision_e.text = subdivision_content_text
-            subdivision_elements.append(subdivision_e)
-        return subdivision_elements
-
-
-class SubdivisionContent(Component):
-    """
-    subdivisonContent |=
-        ( linkAttributes,
-          substituteAttribute? )?,
-        genericContent
-    """
-    def __init__(self, content, link_attributes=None, substitute_attribute=None):
-        if link_attributes is not None:
-            assert isinstance(link_attributes, LinkAttributes)
-        self.link_attributes = link_attributes
-        if substitute_attribute is not None:
-            assert link_attributes is not None
-            assert isinstance(substitute_attribute, SubstituteAttribute)
-        self.substitute_attribute = substitute_attribute
-        assert isinstance(content, GenericContent)
-        self.content = content
-    def serialize_xml(self):
-        # Returns a text string and a dict of parent attributes.
-        attrs = {}
-        if self.link_attributes is not None:
-            link_attributes_attrs = self.link_attributes.serialize_xml()
-            attrs.update(link_attributes_attrs)
-        if self.substitute_attribute is not None:
-            substitute_attribute_attrs = self.substitute_attribute.serialize_xml()
-            attrs.update(substitute_attribute_attrs)
-        content_text, content_attrs = self.content.serialize_xml()
-        attrs.update(content_attrs)
-        return content_text, attrs
-
 
 class NoteList(Component):
     """

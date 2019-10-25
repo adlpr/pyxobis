@@ -41,15 +41,15 @@ class WorkBuilder(PrincipalElementBuilder):
             content = [WorkEntryContentPart(*content_part) for content_part in self.contents]
         note_list = NoteList(self.note_list) if self.note_list else None
         return Work(
-                   WorkContent(
-                       WorkEntryContent( content ),
-                       class_ = self.class_,
-                       entry_group_attributes = self.entry_group_attributes,
-                       variants = self.variants,
-                       note_list = note_list
-                   ),
-                   role  = self.role,
-                   type_ = self.type
+                    RoleAttributes(self.role),
+                    WorkContent(
+                        WorkEntryContent( content ),
+                        class_ = self.class_,
+                        entry_group_attributes = self.entry_group_attributes,
+                        variants = self.variants,
+                        note_list = note_list
+                    ),
+                    type_ = self.type
                )
 
 
@@ -102,7 +102,7 @@ class WorkRefBuilder(PrincipalElementRefBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #  ALTERNATE: add_name (--> add_name_tuple + extra)
-    #    MISSING: add_subdivision_link
+    #    MISSING: -
     # ADDITIONAL: -
     def __init__(self):
         super().__init__()
@@ -118,8 +118,6 @@ class WorkRefBuilder(PrincipalElementRefBuilder):
             qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
             self.contents.append((self.name_content, qualifiers))
             self.name_content, self.qualifiers = [], []
-    def add_subdivision_link(self, *args, **kwargs):
-        raise AttributeError("Work element ref does not have subdivisions")
     def build(self):
         # Dump current name(s)/qualifier(s) to content
         self.__dump_to_content()

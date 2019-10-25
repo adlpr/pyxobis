@@ -182,11 +182,13 @@ class LanguageVariantEntry(VariantEntry):
 
 class LanguageRef(RefElement):
     """
-    languageRef |= element xobis:language { linkAttributes?, substituteAttribute?, langEntryContent, subdivisions? }
+    languageRef |=
+        element xobis:language {
+            linkAttributes?, substituteAttribute?, langEntryContent
+        }
     """
     def __init__(self, language_entry_content, \
-                       link_attributes=None, substitute_attribute=None, \
-                       subdivisions=None):
+                       link_attributes=None, substitute_attribute=None):
         if link_attributes is not None:
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
@@ -195,9 +197,6 @@ class LanguageRef(RefElement):
         self.substitute_attribute = substitute_attribute
         assert isinstance(language_entry_content, LanguageEntryContent)
         self.language_entry_content = language_entry_content
-        if subdivisions is not None:
-            assert isinstance(subdivisions, Subdivisions)
-        self.subdivisions = subdivisions
     def serialize_xml(self):
         # Returns an Element.
         attrs = {}
@@ -210,7 +209,4 @@ class LanguageRef(RefElement):
         language_ref_e = E('language', **attrs)
         language_entry_content_elements = self.language_entry_content.serialize_xml()
         language_ref_e.extend(language_entry_content_elements)
-        if self.subdivisions is not None:
-            subdivisions_elements = self.subdivisions.serialize_xml()
-            language_ref_e.extend(subdivisions_elements)
         return language_ref_e

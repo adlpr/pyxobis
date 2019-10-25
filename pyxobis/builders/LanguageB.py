@@ -84,12 +84,10 @@ class LanguageRefBuilder(PrincipalElementRefBuilder):
         if len(name_content) == 1:
             name_content = name_content[0]
         qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
-        subdivisions = Subdivisions(self.subdivision_link_contents) if self.subdivision_link_contents else None
         return LanguageRef(
                    LanguageEntryContent(
                        GenericName(name_content),
                        qualifiers
                    ),
-                   link_attributes = self.link_attributes,
-                   subdivisions = subdivisions
+                   link_attributes = self.link_attributes
                )

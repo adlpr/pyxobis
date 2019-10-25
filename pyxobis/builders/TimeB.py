@@ -446,7 +446,7 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
     Interface for constructing a TimeRef.
     """
     #  METHODS DEVIATION FROM SUPER
-    #    MISSING: add_name, add_qualifier, add_subdivision_link
+    #    MISSING: add_name, add_qualifier
     # ADDITIONAL: set_time_content*, set_calendar
     def __init__(self):
         super().__init__()
@@ -461,8 +461,6 @@ class TimeRefBuilder(PrincipalElementRefBuilder):
         raise AttributeError("TimeRef element does not have names")
     def add_qualifier(self, *args, **kwargs):
         raise AttributeError("TimeRef element does not have qualifiers")
-    def add_subdivision_link(self, *args, **kwargs):
-        raise AttributeError("TimeRef element does not have subdivison")
     def set_time_content(self, time_content_single1, time_content_single2=None):
         self.time_content_single1 = time_content_single1
         self.time_content_single2 = time_content_single2
@@ -512,7 +510,7 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
     Interface for constructing a DurationRef.
     """
     #  METHODS DEVIATION FROM SUPER
-    #    MISSING: add_name, add_qualifier, add_subdivision_link
+    #    MISSING: add_name, add_qualifier
     # ADDITIONAL: set_time_content1*, set_time_content2*, set_time_content2_link, set_calendar
     def __init__(self):
         super().__init__()
@@ -534,8 +532,6 @@ class DurationRefBuilder(PrincipalElementRefBuilder):
         raise AttributeError("DurationRef element does not have names")
     def add_qualifier(self, *args, **kwargs):
         raise AttributeError("DurationRef element does not have qualifiers")
-    def add_subdivision_link(self, *args, **kwargs):
-        raise AttributeError("DurationRef element does not have subdivision")
     def set_time_content1(self, time_content_single1, time_content_single2=None):
         self.time_content1_single1 = time_content_single1
         self.time_content1_single2 = time_content_single2

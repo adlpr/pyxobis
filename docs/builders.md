@@ -223,9 +223,9 @@ set_link ( link_title,
 ```python
 set_type ( new_type )  # abstract, collective, control, specific
 
-set_usage ( new_usage )  # subdivision ?
+set_usage ( new_usage )  # subdivision
 
-# Only used when usage = "subdivision"; type of subdivision
+# Only used when usage="subdivision"; type of subdivision
 set_subtype ( new_subtype )  # general, form, topical, unspecified
 
 set_scheme ( new_scheme )
@@ -304,11 +304,7 @@ add_name ( name_text,
 
 add_qualifier ( qualifier )  # RefElement
 
-add_subdivision_link ( content_text,
-                       content_lang = None,
-                       link_title = None,
-                       href_URI = None,
-                       substitute = None )
+add_subdivision ( subdivision_ref )  # (ConceptRef | LanguageRef | PlaceRef | TimeRef | DurationRef)
 ```
 
 ## Event
@@ -481,12 +477,6 @@ add_name ( name_text,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
-
-add_subdivision_link ( content_text,
-                       content_lang = None,
-                       link_title = None,
-                       href_URI = None,
-                       substitute = None )
 ```
 
 ## Object
@@ -665,12 +655,6 @@ add_name ( name_text,
            nonfiling = 0 )
 
 add_qualifier ( qualifier )  # RefElement
-
-add_subdivision_link ( content_text,
-                       content_lang = None,
-                       link_title = None,
-                       href_URI = None,
-                       substitute = None )
 ```
 
 ## Place

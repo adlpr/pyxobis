@@ -72,12 +72,10 @@ class PlaceRefBuilder(PrincipalElementRefBuilder):
     Interface for constructing a PlaceRef.
     """
     #  METHODS DEVIATION FROM SUPER
-    #    MISSING: add_subdivision_link
+    #    MISSING: -
     # ADDITIONAL: -
     def __init__(self):
         super().__init__()
-    def add_subdivision_link(self, *args, **kwargs):
-        raise AttributeError("Place element ref does not have subdivisions")
     def build(self):
         name_content = self.name_content
         if len(name_content) == 1:

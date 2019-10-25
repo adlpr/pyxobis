@@ -6,6 +6,8 @@ from pymarc import Field
 from pylmldb import LaneMARCRecord
 from pylmldb.xobis_constants import *
 
+from ..builders import ConceptRefBuilder
+
 from . import tf_common_methods as tfcm
 
 from .Indexer import Indexer
@@ -64,9 +66,10 @@ class RelationshipTransformer:
         if not (field.tag in ('700','710') and element_type == WORK_INST): # ignore author-title field works
             rb.set_link(*self.get_linking_info(field, element_type))
         # subdivisions
-        if element_type in (CONCEPT, LANGUAGE) and not field.tag.endswith('80'):
+        if element_type == CONCEPT and not field.tag.endswith('80'):
             # ^vxyz should always be subdivisions in concept/language fields
             for code, val in field.get_subfields('v','x','y','z', with_codes=True):
+                subcrb = ConceptRefBuilder()
                 if code == 'x' and element_type == CONCEPT:
                     # CONCEPT ^x (MeSH qualifier) needs special Indexer treatment
                     val_href = Indexer.lookup(Field('650','  ',['x',val]), CONCEPT)
@@ -75,11 +78,9 @@ class RelationshipTransformer:
                                            'x' : LANGUAGE,
                                            'y' : TIME}.get(code, PLACE)
                     val_href = Indexer.simple_lookup(val, subdiv_element_type)
-                rb.add_subdivision_link(val,
-                                        content_lang = None,
-                                        link_title = val,
-                                        href_URI = val_href,
-                                        substitute = None)
+                subcrb.set_link(val, val_href)
+                subcrb.add_name(val)
+                rb.add_subdivision(subcrb.build())
         return rb.build()
 
 

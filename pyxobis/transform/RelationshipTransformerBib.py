@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import regex as re
+from loguru import logger
 
 from pymarc import Field
 
@@ -719,7 +720,7 @@ class RelationshipTransformerBib:
                     target_identity = Indexer.reverse_lookup(target_ctrlno)
                     # if invalid control number, print warning, use dummy name
                     if not target_identity:
-                        print(f"WARNING: {record.get_control_number()}: {field}: invalid href, default title to 'Unknown work'")
+                        logger.warning(f"{record.get_control_number()}: {field}: invalid href, default title to 'Unknown work'")
                         target_ref = tfcm.build_simple_ref("Unknown work", WORK_INST)
                     else:
                         target_ref = self.build_ref_from_field(Field('149','  ',target_identity), WORK_INST)
@@ -770,7 +771,7 @@ class RelationshipTransformerBib:
     #                 else:
     #                     # convert subfield codes
     #                     # linking_work_subfields = []
-    #                     print(record['001'].data, linking_ctrlno, linking_work_subfields)
+    #                     logger.debug(f"{record['001'].data}\t{linking_ctrlno}\t{linking_work_subfields}")
     #     return record
 
 

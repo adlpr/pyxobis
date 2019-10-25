@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
+from loguru import logger
+
 from pymarc import Field
 
 from pylmldb import LaneMARCRecord
@@ -69,7 +71,7 @@ class RelationshipTransformerHdg:
 
             # Name/Type
             if 'b' not in field:
-                print(f"WARNING: {record.get_control_number()}: loc code ($b) not found: {field}")
+                logger.warning(f"{record.get_control_number()}: loc code ($b) not found: {field}")
                 continue
             loc_code = field['b'].strip(' .').upper()
             rel_name = self.location_code_to_relator_map.get(loc_code, "Access")

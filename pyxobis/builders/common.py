@@ -202,13 +202,11 @@ COMMON ATTRIBUTES
 * self.name_content
 * self.qualifiers
 self.link_attributes
-self.subdivision_link_contents
 
 COMMON METHODS
 * add_name  [+ add_name_tuple]
 * add_qualifier
 set_link
-add_subdivision_link
 """
 
 class PrincipalElementRefBuilder(Builder):
@@ -218,22 +216,8 @@ class PrincipalElementRefBuilder(Builder):
     def __init__(self):
         super().__init__()
         self.link_attributes = None    # LinkAttributes
-        self.subdivision_link_contents = []
     def set_link(self, link_title, href_URI=None):
         self.link_attributes = LinkAttributes(
                                    link_title,
                                    XSDAnyURI(href_URI) if href_URI else None
                                )
-    def add_subdivision_link(self, content_text, content_lang=None, link_title=None, href_URI=None, substitute=None):
-        link_attributes = LinkAttributes( \
-                              link_title, \
-                              XSDAnyURI(href_URI) if href_URI else None \
-                          ) if link_title else None
-        substitute_attribute = SubstituteAttribute(substitute) if substitute is not None else None
-        self.subdivision_link_contents.append(
-            SubdivisionContent(
-                GenericContent(content_text, content_lang),
-                link_attributes = link_attributes,
-                substitute_attribute = substitute_attribute
-            )
-        )

@@ -1,11 +1,11 @@
-# PyXOBIS
+# pyxobis
 
 Packages for transformation of Stanford Lane MARC data to XOBIS-XML.
 
 ## Documentation (by subpackage)
-<!-- * [pyxobis.classes](./docs/classes.md) -->
-* [pyxobis.builders](./docs/builders.md)
 * [pyxobis.transform](./docs/transform.md)
+* [pyxobis.builders](./docs/builders.md)
+<!-- * [pyxobis.classes](./docs/classes.md) -->
 
 ## Links
 

@@ -4,7 +4,9 @@
 # import re
 
 import pickle, time
+
 from tqdm import tqdm
+from loguru import logger
 
 from pymarc import Field, Record
 
@@ -37,12 +39,12 @@ class FieldTransposer:
 
 
     def __add_hdgs_fields_from_bibs(self, db):
-        print("generating fields to transpose from bib to hdgs")
+        logger.info("generating fields to transpose from bib to hdgs")
         self.map[LaneMARCRecord.BIB] = {}
         # for each bib
         hdg_ctrlnos_all = []
         bib_fields_to_move_map = {}
-        print("pulling fields and holdings IDs from bibs")
+        logger.info("pulling fields and holdings IDs from bibs")
         for bib_ctrlno, bib_record in tqdm(db.get_bibs()):
             # does it have fields to move?
             callno_and_alt_id_fields = bib_record.get_fields('050','060','086')
@@ -62,13 +64,13 @@ class FieldTransposer:
             bib_fields_to_move_map[bib_ctrlno] = (hdg_ctrlnos, field_sets_to_move)
 
         # map holdings IDs to types
-        print("reading hdgs types")
+        logger.info("reading hdgs types")
         hdgs_type_map = {}
         for hdg_ctrlno, hdg_record in tqdm(db.get_hdgs(hdg_ctrlnos_all)):
             hdgs_type_map[hdg_ctrlno] = hdg_record.get_holdings_type()
 
         # finally, match each field to the appropriate hdg id it should move to
-        print("aligning bib fields to hdgs")
+        logger.info("aligning bib fields to hdgs")
         for bib_ctrlno, bib_data in tqdm(bib_fields_to_move_map.items()):
             hdg_ctrlnos, field_sets_to_move = bib_data
             callno_and_alt_id_fields, note_unknown_fields, note_title_level_data_fields = field_sets_to_move
@@ -106,7 +108,7 @@ class FieldTransposer:
 
 
     def __generate_hdgs_from_auts(self, db):
-        print(f"generating ad-hoc hdgs linked to (Work) auts")
+        logger.info("generating ad-hoc hdgs linked to (Work) auts")
         self.map[LaneMARCRecord.AUT] = []
         for aut_ctrlno, aut_record in tqdm(db.get_auts()):
             fields_to_move = [field for field in aut_record.get_fields('856') if field.indicator2 in '01']

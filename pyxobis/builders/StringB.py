@@ -93,13 +93,11 @@ class StringRefBuilder(PrincipalElementRefBuilder):
     Interface for constructing a StringRef.
     """
     #  METHODS DEVIATION FROM SUPER
-    #    MISSING: add_subdivision_link
+    #    MISSING: -
     # ADDITIONAL: add_pos
     def __init__(self):
         super().__init__()
         self.parts_of_speech = []
-    def add_subdivision_link(self, *args, **kwargs):
-        raise AttributeError("String element ref does not have subdivisions")
     def add_pos(self, pos_text, pos_lang=None, title=None, href=None):
         self.parts_of_speech.append(
             PartOfSpeech(

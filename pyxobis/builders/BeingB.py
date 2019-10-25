@@ -96,14 +96,12 @@ class BeingRefBuilder(PrincipalElementRefBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #  ALTERNATE: add_name (--> add_name_tuple)
-    #    MISSING: add_subdivision_link
+    #    MISSING: -
     # ADDITIONAL: -
     def __init__(self):
         super().__init__()
     def add_name(self, *args, **kwargs):
         super().add_name_tuple(*args, **kwargs)
-    def add_subdivision_link(self, *args, **kwargs):
-        raise AttributeError("Being element ref does not have subdivisions")
     def build(self):
         name_content = self.name_content
         if len(self.name_content) == 1 and self.name_content[0][0] == "generic":

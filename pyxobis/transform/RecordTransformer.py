@@ -4,6 +4,8 @@
 import os, json
 import regex as re
 
+from loguru import logger
+
 from pymarc import Field
 
 from pylmldb import LaneMARCRecord
@@ -367,7 +369,7 @@ class RecordTransformer:
         for field in record.get_fields('915'):
             subf_as, subf_es = field.get_subfields('a'), field.get_subfields('e')
             if len(subf_as) != 1 or len(subf_es) != 1:
-                print(f"{record.get_control_number()}: WARNING: invalid 915: {field}")
+                logger.warning(f"{record.get_control_number()}: invalid 915: {field}")
                 continue
             timestamp, action_type = subf_as[0], subf_es[0]
             time_ref = DateTimeParser.parse_as_ref(timestamp)
@@ -429,16 +431,16 @@ class RecordTransformer:
             being_class = 'referential'
         elif broad_category == 'Peoples':
             if record['100'].indicator1 != '9':
-                print(f"WARNING: {self.get_control_number()}: Peoples without I1=9")
+                logger.warning(f"{self.get_control_number()}: Peoples without I1=9")
             else:
                 being_class = 'collective'
         elif broad_category == 'Persons, Families or Groups':
             if record['100'].indicator1 != '3':
-                print(f"WARNING: {self.get_control_number()}: Family/Group without I1=3")
+                logger.warning(f"{self.get_control_number()}: Family/Group without I1=3")
             being_class = 'familial'
         else:
             if record['100'].indicator1 not in '01':
-                print(f"WARNING: {self.get_control_number()}: Individual without I1=[01]")
+                logger.warning(f"{self.get_control_number()}: Individual without I1=[01]")
             being_class = 'individual'
 
         bb.set_class(being_class)
@@ -934,24 +936,24 @@ class RecordTransformer:
             ref = tfcm.build_simple_ref(val, WORK_AUT)
             if ref.link_attributes is not None and ref.link_attributes.href.anyURI not in (Indexer.UNVERIFIED, Indexer.CONFLICT):
                 hb.add_qualifier(ref)
-                # print(val, WORK_AUT, ref.link_attributes.href.anyURI)
+                # logger.debug(f"{val}\t{WORK_AUT}\t{ref.link_attributes.href.anyURI}")
                 continue
             # WORK_INST
             ref = tfcm.build_simple_ref(val, WORK_INST)
             if ref.link_attributes is not None and ref.link_attributes.href.anyURI not in (Indexer.UNVERIFIED, Indexer.CONFLICT):
                 hb.add_qualifier(ref)
-                # print(val, WORK_INST, ref.link_attributes.href.anyURI)
+                # logger.debug(f"{val}\t{WORK_INST}\t{ref.link_attributes.href.anyURI}")
                 continue
             # ORGANIZATION
             ref = tfcm.build_simple_ref(val, ORGANIZATION)
             if ref.link_attributes is not None and ref.link_attributes.href.anyURI not in (Indexer.UNVERIFIED, Indexer.CONFLICT):
                 hb.add_qualifier(ref)
-                # print(val, ORGANIZATION, ref.link_attributes.href.anyURI)
+                # logger.debug(f"{val}\t{ORGANIZATION}\t{ref.link_attributes.href.anyURI}")
                 continue
             # STRING
             ref = tfcm.build_simple_ref(val, STRING)
             hb.add_qualifier(ref)
-            # print(val, STRING, ref.link_attributes.href.anyURI)
+            # logger.debug(f"{val}\t{STRING}\t{ref.link_attributes.href.anyURI}")
 
         # SUMMARY
         # ---
@@ -961,11 +963,11 @@ class RecordTransformer:
             summary_enum, summary_chron = None, None
             if 'v' in record_summary_field:
                 if len(record_summary_field.get_subfields('v')) > 1:
-                    print(f"WARNING: {record.get_control_number()}: >1 866v")
+                    logger.warning(f"{record.get_control_number()}: >1 866v")
                 summary_enum = record_summary_field['v']
             if 'y' in record_summary_field:
                 if len(record_summary_field.get_subfields('y')) > 1:
-                    print(f"WARNING: {record.get_control_number()}: >1 866y")
+                    logger.warning(f"{record.get_control_number()}: >1 866y")
                 summary_chron = record_summary_field['y']
             hb.set_summary(summary_enum, summary_chron)
             for code, val in record_summary_field.get_subfields('x','z', with_codes=True):
@@ -1281,8 +1283,6 @@ class RecordTransformer:
         # if no field can be found to accept the information, just add a 546 note instead
         if orig_langs_as_note:
             record.add_ordered_field(Field('546','  ',['a', f'Language(s) of original: {"; ".join(orig_langs)}']))
-        else:
-            print(record)
         return record
 
 
@@ -1323,7 +1323,7 @@ class RecordTransformer:
             codes = ''.join(field.subfields[::2])
             if any(code not in 'abc' for code in codes):
                 # warn of invalid code and ignore this field
-                print(f"WARNING: {record.get_control_number()}: field contains invalid subfield: {field}")
+                logger.warning(f"{record.get_control_number()}: field contains invalid subfield: {field}")
                 continue
 
             record.remove_field(field)
@@ -1374,13 +1374,12 @@ class RecordTransformer:
             org_rel_field = Field('610','24', ['e', relator] + org_rel_subfields)
 
             lookup_result = Indexer.lookup(org_rel_field, ORGANIZATION)
-            # print(f"{record.get_control_number()}\t{field}\t{org_rel_field}\t{lookup_result}",end='\t')
+            # logger.debug(f"{record.get_control_number()}\t{field}\t{org_rel_field}\t{lookup_result}",end='\t')
 
             if lookup_result not in (Indexer.CONFLICT, Indexer.UNVERIFIED):
-                # print(''.join([val if i%2 else '$'+val for i, val in enumerate(Indexer.reverse_lookup(lookup_result))]))
+                # logger.debug(''.join([val if i%2 else '$'+val for i, val in enumerate(Indexer.reverse_lookup(lookup_result))]))
                 record.remove_field(field)
                 record.add_field(org_rel_field)
-            # print()
 
         return record
 
@@ -1433,9 +1432,9 @@ class RecordTransformer:
                 record.add_field(Field('246', field.indicators, new_subfields))
 
             # ^6 130, 630, 730, 740, 830 --> note on relationship; deal with this during bib rel transform for those fields
-            # but print a warning here if there are multiple candidates
+            # but log a warning here if there are multiple candidates
             if linked_field_tag in ('130','630','730','740','830') and len(record.get_fields(linked_field_tag)) > 1:
-                print(f"WARNING: {record.get_control_number()}: multiple candidates for 880 with linked tag {linked_field_tag}")
+                logger.warning(f"{record.get_control_number()}: multiple candidates for 880 with linked tag {linked_field_tag}")
 
         return record
 
@@ -1498,7 +1497,7 @@ class RecordTransformer:
                     record.remove_field(field_901)
                 else:
                     # if no match to a single 830, keep the 901 to transform to a record-level note
-                    print(f"WARNING: {record.get_control_number()}: no 830 match for 901, default to Series Note: {field_901}")
+                    logger.warning(f"{record.get_control_number()}: no 830 match for 901, default to Series Note: {field_901}")
 
 
     @staticmethod
@@ -1520,7 +1519,7 @@ class RecordTransformer:
         shared_subfields = [code_or_val for code, val in zip(field_830.subfields[::2], field_830.subfields[1::2]) for code_or_val in (code, val) if code not in 'dv']
         default_date = field_830['d'] or record['008'].data[7:10].strip() or 'uuuu'
         for val in field_901.get_subfields('v'):
-            # print(f"{record.get_control_number()}\t{val}")
+            # logger.debug(f"{record.get_control_number()}\t{val}")
             enum, date = self.__parse_901_v(val)
             record.add_field(Field('830', '  ', shared_subfields + ['d', date or default_date, 'v', enum]))
 

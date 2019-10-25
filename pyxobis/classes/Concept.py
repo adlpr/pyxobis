@@ -2,6 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 from .common import *
+from .Language import LanguageRef
+from .Place import PlaceRef
 from .Time import TimeRef, DurationRef
 
 from lxml.builder import ElementMaker
@@ -193,7 +195,13 @@ class ConceptVariantEntry(VariantEntry):
 
 class ConceptRef(RefElement):
     """
-    conceptRef |= element xobis:concept { linkAttributes?, substituteAttribute?, conceptEntryContent, subdivisions? }
+    conceptRef |=
+        element xobis:concept {
+            linkAttributes?,
+            substituteAttribute?,
+            conceptEntryContent,
+            subdivisions?
+        }
     """
     def __init__(self, concept_entry_content, \
                        link_attributes=None, substitute_attribute=None, \
@@ -222,6 +230,29 @@ class ConceptRef(RefElement):
         concept_entry_content_elements = self.concept_entry_content.serialize_xml()
         concept_ref_e.extend(concept_entry_content_elements)
         if self.subdivisions is not None:
-            subdivisions_elements = self.subdivisions.serialize_xml()
-            concept_ref_e.extend(subdivisions_elements)
+            subdivisions_e = self.subdivisions.serialize_xml()
+            concept_ref_e.append(subdivisions_e)
         return concept_ref_e
+
+
+class Subdivisions(Component):
+    """
+    subdivisions |=
+        element xobis:subdivisions {
+            ( conceptRef | languageRef | placeRef | timeRef | durationRef )+
+        }
+    """
+    VALID_REFS = (ConceptRef, LanguageRef, PlaceRef, TimeRef, DurationRef)
+    def __init__(self, subdivisions):
+        assert subdivisions, "Subdivisions must contain one or more Refs"
+        for subdivision in subdivisions:
+            assert type(subdivision) in Subdivisions.VALID_REFS, \
+                f"Invalid subdivision type: {type(subdivision)}"
+        self.subdivisions = subdivisions
+    def serialize_xml(self):
+        # Returns an Element.
+        subdivisions_e = E('subdivisions')
+        for subdivision in self.subdivisions:
+            ref_e = subdivision.serialize_xml()
+            subdivisions_e.append(ref_e)
+        return subdivisions_e

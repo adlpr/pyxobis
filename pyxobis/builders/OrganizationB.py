@@ -115,14 +115,11 @@ class OrganizationRefBuilder(PrincipalElementRefBuilder):
             name_content = name_content[0]
         prequalifiers = Prequalifiers(self.prequalifiers) if self.prequalifiers else None
         qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
-        subdivisions = Subdivisions(self.subdivision_link_contents) \
-            if self.subdivision_link_contents else None
         return OrganizationRef(
                    OrganizationEntryContent(
                        GenericName(name_content),
                        prequalifiers,
                        qualifiers
                    ),
-                   link_attributes = self.link_attributes,
-                   subdivisions = subdivisions
+                   link_attributes = self.link_attributes
                )

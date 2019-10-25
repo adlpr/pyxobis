@@ -41,7 +41,6 @@ class EntryStringFormatter:
                     entry_str_segments.append(cls.format_ref_element_str(child))
                 entry_str_segments.append('·')
         elif entry_tag.find_all('name', recursive=False):
-            # print("entry with child name")
             # <entry> with typical <name>
             for child in entry_tag.children:
                 if child.name in ('name','pos'):
@@ -50,7 +49,6 @@ class EntryStringFormatter:
                     entry_str_segments.append(cls.format_qualifiers_str(child))
                 entry_str_segments.append('·')
         else:
-            # print("entry without child name")
             # no <name> indicates a <work> <entry> with interleaved <part>s and <qualifers>s
             for child in entry_tag.children:
                 if child.name == 'part':

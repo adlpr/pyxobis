@@ -78,16 +78,19 @@ class ConceptRefBuilder(PrincipalElementRefBuilder):
     """
     #  METHODS DEVIATION FROM SUPER
     #    MISSING: -
-    # ADDITIONAL: -
+    # ADDITIONAL: add_subdivision
     def __init__(self):
         super().__init__()
+        self.subdivisions = []
+    def add_subdivision(self, subdivision_ref):
+        self.subdivisions.append(subdivision_ref)
     def build(self):
         name_content = self.name_content
         if len(self.name_content) == 1:
             name_content = name_content[0]
         qualifiers = Qualifiers(self.qualifiers) if self.qualifiers else None
-        subdivisions = Subdivisions(self.subdivision_link_contents) \
-            if self.subdivision_link_contents else None
+        subdivisions = Subdivisions(self.subdivisions) \
+            if self.subdivisions else None
         return ConceptRef(
                    ConceptEntryContent(
                        GenericName(name_content),

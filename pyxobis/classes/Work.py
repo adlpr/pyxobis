@@ -14,18 +14,17 @@ class Work(PrincipalElement):
     workPE |=
         element xobis:work {
             attribute type { string "intellectual" | string "artistic" }?,
-            attribute role { string "instance" | string "authority instance" | string "authority" },
+            roleAttributes,
             workContent
         }
     """
     TYPES = ["intellectual", "artistic", None]
-    ROLES = ["instance", "authority instance", "authority"]
-    def __init__(self, work_content, role, type_=None):
+    def __init__(self, role_attributes, work_content, type_=None):
         # attributes
         assert type_ in Work.TYPES, f"Work type ({type_}) must be in: {Work.TYPES}"
         self.type = type_
-        assert role in Work.ROLES, f"Work role ({role}) must be in: {Work.ROLES}"
-        self.role = role
+        assert isinstance(role_attributes, RoleAttributes)
+        self.role_attributes = role_attributes
         # content
         assert isinstance(work_content, WorkContent)
         self.work_content = work_content
@@ -35,8 +34,8 @@ class Work(PrincipalElement):
         work_attrs = {}
         if self.type:
             work_attrs['type'] = self.type
-        if self.role:
-            work_attrs['role'] = self.role
+        role_attributes_attrs = self.role_attributes.serialize_xml()
+        work_attrs.update(role_attributes_attrs)
         # content
         work_e = E('work', **work_attrs)
         work_content_elements = self.work_content.serialize_xml()

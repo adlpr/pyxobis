@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 
 from tqdm import tqdm
+from loguru import logger
 
 # import iso4
 from pymarc import MARCReader, Field
@@ -147,6 +148,7 @@ class Indexer:
                 with cls.INDEX_BIB_TO_HDG_FILE.open('r') as inf:
                     cls.index_bib_to_hdg = json.load(inf)
             except:
+                logger.warning("index files not found; regenerating from LMLDB")
                 cls.__generate_index()
                 with cls.INDEX_FILE.open('w') as outf:
                     json.dump(cls.index, outf)
@@ -160,8 +162,6 @@ class Indexer:
     @classmethod
     def __generate_index(cls):
         # Generate index from given input MARC files.
-        print("generating indices")
-
         # forward index (main or variant identity string --> ctrl number/conflict)
         index, index_variants = {}, {}
         conflicts, conflicts_variants = set(), set()
@@ -176,7 +176,7 @@ class Indexer:
 
         with LMLDB() as db:
             for record_type, db_query in (('bib',db.get_bibs),('auth',db.get_auts)):
-                print(f"  reading {record_type}s...")
+                logger.info(f"reading {record_type}s...")
                 for _, record in tqdm(db_query()):
                     # if relationship, add to rel type index
                     if record.get_broad_category() == 'Relationships':
@@ -217,7 +217,7 @@ class Indexer:
                             else:
                                 index_variants[variant_element_type][variant_id_string] = ctrlno
 
-            print(f"  reading hdgs...")
+            logger.info(f"reading hdgs...")
             for hdg_ctrlno, hdg_record in tqdm(db.get_hdgs()):
                 bib_ctrlno = hdg_record['004'].data
                 if bib_ctrlno not in index_bib_to_hdg:

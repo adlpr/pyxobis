@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import regex as re
+from loguru import logger
 
 from pylmldb.xobis_constants import *
 
@@ -43,7 +44,7 @@ class DateTimeParser:
         Parse out a time or duration string into a Time or Duration ref element.
         """
         # Misc preprocessing
-        # print("start", datestring)
+        # logger.debug(f"start:\t{datestring}")
 
         """
         [between 1401 and 1425?]	1
@@ -86,7 +87,7 @@ class DateTimeParser:
         dts = re.sub(r"נפ?[׳'] +", "died ", dts)
         dts = re.sub(r" +או +", " or ", dts)
 
-        # print("punct", dts)
+        # logger.debug(f"punct:\t{dts}")
 
         # English
         # single digit days
@@ -106,7 +107,7 @@ class DateTimeParser:
             # potential problem here if multiple instances
             dts = dts.replace(m.group(0), m.group(1)+m.group(2)+m.group(1)+m.group(3)+m.group(4))
 
-        # print("pre normalize", dts)
+        # logger.debug(f"pre normalize:\t{dts}")
 
         for i, m in enumerate([
                 r"jan(?:\.|uary)?",  r"feb(?:\.|ruary)?",  r"mar(?:\.|ch)?",
@@ -140,7 +141,7 @@ class DateTimeParser:
         # <> to ~
         dts = re.sub(r"\<([\d\-]+)\>",  r"\1~", dts, flags=re.I)
 
-        # print("normalize", dts)
+        # logger.debug(f"normalize:{dts}")
 
         # --------
         # ELEMENT-SPECIFIC PARSING
@@ -160,7 +161,7 @@ class DateTimeParser:
                 # "Died" date --> Born Unknown.
                 dts = 'Unknown-' + re.sub(r"^d(ied |\. ?|\.? )", '', dts).strip()
 
-        # print("pre split", dts)
+        # logger.debug(f"pre split:\t{dts}")
 
         # --------
         # SPLIT
@@ -171,7 +172,7 @@ class DateTimeParser:
         if len(split_dates) == 1:
             split_dates = re.split(r'-(?!\d\d(?:[T\-\./\?~](?: [\w\.]+)?|[T\-\./\?~]?(?: [\w\.]+)?$))', dts)
 
-        # print("split", str(split_dates))
+        # logger.debug(f"split:\t{split_dates}")
 
         if len(split_dates) == 1:
             # This should be a TimeRef.
@@ -266,8 +267,8 @@ class DateTimeParser:
                 raise ValueError(f"problem building duration from datestring: {datestring}")
 
         else:
-            # Did not split as expected; print warning and treat as named
-            print(f"WARNING: problem splitting datestring, treating as name: {datestring}")
+            # Did not split as expected; log warning and treat as named
+            logger.warning(f"problem splitting datestring, treating as name: {datestring}")
             return cls.build_simple_named_datetime(datestring)
 
 

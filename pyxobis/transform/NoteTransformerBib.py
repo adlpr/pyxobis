@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
+from loguru import logger
+
 from pymarc import Field
 
 from . import tf_common_methods as tfcm
@@ -94,7 +96,7 @@ class NoteTransformerBib:
                                        '2' : "Intervening publisher:",
                                        '3' : "Latest publisher:" }][any(code in '3abc' for code in new_codes)].get(new_field.indicator1)
                     except:
-                        print(f"WARNING: {record.get_control_number()}: invalid indicator(s): {field}")
+                        logger.warning("{record.get_control_number()}: invalid indicator(s): {field}")
                         continue
                     new_field.subfields = [ 'i', note_subf ] + new_field.subfields
                     notes.append({ 'content_text' : tfcm.concat_subfs(new_field),
@@ -125,7 +127,7 @@ class NoteTransformerBib:
                                           '2' : "Intervening manufacturer:",
                                           '3' : "Latest manufacturer:" } }.get(field.indicator2).get(field.indicator1)
                 except:
-                    print(f"WARNING: {record.get_control_number()}: invalid indicator(s): {field}")
+                    logger.warning("{record.get_control_number()}: invalid indicator(s): {field}")
                     continue
                 field.subfields = [ 'i', note_subf ] + field.subfields
                 notes.append({ 'content_text' : tfcm.concat_subfs(field),
@@ -193,7 +195,7 @@ class NoteTransformerBib:
             elif field.tag == '490':
                 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                 if field.indicator1!='0':
-                    print(f"WARNING: {record.get_control_number()}: unmatched series note: {field}")
+                    logger.warning("{record.get_control_number()}: unmatched series note: {field}")
                 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                 notes.append({ 'content_text' : tfcm.concat_subfs(field, with_codes=False),
                                'role' : 'transcription',

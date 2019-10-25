@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-from .common import Component, PrincipalElement, PrequalifierRefElement, VariantEntry, GenericName, SchemeAttribute, ClassAttribute, GenericType, LinkAttributes, SubstituteAttribute, Subdivisions, NoteList, Prequalifiers, Qualifiers, VariantAttributes, EntryGroupAttributes
+from .common import Component, PrincipalElement, PrequalifierRefElement, VariantEntry, GenericName, SchemeAttribute, ClassAttribute, GenericType, LinkAttributes, SubstituteAttribute, NoteList, Prequalifiers, Qualifiers, VariantAttributes, EntryGroupAttributes
 from .Time import TimeRef, DurationRef
 
 from lxml.builder import ElementMaker
@@ -14,10 +14,17 @@ class Organization(PrincipalElement):
     orgPE |=
         element xobis:organization {
             attribute type {
-                string "business" | string "government" | string "nonprofit" | string "other"
+                ( string "business"
+                | string "government"
+                | string "nonprofit"
+                | string "other" )
             }?,
             classAttribute?,
-            element xobis:entry { schemeAttribute?, entryGroupAttributes?, orgEntryContent },
+            element xobis:entry {
+                schemeAttribute?,
+                entryGroupAttributes?,
+                orgEntryContent
+            },
             element xobis:variants { anyVariant+ }?,
             noteList?
         }
@@ -118,8 +125,13 @@ class OrganizationVariantEntry(VariantEntry):
         element xobis:organization {
             variantAttributes?,
             genericType?,
-            (timeRef | durationRef)?,
-            element xobis:entry { substituteAttribute?, schemeAttribute?, entryGroupAttributes?, orgEntryContent },
+            ( timeRef | durationRef )?,
+            element xobis:entry {
+                substituteAttribute?,
+                schemeAttribute?,
+                entryGroupAttributes?,
+                orgEntryContent
+            },
             noteList?
         }
     """
@@ -195,11 +207,13 @@ class OrganizationVariantEntry(VariantEntry):
 
 class OrganizationRef(PrequalifierRefElement):
     """
-    orgRef |= element xobis:organization { linkAttributes?, substituteAttribute?, orgEntryContent, subdivisions? }
+    orgRef |=
+        element xobis:organization {
+            linkAttributes?, substituteAttribute?, orgEntryContent
+        }
     """
     def __init__(self, organization_entry_content,
-                       link_attributes=None, substitute_attribute=None, \
-                       subdivisions=None):
+                       link_attributes=None, substitute_attribute=None):
         if link_attributes is not None:
             assert isinstance(link_attributes, LinkAttributes)
         self.link_attributes = link_attributes
@@ -208,9 +222,6 @@ class OrganizationRef(PrequalifierRefElement):
         self.substitute_attribute = substitute_attribute
         assert isinstance(organization_entry_content, OrganizationEntryContent)
         self.organization_entry_content = organization_entry_content
-        if subdivisions is not None:
-            assert isinstance(subdivisions, Subdivisions)
-        self.subdivisions = subdivisions
     def serialize_xml(self):
         # Returns an Element.
         attrs = {}
@@ -223,7 +234,4 @@ class OrganizationRef(PrequalifierRefElement):
         org_ref_e = E('organization', **attrs)
         organization_entry_content_elements = self.organization_entry_content.serialize_xml()
         org_ref_e.extend(organization_entry_content_elements)
-        if self.subdivisions is not None:
-            subdivisions_elements = self.subdivisions.serialize_xml()
-            org_ref_e.extend(subdivisions_elements)
         return org_ref_e
