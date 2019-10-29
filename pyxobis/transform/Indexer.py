@@ -2,10 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 """
-Enables lookup between record IDs and identities.
+Enables lookup between record identities and control numbers.
 """
 
-import json
+import os, json
 from pathlib import Path
 
 from tqdm import tqdm
@@ -17,10 +17,14 @@ from pymarc import MARCReader, Field
 from pylmldb import LaneMARCRecord, LMLDB
 from pylmldb.xobis_constants import *
 
+DEFAULT_INDEX_DIR_STR = "/home/alex/py/lib/pylmldb"    # @@@@@@@@@@@@@@@@@@
 
 class Indexer:
-    # index file paths
-    INDEX_DIR = Path("/home/alex/py/lib/pylmldb")  # @@@@@@@@@@@@@@@@@@
+    # index file paths; check for set env var, else default
+    INDEX_DIR_STR = os.environ.get("PYXOBIS_INDEXER_PATH") or DEFAULT_INDEX_DIR_STR
+    if "PYXOBIS_INDEXER_PATH" not in os.environ:
+        logger.warning(f"PYXOBIS_INDEXER_PATH not set; using default dir: {INDEX_DIR_STR}")
+    INDEX_DIR = Path(INDEX_DIR_STR)
     INDEX_FILE = INDEX_DIR / "index.json"
     INDEX_REVERSE_FILE = INDEX_DIR / "index_reverse.json"
     INDEX_REL_TYPE_FILE = INDEX_DIR / "index_rel_type.json"
