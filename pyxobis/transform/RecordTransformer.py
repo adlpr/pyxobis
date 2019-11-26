@@ -281,7 +281,7 @@ class RecordTransformer:
                             set_ref = self.subset_set_href)
 
         # hdg 907 to Subsets
-        if record.get_xobis_element_type() == LaneMARCRecord.HDG:
+        if record.get_xobis_element_type() == HOLDINGS:
             for field in record.get_fields('907'):
                 # a  Serial type (INC EXC 2ND N/A) (NR)
                 for val in field.get_subfields('a'):
@@ -312,6 +312,52 @@ class RecordTransformer:
                     val = val.strip(" ;:.,'/").upper()
                     title = {'SCN': "Subset, Classed Together",
                              'VCN': "Subset, Classed Separately"}.get(val)
+                    if title is not None:
+                        rb.add_type(title = title,
+                                    href  = Indexer.simple_lookup(title, CONCEPT),
+                                    set_ref = self.subset_set_href)
+                # f  Component parts indicator (aa, aa selected, ca) (NR)
+                for val in field.get_subfields('f'):
+                    val = val.strip(" ;:.,'/").lower()
+                    title = {'aa': "Subset, Components, Complete/Ongoing",
+                             'ab': "Subset, Components, Serial",
+                             'pa': "Subset, Components, Selected Only",
+                             'ca': "Subset, Components, Consider"}.get(val)
+                    if title is not None:
+                        rb.add_type(title = title,
+                                    href  = Indexer.simple_lookup(title, CONCEPT),
+                                    set_ref = self.subset_set_href)
+                # x  Subscription Status (Current, eCurrent, Ceased, On Order, etc.) (NR)
+                for val in field.get_subfields('x'):
+                    val = val.strip(" ;:.,'/").lower()
+                    title = {'ceased':     "Subset, Acquisitions, Print Subscription Ceased",
+                             'eceased':    "Subset, Acquisitions, Digital Subscription Ceased",
+                             'changed':    "Subset, Acquisitions, Print Subscription Changed Title",
+                             'echanged':   "Subset, Acquisitions, Digital Subscription Changed Title",
+                             'current':    "Subset, Acquisitions, Print Subscription Current",
+                             'ecurrent':   "Subset, Acquisitions, Digital Subscription Current",
+                             'inactive':   "Subset, Acquisitions, Print Subscription Inactive",
+                             'einactive':  "Subset, Acquisitions, Digital Subscription Inactive",
+                             'individual': "Subset, Acquisitions, Print Subscription, Individual",
+                             'edelayed':   "Subset, Acquisitions, Digital Subscription Delayed"}.get(val)
+                    if title is not None:
+                        rb.add_type(title = title,
+                                    href  = Indexer.simple_lookup(title, CONCEPT),
+                                    set_ref = self.subset_set_href)
+                # y  Payment Type (DigiPay, DigiCopay, DigiCoop, DigiFree, PrtPay, PrtFree) (NR)
+                for val in field.get_subfields('y'):
+                    val = val.strip(" ;:.,'/").lower()
+                    title = {'digicoop':  "Subset, Acquisitions Payment, Digital Acquired Cooperatively",
+                             'digicopay': "Subset, Acquisitions Payment, Digital Acquired CoPay",
+                             'sulcopay':  "Subset, Acquisitions Payment, Digital Acquired CoPay SUL",
+                             'digifree':  "Subset, Acquisitions Payment, Digital Acquired Free",
+                             'digisomcc': "Subset, Acquisitions Payment, Digital Acquired SOMCC Pays",
+                             'digitrial': "Subset, Acquisitions Payment, Digital Acquired Trial",
+                             'digipay':   "Subset, Acquisitions Payment, Digital Lane Pays",
+                             'digipda':   "Subset, Acquisitions Payment, Digital Acquired Trial, Patron Driven Acquisition",
+                             'digiq':     "Subset, Acquisitions Payment, Digital Question",
+                             'prtfree':   "Subset, Acquisitions Payment, Print Acquired Free",
+                             'prtpay':    "Subset, Acquisitions Payment, Print Acquired Lane Pays"}.get(val)
                     if title is not None:
                         rb.add_type(title = title,
                                     href  = Indexer.simple_lookup(title, CONCEPT),
@@ -1685,8 +1731,11 @@ class RecordTransformer:
         return record
 
 
-    subfb_regex = re.compile(r'(?:^|\s)(AA|CA|DA|PA|NA)(?:[\s:;.,/!?+*]|$)', flags=re.I)
-    subfc_regex = re.compile(r'(?:^|\s)(AA|CA|DA|PA|NA)(?:[\s:;.,/!?+*]|$)', flags=re.I)
+    f907b_regex = re.compile(r'(?:^|[\s,;])(AA|CA|DA|PA|NA)(?:[\s:;.,/!?+*]|$)', flags=re.I)
+    f907c_regex = re.compile(r'(?:^|[\s,;])([SV]CN)(?:[\s:;.,/!?+*]|$)', flags=re.I)
+    f907f_regex = re.compile(r'(?:^|[\s,;])(aa[,;]? (?:selected|scattered|substantially|\[?various|partial|(?:\[|v\.\s*)?\d+)|[acp]a|ab)(?:[\s:;.,/!?+*\-\]]|$)', flags=re.I)
+    f907x_regex = re.compile(r'(?:^|[\s,;])(e?ceased|e?changed|e?current|e?inactive|individual|edelayed)(?:paper|print|[\s:;.,/!?+*\-\]]|$)', flags=re.I)
+    f907y_regex = re.compile(r'(?:^|[\s,;])(digi(?:co(?:op|pay)|free|somcc|trial|pay|q)|prt(?:free|pay))(?:[N\s:;.,/!?+*\-\]]|$)', flags=re.I)
     def __preprocess_hdg_907(self, record):
         """
         Reduce the compexity of 907s for other transform methods, by splitting
@@ -1698,23 +1747,42 @@ class RecordTransformer:
                 if code == 'b':
                     # b  Analysis treatment (AA CA DA PA NA) (NR)
                     # split
-                    for extracted_subset_code in self.subfb_regex.findall(val):
+                    for extracted_subset_code in self.f907b_regex.findall(val):
                         new_subfields.append(code)
                         new_subfields.append(extracted_subset_code.upper())
-                    if re.sub('[\s:;.,/!?+*]', '', self.subfb_regex.sub('', val)):
+                    if re.sub('[\s:;.,/!+*]', '', self.f907b_regex.sub('', val)):
                         # rest --> $α -> Analysis Treatment Note
                         new_subfields.append('α')
                         new_subfields.append(val)
                 elif code == 'c':
                     # c  Classification/shelving pattern (PER EPER SCN VCN MST N/A) (NR)
-                    for extracted_subset_code in self.subfb_regex.findall(val):
+                    for extracted_subset_code in self.f907c_regex.findall(val):
                         new_subfields.append(code)
                         new_subfields.append(extracted_subset_code.upper())
-                    if re.sub('[\s:;.,/!?+*]', '', self.subfb_regex.sub('', val)):
-                        # --> $α -> Analysis Treatment Note
-                        new_subfields.append('α')
+                elif code == 'f':
+                    # f  Component parts indicator (aa, aa selected, ca) (NR)
+                    for extracted_subset_code in self.f907f_regex.findall(val):
+                        if extracted_subset_code.startswith('aa') and len(extracted_subset_code) > 2:
+                            extracted_subset_code = 'pa'
+                        new_subfields.append(code)
+                        new_subfields.append(extracted_subset_code.lower())
+                    if re.sub('[\s:;.,/!+*]', '', self.f907f_regex.sub('', val)):
+                        # rest --> $π -> Component Parts Note
+                        new_subfields.append('π')
+                        new_subfields.append(val)
+                elif code in 'xy':
+                    # x  Subscription Status (Current, eCurrent, Ceased, On Order, etc.) (NR)
+                    # y  Payment Type (DigiPay, DigiCopay, DigiCoop, DigiFree, PrtPay, PrtFree) (NR)
+                    f907subf_regex = self.f907x_regex if code == 'x' else self.f907y_regex
+                    for extracted_subset_code in f907subf_regex.findall(val):
+                        new_subfields.append(code)
+                        new_subfields.append(extracted_subset_code.lower())
+                    if re.sub('[\s:;.,/!+*]', '', f907subf_regex.sub('', val)):
+                        # rest --> $ω -> Acquisitions Note
+                        new_subfields.append('ω')
                         new_subfields.append(val)
                 else:
+                    # just pass the rest through
                     new_subfields.append(code)
                     new_subfields.append(val)
             field.subfields = new_subfields

@@ -11,7 +11,6 @@ from pathlib import Path
 from tqdm import tqdm
 from loguru import logger
 
-# import iso4
 from pymarc import MARCReader, Field
 
 from pylmldb import LaneMARCRecord, LMLDB
