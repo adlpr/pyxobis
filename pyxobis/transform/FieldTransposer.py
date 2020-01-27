@@ -130,6 +130,10 @@ class FieldTransposer:
     def get_transposed_fields(self, target_record_ctrlno):
         return self.map[LaneMARCRecord.BIB].get(target_record_ctrlno, [])
 
-    def get_ad_hoc_hdgs(self):
-        for record in self.map[LaneMARCRecord.AUT]:
-            yield record['001'].data, record
+    def get_ad_hoc_hdgs(self, batch_size=0):
+        if batch_size > 0:
+            for i in range(0, len(self.map[LaneMARCRecord.AUT]), batch_size):
+                yield [(record['001'].data, record) for record in self.map[LaneMARCRecord.AUT][i:i+batch_size]]
+        else:
+            for record in self.map[LaneMARCRecord.AUT]:
+                yield record['001'].data, record
