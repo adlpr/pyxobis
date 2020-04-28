@@ -127,7 +127,7 @@ class WorkEntryContent(Component):
         # or a list of WorkEntryContentPart objects
         self.is_parts = not isinstance(content, WorkEntryContentSingleGeneric)
         if self.is_parts:
-            assert content, "Work entry content must have at least one part"
+            assert content, f"Work entry content must have at least one part"
             assert all(isinstance(content_part, WorkEntryContentPart) for content_part in content)
         self.content = content
     def serialize_xml(self):
