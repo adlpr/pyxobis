@@ -339,7 +339,7 @@ class RecordTransformer:
                              'inactive':   "Subset, Acquisitions, Print Subscription Inactive",
                              'einactive':  "Subset, Acquisitions, Digital Subscription Inactive",
                              'individual': "Subset, Acquisitions, Print Subscription, Individual",
-                             'edelayed':   "Subset, Acquisitions, Digital Subscription Delayed"
+                             'edelayed':   "Subset, Acquisitions, Digital Subscription Delayed",
                              'eunknown':   "Subset, Acquisitions, Digital Subscription Unknown"}.get(val)
                     if title is not None:
                         rb.add_type(title = title,
