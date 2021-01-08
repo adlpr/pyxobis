@@ -19,7 +19,7 @@ setup(
     packages = find_packages(),
     python_requires='>=3.7',
     install_requires = ['pymarc==3.1.L',
-                        'lxml==4.4.1',
+                        'lxml==4.6.2',
                         'regex==2019.8.19',
                         'tqdm==4.36.1',
                         'loguru==0.3.2'],
